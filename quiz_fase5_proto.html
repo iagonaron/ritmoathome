@@ -293,11 +293,12 @@ body.fire .green-cap{background:#ff4d00;box-shadow:0 0 16px rgba(255,90,0,.9)}
 <script>
 const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
 
-/* ===== carta 1.1 (datos reales) ===== */
-const CARD = { kicker:"Carta 1.1",
+/* ===== carta: por config (URL) o 1.1 por defecto ===== */
+const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
+const CARD = _CFG ? { kicker:"Carta "+(_CFG.atlasId||''), cells:_CFG.cells.map(c=>c.notes) } : { kicker:"Carta 1.1",
   cells:[ ["16","16","8","8"], ["8","16","16","8"], ["8","8","16","16"] ] };   // variaciones (objetivo)
-const COMPOUND=true, PULSE_Q=1.5, BPM=42;   // BASE estándar: negra c/puntillo=42 (negra≈63) · extremo=70 · blanca≈31 · fusas: mitad
-const FILLERS = [ ["qd"], ["8","8","8"], ["q","8"], ["8","q"] ];                 // relleno (más sencillo)
+const COMPOUND=_CFG?_CFG.compound:true, PULSE_Q=_CFG?_CFG.pulseQ:1.5, BPM=_CFG?_CFG.bpm:42, BPM_EXTREME=_CFG?_CFG.bpmExtreme:70;   // BPM = bpm del PULSO
+const FILLERS = _CFG?_CFG.fillers:[ ["qd"], ["8","8","8"], ["q","8"], ["8","q"] ];                 // relleno (más sencillo)
 
 /* ===== helpers rítmicos ===== */
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
@@ -400,7 +401,7 @@ let running=false, attacks=[], notes=[], beamGroups=[], roundsMeta=[], raf=null;
 let extremeMode=false, VIS_DELAY_P=0;
 let musAnchors=[], schedP=0, schedT=0, schedTimer=null, lastP=0;      // reloj musical + scheduler de audio
 
-function curBpm(){ return extremeMode?70:BPM; }
+function curBpm(){ return extremeMode?BPM_EXTREME:BPM; }
 function effSecPerPulse(){ const spqBase=(60/curBpm())/PULSE_Q; const mult=extremeMode?1:SPEEDS[speedLevel].mult; return PULSE_Q*spqBase*mult; }   // lee speedLevel EN VIVO
 function curPer(){ return (SUBDIV_OPTS.find(o=>o.key===subdivSel)||{per:1}).per; }                                                              // subdivisión EN VIVO
 

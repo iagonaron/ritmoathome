@@ -218,8 +218,13 @@ body.quiz .sky{opacity:.92}
 <script>
 const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
 
-/* ===== CARTA ÚNICA (datos reales de GE_WORLDS) ===== */
-const CARD = {
+/* ===== CARTA: por config (URL) o 1.1 por defecto ===== */
+const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
+const CARD = _CFG ? {
+  kicker:"Carta "+(_CFG.atlasId||''), name:_CFG.name||'',
+  bpmSimple:_CFG.bpmSimple, bpmComp:_CFG.bpmComp,
+  cells:_CFG.cells
+} : {
   kicker:"Carta 1.1", name:"Semicorcheas s.ternaria · 2 por pulso",
   note:"Una sola corchea del pulso se divide en dos semicorcheas. Tres colocaciones dentro del pulso.",
   bpmSimple:54, bpmComp:40,

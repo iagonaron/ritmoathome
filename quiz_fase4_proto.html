@@ -146,11 +146,12 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 <script>
 const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
 
-/* carta 1.1 */
-const CARD={ bpmComp:42, cells:[   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
+/* carta: por config (URL) o 1.1 por defecto */
+const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
+const CARD = _CFG ? { bpmComp:_CFG.bpmComp, spq:_CFG.spq, cells:_CFG.cells.map(c=>c.notes) } : { bpmComp:42, cells:[   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
   ["16","16","8","8"],["8","16","16","8"],["8","8","16","16"]
 ]};
-const COMPOUND=true, MEAS="6/8", PULSE_Q=1.5, GIVEN=COMPOUND?"qd":"q";
+const COMPOUND=_CFG?_CFG.compound:true, MEAS=_CFG?_CFG.meas:"6/8", PULSE_Q=_CFG?_CFG.pulseQ:1.5, GIVEN=_CFG?_CFG.given:(COMPOUND?"qd":"q");
 const NVAR=CARD.cells.length; const ROUNDS = NVAR===1 ? 2 : NVAR;   // tantas rondas como variaciones (si solo hay 1 → 2, alternando el pulso dado)
 const HAS_TIES=false;   // 1.1 no usa ligaduras
 
@@ -250,7 +251,7 @@ function ritmoSound(t0,durSec,gain,dest){ const c=ac(); if(!c)return; const out=
   const o=c.createOscillator(); o.type='sine'; o.frequency.value=REF_FREQ; const g=c.createGain(); o.connect(g); g.connect(out);
   g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.01); g.gain.setValueAtTime(peak*0.42,t0+Math.max(0.05,sustain*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
   o.start(t0); o.stop(t0+sustain+0.03); }
-const spq=(60/CARD.bpmComp)/1.5, secPerPulse=PULSE_Q*spq;
+const spq=_CFG?_CFG.spq:(60/CARD.bpmComp)/1.5, secPerPulse=PULSE_Q*spq;
 let phraseBus=null, playing=false, playTimers=[], idleLabel='▶ Escuchar';
 function stopPhrase(){ const c=ac(); if(phraseBus&&c){ try{ phraseBus.gain.setTargetAtTime(0.0001,c.currentTime,.015);}catch(e){} const pb=phraseBus; setTimeout(()=>{try{pb.disconnect();}catch(e){}},140); phraseBus=null;} playing=false; setSounding(false); playTimers.forEach(clearTimeout); playTimers=[]; lightGiven(false); }
 function setSounding(on){ const b=document.getElementById('playBtn').querySelector('span'); if(b) b.textContent=on?'⏸ Parar':idleLabel; }

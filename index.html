@@ -3805,7 +3805,7 @@ function renderSetupCards(){
           timer=setInterval(()=>{ frame=(frame+1)%album.length; exHost.innerHTML=album[frame]; },600); });
         el.addEventListener('mouseleave',()=>{ if(timer){clearInterval(timer);timer=null;} el.classList.remove('playing'); frame=0; exHost.innerHTML=album[0]; });
       }
-      if(c.atlasId==='1.1'){
+      if(c.cells && c.cells.length && !c.equivCard && !c.base && !c.pending){
         el.classList.add('has-quiz');
         const star=document.createElement('button'); star.type='button'; star.className='card-qstar';
         star.setAttribute('aria-label','Hacer el quiz de esta carta');
@@ -4995,7 +4995,33 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     {file:'quiz_fase4_proto.html',    name:'Escucha y escribe'},
     {file:'quiz_fase5_proto.html',    name:'Sigue el ritmo'},
   ];
-  let ov=null, frame=null, stepsEl=null, idx=0, done=[], maxReached=0;
+  let ov=null, frame=null, stepsEl=null, idx=0, done=[], maxReached=0, cfgB64='';
+
+  // ---- config por carta (células + compás + parámetros métricos + fillers + tempo del esquema) ----
+  function cardQuizConfig(card){
+    const cells=(card.cells||[]).filter(ce=>!ce.equiv);
+    const meas=(cells[0]&&cells[0].ts)||'6/8';
+    const [N,D]=meas.split('/').map(Number);
+    const compound=(D===8 && N%3===0);
+    const dispar=(D===8 && N%3!==0);
+    const hasFusas=cells.some(ce=>(ce.notes||[]).some(t=>(''+t).indexOf('32')>=0));
+    let pulsesPerMeas,pulseQ,given,fillers,bpmPulse,spq;
+    if(compound){ pulsesPerMeas=N/3; pulseQ=1.5; given='qd'; fillers=[['qd'],['8','8','8'],['q','8'],['8','q']]; bpmPulse=42; spq=(60/42)/1.5; }
+    else if(D===2){ pulsesPerMeas=N; pulseQ=2; given='h'; fillers=[['h'],['q','q'],['q','8','8'],['8','8','q']]; bpmPulse=50; spq=(60/50)/2; }
+    else if(dispar){ pulsesPerMeas=2; pulseQ=1.5; given='qd'; fillers=[['qd'],['8','8','8'],['q','8']]; bpmPulse=63; spq=60/63; }   // 5/8 (aprox): corchea=126
+    else { pulsesPerMeas=N; pulseQ=1; given='q'; fillers=[['q'],['8','8'],['16','16','8'],['8','16','16'],['16','16','16','16']]; bpmPulse=hasFusas?44:50; spq=60/bpmPulse; }
+    const nMeas=Math.max(2, Math.round(8/pulsesPerMeas));
+    return {
+      atlasId:card.atlasId||'', name:card.name||'', meas, compound, dispar,
+      pulsesPerMeas, pulseQ, given, fillers, nMeas, hasFusas,
+      spq,                                   // segundos por NEGRA (motor de tempo)
+      bpm:bpmPulse,                          // bpm del PULSO
+      bpmComp: compound?bpmPulse:42,         // referencia c/puntillo (para fases que lo usan)
+      bpmSimple: Math.round(1/ (spq/60) ),   // bpm de negra = 60/spq
+      bpmExtreme: Math.round(bpmPulse*(70/42)),
+      cells: cells.map(ce=>({ts:ce.ts, beat:ce.beat, notes:(ce.notes||[]).slice(), beams:(ce.beams||[]).map(b=>b.slice()), ties:(ce.ties||[]).map(t=>t.slice())}))
+    };
+  }
 
   function build(){
     ov=document.createElement('div'); ov.className='cardquiz-ov'; ov.id='cardQuizOv';
@@ -5031,14 +5057,15 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     el.classList.toggle('locked', i>maxReached);
   }); }
   function load(i){ idx=Math.max(0,Math.min(PHASES.length-1,i)); const p=PHASES[idx];
-    const last=(idx===PHASES.length-1)?'&last=1':''; ov.classList.add('loading');
-    frame.src=p.file+'?embed=1'+last; paint(); }
+    const last=(idx===PHASES.length-1)?'&last=1':''; const cfgQ=cfgB64?('&cfg='+cfgB64):''; ov.classList.add('loading');
+    frame.src=p.file+'?embed=1'+last+cfgQ; paint(); }
   function onMsg(e){ if(!frame||e.source!==frame.contentWindow) return; const d=e.data||{};
     if(d.type==='quizPhaseDone'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); paint(); }
     else if(d.type==='quizAdvanceNow'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1));
       if(idx<PHASES.length-1) load(idx+1); else paint(); } }
   function open(card,worldId){
     if(!ov) build();
+    cfgB64=''; try{ const cfg=cardQuizConfig(card); cfgB64=encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(cfg))))); }catch(e){ console.error('cfg',e); }
     done=PHASES.map(()=>false); idx=0; maxReached=0;
     document.body.style.overflow='hidden';
     ov.classList.add('show'); load(0);

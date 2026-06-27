@@ -156,14 +156,15 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 <script>
 const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
 
-/* ===== carta 1.1 ===== */
-const CARD = { bpmComp:42, cells:[   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
+/* ===== carta: por config (URL) o 1.1 por defecto ===== */
+const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
+const CARD = _CFG ? { bpmComp:_CFG.bpmComp, bpmSimple:_CFG.bpmSimple, spq:_CFG.spq, cells:_CFG.cells } : { bpmComp:42, cells:[   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
   {ts:"6/8",beats:3,beat:8,notes:["16","16","8","8"],beams:[[0,1,2,3]]},
   {ts:"6/8",beats:3,beat:8,notes:["8","16","16","8"],beams:[[0,1,2,3]]},
   {ts:"6/8",beats:3,beat:8,notes:["8","8","16","16"],beams:[[0,1,2,3]]}
 ]};
-const COMPOUND=true, MEAS="6/8", PULSES_PER_MEAS=2, N_MEAS=4, N_PULSES=8, PULSE_Q=1.5;
-const FILLERS=[ ["qd"], ["8","8","8"], ["q","8"], ["8","q"] ];   // rellenos más sencillos
+const COMPOUND=_CFG?_CFG.compound:true, MEAS=_CFG?_CFG.meas:"6/8", PULSES_PER_MEAS=_CFG?_CFG.pulsesPerMeas:2, N_MEAS=_CFG?_CFG.nMeas:4, N_PULSES=N_MEAS*PULSES_PER_MEAS, PULSE_Q=_CFG?_CFG.pulseQ:1.5;
+const FILLERS=_CFG?_CFG.fillers:[ ["qd"], ["8","8","8"], ["q","8"], ["8","q"] ];   // rellenos más sencillos
 
 /* ===== helpers ===== */
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
@@ -224,7 +225,7 @@ function ritmoSound(t0,durSec,gain,dest){
   g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.01);
   g.gain.setValueAtTime(peak*0.42,t0+Math.max(0.05,sustain*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
   o.start(t0); o.stop(t0+sustain+0.03); }
-const spq=(60/CARD.bpmComp)/1.5, secPerPulse=PULSE_Q*spq;
+const spq=_CFG?_CFG.spq:(60/CARD.bpmComp)/1.5, secPerPulse=PULSE_Q*spq;
 let phraseBus=null, playing=false, lightTimers=[], idleLabel='▶ Escuchar la frase';
 function stopPhrase(){ const c=ac(); if(phraseBus&&c){ try{ phraseBus.gain.setTargetAtTime(0.0001,c.currentTime,.015);}catch(e){} const pb=phraseBus; setTimeout(()=>{try{pb.disconnect();}catch(e){}},140); phraseBus=null;} playing=false; setSounding(false); lightTimers.forEach(clearTimeout); lightTimers=[]; clearLight(); }
 function setSounding(on){ const b=document.getElementById('playBtn').querySelector('span'); if(b) b.textContent=on?'⏸ Parar':idleLabel; }
@@ -299,7 +300,7 @@ function pulseAt(clientX,clientY){
   const scale=rect.width/svgGeom.CW; const vx=(clientX-rect.left)/scale, vy=(clientY-rect.top)/scale;
   if(vy<svgGeom.staveTop-32 || vy>svgGeom.pulseY+30) return null;
   for(let i=0;i<N_MEAS;i++){ const g=measGeom[i]; if(vx>=g.x0-8 && vx<=g.x1+8){ const span=g.x1-g.x0;
-    const p=vx<g.x0+span*0.5?0:1; return i*PULSES_PER_MEAS+p; } }
+    const p=Math.max(0,Math.min(PULSES_PER_MEAS-1, Math.floor((vx-g.x0)/span*PULSES_PER_MEAS))); return i*PULSES_PER_MEAS+p; } }
   return null;
 }
 function showPulseHL(idx){ Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6'));

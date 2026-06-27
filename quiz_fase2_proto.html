@@ -195,7 +195,8 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
 
 /* ===== carta 1.1 (datos reales) ===== */
-const CARD = {
+const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
+const CARD = _CFG ? { kicker:"Carta "+(_CFG.atlasId||''), bpmSimple:_CFG.bpmSimple, bpmComp:_CFG.bpmComp, cells:_CFG.cells } : {
   kicker:"Carta 1.1", bpmSimple:63, bpmComp:42,   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
   cells:[
     {ts:"6/8",beats:3,beat:8,notes:["16","16","8","8"],beams:[[0,1,2,3]]},
@@ -203,17 +204,17 @@ const CARD = {
     {ts:"6/8",beats:3,beat:8,notes:["8","8","16","16"],beams:[[0,1,2,3]]}
   ]
 };
-const COMPOUND = (CARD.cells[0].beat===8);
-const MEAS = COMPOUND ? "6/8" : "2/4";
-const PULSES_PER_MEAS = 2;          // compases de 2 pulsos
-const N_MEAS = 4;                   // frase de 4 compases
-const N_PULSES = N_MEAS*PULSES_PER_MEAS;   // 8 pulsos
-const PULSE_Q = COMPOUND ? 1.5 : 1;        // duración de pulso en negras
+const COMPOUND = _CFG ? _CFG.compound : (CARD.cells[0].beat===8);
+const MEAS = _CFG ? _CFG.meas : (COMPOUND ? "6/8" : "2/4");
+const PULSES_PER_MEAS = _CFG ? _CFG.pulsesPerMeas : 2;
+const N_MEAS = _CFG ? _CFG.nMeas : 4;
+const N_PULSES = N_MEAS*PULSES_PER_MEAS;
+const PULSE_Q = _CFG ? _CFG.pulseQ : (COMPOUND ? 1.5 : 1);
 
 /* rellenos: patrones de UN pulso (en negras), más sencillos que el objetivo */
-const FILLERS = COMPOUND
+const FILLERS = _CFG ? _CFG.fillers : (COMPOUND
   ? [ ["qd"], ["8","8","8"], ["q","8"], ["8","q"], ["16","16","8","8"] ]
-  : [ ["q"], ["8","8"], ["8","16","16"], ["16","16","8"] ];
+  : [ ["q"], ["8","8"], ["8","16","16"], ["16","16","8"] ]);
 
 /* ===== helpers ===== */
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
@@ -330,7 +331,7 @@ function ritmoSound(t0,durSec,gain,dest){
 
 /* ===== estado de ronda ===== */
 let round=null, score=0, hits=0, answered=false, targetCellIdx=-1, lastTargetPulse=-1;
-const spq = COMPOUND ? (60/CARD.bpmComp)/1.5 : 60/CARD.bpmSimple;   // seg por negra
+const spq = _CFG ? _CFG.spq : (COMPOUND ? (60/CARD.bpmComp)/1.5 : 60/CARD.bpmSimple);   // seg por negra
 const secPerPulse = PULSE_Q*spq;
 
 function newRound(){
