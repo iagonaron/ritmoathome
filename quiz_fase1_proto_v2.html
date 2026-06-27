@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz · Fase 1 — Escucha las cartas (prototipo v2)</title>
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<style>
+:root{
+  --text:#f6f3ff; --muted:#cfc7f2; --paper:#f7f6ff; --ink:#16132b;
+  --c1:#34d399; --c2:#5bd0ff; --c3:#ff9a3c; --c4:#a974ff; --c5:#ff5ccd;
+  --line:rgba(255,255,255,.16); --panel:rgba(22,16,48,.5); --radius:18px;
+  --grad:linear-gradient(120deg,#a974ff 0%,#5bd0ff 22%,#34d399 44%,#ff9a3c 66%,#ff5ccd 84%,#a974ff 100%);
+  --font:"Helvetica Neue",Arial,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  color:var(--text); font-family:var(--font); -webkit-font-smoothing:antialiased;
+  line-height:1.45; min-height:100vh; position:relative; overflow-x:hidden;
+  /* ANTES del quiz: estética normal de la app (azul) */
+  background:
+    radial-gradient(1100px 520px at 50% -5%, #16327a 0%, transparent 60%),
+    linear-gradient(180deg, #0b1f4d 0%, #0a1430 32%, #060a18 70%, #02030a 100%);
+  background-attachment:fixed; transition:background .5s ease;
+}
+/* DURANTE el quiz: base nebulosa (la estrella activa esto) */
+body.quiz{ background:linear-gradient(160deg,#241a52 0%,#180f3c 38%,#0e0a2c 72%,#080518 100%); background-attachment:fixed; }
+/* cielo vivo: manchas de color que derivan lentamente (oculto hasta iniciar el quiz) */
+.sky{position:fixed;inset:-12% -8%;z-index:-1;filter:blur(40px) saturate(1.15);opacity:0;transition:opacity .7s ease;pointer-events:none}
+body.quiz .sky{opacity:.92}
+.sky b{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:.55}
+.b1{width:46vw;height:42vw;left:-6%;top:-10%;background:#34d399;animation:drift1 19s ease-in-out infinite}
+.b2{width:44vw;height:40vw;right:-8%;top:-6%;background:#5bd0ff;animation:drift2 23s ease-in-out infinite}
+.b3{width:50vw;height:46vw;right:6%;bottom:-16%;background:#a974ff;animation:drift3 21s ease-in-out infinite}
+.b4{width:42vw;height:40vw;left:-4%;bottom:-14%;background:#ff9a3c;animation:drift4 25s ease-in-out infinite}
+.b5{width:34vw;height:32vw;left:32%;top:42%;background:#ff5ccd;animation:drift5 27s ease-in-out infinite;opacity:.4}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(7vw,5vh) scale(1.12)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-6vw,6vh) scale(1.1)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,-6vh) scale(1.14)}}
+@keyframes drift4{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,-5vh) scale(1.12)}}
+@keyframes drift5{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-8vw,-4vh) scale(1.2)}}
+.wrap{max-width:1120px;margin:0 auto;padding:22px 20px 60px;position:relative}
+
+/* cabecera */
+.topbar{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.brand{font-size:24px;font-weight:900;letter-spacing:-.4px}
+.brand .a{color:var(--text)} .brand .h{color:var(--muted);font-weight:300}
+.brand .home{color:var(--muted);font-weight:300;font-style:normal}
+.protlbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:3px 11px;margin-left:auto}
+.gtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+
+/* ===== PANTALLA A · carta con estrella ===== */
+.stage{margin-top:26px}
+.carta{
+  position:relative;max-width:440px;margin:0 auto;
+  background:linear-gradient(180deg, rgba(34,24,70,.66), rgba(16,11,40,.66));
+  border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:0 18px 50px rgba(0,0,0,.4);padding:20px 22px 22px;
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+}
+.carta .c-kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:900;margin:0 0 5px;color:var(--muted)}
+.carta .c-name{font-size:19px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px;padding-right:48px}
+.carta .c-note{font-size:13px;color:var(--muted);margin:0}
+.carta .c-paper{margin-top:14px;background:var(--paper);border-radius:12px;padding:8px 10px;min-height:96px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+.carta .c-paper svg{max-width:100%;height:auto}
+
+.qstar{position:absolute;top:12px;right:12px;width:44px;height:44px;border:none;background:transparent;cursor:pointer;padding:0;display:grid;place-items:center}
+.qstar svg{width:36px;height:36px;display:block;
+  filter:drop-shadow(0 0 6px rgba(255,214,120,.95)) drop-shadow(0 0 16px rgba(169,116,255,.65));
+  animation:twinkle 1.7s ease-in-out infinite}
+.qstar:hover svg{animation-duration:.85s}
+@keyframes twinkle{0%,100%{transform:scale(.88) rotate(0)}50%{transform:scale(1.16) rotate(10deg)}}
+.qstar .qtip{position:absolute;top:48px;right:0;white-space:nowrap;font-size:11.5px;font-weight:900;color:#16132b;
+  background:linear-gradient(120deg,#ffd678,#ff9a3c);padding:5px 10px;border-radius:9px;
+  box-shadow:0 8px 22px rgba(255,154,60,.45);opacity:0;transform:translateY(-4px);transition:.16s;pointer-events:none}
+.qstar:hover .qtip{opacity:1;transform:translateY(0)}
+
+/* ===== overlays (intro + transición) ===== */
+.ov{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
+  background:rgba(8,5,22,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.ov.show{display:flex;animation:ovfade .25s ease}
+@keyframes ovfade{from{opacity:0}to{opacity:1}}
+.cartel{position:relative;text-align:center;padding:32px 36px 30px;border-radius:26px;max-width:460px;overflow:hidden;
+  background:linear-gradient(180deg, rgba(40,28,92,.92), rgba(14,10,42,.95));
+  border:1px solid var(--line);box-shadow:0 28px 80px rgba(169,116,255,.45);
+  transform:scale(.9);animation:pop .44s cubic-bezier(.2,1.35,.4,1) forwards}
+@keyframes pop{to{transform:scale(1)}}
+.cartel::before{content:"";position:absolute;inset:-2px;border-radius:28px;padding:2px;pointer-events:none;
+  background:var(--grad);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;opacity:.85;animation:spin 18s linear infinite}
+@keyframes spin{to{filter:hue-rotate(360deg)}}
+.cartel .badge{font-size:12px;letter-spacing:.26em;text-transform:uppercase;font-weight:900}
+.cartel h1{font-size:30px;margin:8px 0 2px;font-weight:900;letter-spacing:-.6px}
+.cartel .sub{color:var(--muted);font-size:14px;margin:0 0 20px}
+.cbtn{font:inherit;font-size:16px;font-weight:900;color:#16132b;cursor:pointer;border:none;padding:12px 28px;border-radius:14px;
+  background:var(--grad);background-size:200% 100%;box-shadow:0 12px 36px rgba(169,116,255,.5);
+  transition:transform .07s,filter .15s;animation:slide 20s linear infinite}
+@keyframes slide{to{background-position:200% 0}}
+.cbtn:hover{filter:brightness(1.08)} .cbtn:active{transform:translateY(1px)}
+
+/* ===== Fase 1 ===== */
+.fase{display:none;margin-top:24px}
+.fase.show{display:block;animation:fslide .4s ease}
+@keyframes fslide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.fase-head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:2px}
+.fase-step{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:900;color:var(--muted)}
+.fase-head h2{margin:0;font-size:26px;font-weight:900;letter-spacing:-.5px}
+.fase-sub{color:var(--muted);font-size:13.5px;margin:4px 0 18px;max-width:680px}
+.fase-sub b{color:var(--text);font-weight:700}
+
+.cells-grid{display:flex;flex-wrap:wrap;gap:14px}
+.cell-card{position:relative;width:230px;border-radius:16px;padding:12px 12px 14px;
+  background:linear-gradient(180deg, rgba(34,24,72,.6), rgba(14,10,38,.6));
+  border:1px solid var(--line);box-shadow:0 14px 34px rgba(0,0,0,.34);
+  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  transition:transform .12s, box-shadow .2s, border-color .2s}
+.cell-card.playing{border-color:transparent;transform:translateY(-2px);animation:cardglow 14s ease-in-out infinite}
+@keyframes cardglow{
+  0%{box-shadow:0 0 0 2px var(--c2),0 16px 42px rgba(91,208,255,.4)}
+  33%{box-shadow:0 0 0 2px var(--c3),0 16px 44px rgba(255,154,60,.45)}
+  66%{box-shadow:0 0 0 2px var(--c5),0 16px 44px rgba(255,92,205,.45)}
+  100%{box-shadow:0 0 0 2px var(--c4),0 16px 42px rgba(169,116,255,.45)}}
+.cell-card .cc-tag{font-size:11px;font-weight:900;letter-spacing:.04em;margin:0 0 8px;color:var(--muted)}
+.cell-card .cc-paper{background:var(--paper);border-radius:11px;padding:6px 8px;min-height:92px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cell-card .cc-paper svg{max-width:100%;height:auto}
+.cc-play{position:absolute;top:10px;right:10px;width:40px;height:40px;border:none;border-radius:50%;cursor:pointer;
+  color:#16132b;font-size:15px;display:grid;place-items:center;overflow:visible;
+  background:var(--grad);background-size:200% 100%;box-shadow:0 8px 22px rgba(169,116,255,.5);
+  transition:transform .08s,filter .15s;animation:slide 22s linear infinite}
+.cc-play:hover{filter:brightness(1.08)} .cc-play:active{transform:scale(.93)}
+.cc-play.on{box-shadow:0 8px 26px rgba(169,116,255,.6)}
+@keyframes btnpulse{0%,100%{box-shadow:0 8px 22px rgba(91,208,255,.55)}50%{box-shadow:0 10px 34px rgba(255,92,205,.75)}}
+.cc-wave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--c2);animation:ripple .56s ease-out forwards;pointer-events:none}
+@keyframes ripple{from{transform:scale(1);opacity:.75}to{transform:scale(2.2);opacity:0}}
+
+/* nota activa: ciclo de color psicodélico */
+.vf-spark path{fill:#ff3df0 !important;stroke:#ff3df0 !important}
+.vf-spark{animation:spark 18s linear infinite}
+@keyframes spark{0%{filter:hue-rotate(0) drop-shadow(0 0 7px rgba(255,255,255,.6))}100%{filter:hue-rotate(360deg) drop-shadow(0 0 7px rgba(255,255,255,.6))}}
+
+.fase-foot{margin-top:22px;display:flex;justify-content:center}
+.continue{font:inherit;font-size:15px;font-weight:900;color:#16132b;cursor:pointer;border:none;padding:13px 28px;border-radius:14px;
+  background:var(--grad);background-size:200% 100%;box-shadow:0 12px 32px rgba(169,116,255,.45);
+  transition:transform .07s,filter .15s;animation:slide 20s linear infinite}
+.continue:hover{filter:brightness(1.08)} .continue:active{transform:translateY(1px)}
+
+/* confeti */
+.confetti{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;width:9px;height:14px;border-radius:2px;opacity:0;will-change:transform}
+@keyframes conf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot))}}
+
+.proto-foot{margin-top:30px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="sky"><b class="b1"></b><b class="b2"></b><b class="b3"></b><b class="b4"></b><b class="b5"></b></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <span class="brand"><span class="a">RITMO</span> <span class="h">at home · 4º GE</span></span>
+    <span class="protlbl">prototipo · fase 1</span>
+  </div>
+
+  <!-- PANTALLA A -->
+  <div class="stage" id="stageCarta">
+    <div class="carta">
+      <button class="qstar" id="qstarBtn" aria-label="Iniciar quiz">
+        <svg viewBox="0 0 24 24"><path d="M12 2.2l2.5 6.2 6.7.4-5.2 4.3 1.7 6.5L12 16.8 6.6 19.6l1.7-6.5L3.1 8.8l6.7-.4z"
+          fill="#ffd678" stroke="#a974ff" stroke-width="1" stroke-linejoin="round"/></svg>
+        <span class="qtip">Iniciar quiz</span>
+      </button>
+      <p class="c-kicker" id="cartaKicker">Carta 1.1</p>
+      <h3 class="c-name" id="cartaName"></h3>
+      <p class="c-note" id="cartaNote"></p>
+      <div class="c-paper" id="cartaPaper"></div>
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <div class="ov" id="ovIntro">
+    <div class="cartel">
+      <div class="badge gtext">Quiz</div>
+      <h1 id="introTitle">Carta 1.1</h1>
+      <p class="sub">Fase 1 — Escucha las cartas</p>
+      <button class="cbtn" id="introGo">Empezar ▶</button>
+    </div>
+  </div>
+
+  <!-- TRANSICIÓN (demo del estilo de carteles entre fases) -->
+  <div class="ov" id="ovTrans">
+    <div class="cartel">
+      <div class="badge gtext">¡Bien!</div>
+      <h1>Fase 1 superada</h1>
+      <p class="sub">Siguiente — Fase 2 · Identifica el pulso</p>
+      <button class="cbtn" id="transBack">Volver al inicio</button>
+    </div>
+  </div>
+
+  <!-- FASE 1 -->
+  <div class="fase" id="faseEscucha">
+    <div class="fase-head">
+      <span class="fase-step">Fase 1 de 5</span>
+      <h2>Escucha las cartas</h2>
+    </div>
+    <p class="fase-sub">Cada tarjeta es uno de los ritmos de esta carta. Pulsa <b>▶</b> y sonará en bucle:
+      el <b>primer pulso</b> es la dificultad y el <b>segundo</b>, un pulso de reposo. Escúchalas todas antes de seguir.</p>
+    <div class="cells-grid" id="cellsGrid"></div>
+    <div class="fase-foot"><button class="continue" id="continueBtn">He escuchado todas · Continuar ▶</button></div>
+  </div>
+
+  <p class="proto-foot">Prototipo aislado · estética 100&nbsp;% multicolor · una sola carta (1.1).<br>
+    La nota activa cicla de color; el cartel de transición muestra el estilo entre fases.</p>
+</div>
+
+<div class="confetti" id="confetti"></div>
+
+<script>
+const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
+
+/* ===== CARTA ÚNICA (datos reales de GE_WORLDS) ===== */
+const CARD = {
+  kicker:"Carta 1.1", name:"Semicorcheas s.ternaria · 2 por pulso",
+  note:"Una sola corchea del pulso se divide en dos semicorcheas. Tres colocaciones dentro del pulso.",
+  bpmSimple:54, bpmComp:40,
+  cells:[
+    {ts:"6/8",beats:3,beat:8,notes:["16","16","8","8"],beams:[[0,1,2,3]]},
+    {ts:"6/8",beats:3,beat:8,notes:["8","16","16","8"],beams:[[0,1,2,3]]},
+    {ts:"6/8",beats:3,beat:8,notes:["8","8","16","16"],beams:[[0,1,2,3]]}
+  ]
+};
+
+/* ===== helpers rítmicos ===== */
+function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
+  const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125,'64':0.0625}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
+function meterCapQ(time){ const [n,d]=time.split('/').map(Number); return n*4/d; }
+function noteBeats(m){ return m.notes.map(n=>durQ(n.dur)); }
+function pulseOnsets(m){ const [n,d]=m.time.split('/').map(Number); const unit=4/d; const comp=(d===8&&n%3===0); const step=comp?unit*3:unit;
+  const cap=n*unit,out=[]; for(let x=0;x+1e-6<cap;x+=step) out.push(x); return out; }
+function cellToMeasure(cell){ const comp=(cell.beat===8); const time=comp?'6/8':'2/4';
+  const notes=cell.notes.map(tok=>{ const rest=tok.endsWith('r'); return rest?{dur:tok.slice(0,-1),rest:true}:{dur:tok}; });
+  const beams=(cell.beams||[]).map(b=>b.slice()); const ties=(cell.ties||[]).map(t=>t.slice());
+  notes.push({dur:comp?'qd':'q'}); return {time,notes,beams,ties,tuplets:[],clef:'treble'}; }
+function orderedMeasures(card){ const firstRest=(c)=>{ const ns=c.notes||[]; for(let i=0;i<ns.length;i++){ if(ns[i].endsWith('r'))return i; } return Infinity; };
+  return card.cells.slice().sort((a,b)=>firstRest(b)-firstRest(a)).map(cellToMeasure); }
+
+/* ===== render mini compás ===== */
+function renderMiniMeasure(m){
+  const clef=m.clef||'treble', time=m.time;
+  const PAD_L=6, PAD_R=14, STAVE_W=Math.max(190, 72+m.notes.length*28);
+  const CANVAS_W=PAD_L+STAVE_W+PAD_R, CANVAS_H=140, STAVE_Y=48;
+  const host=document.createElement('div');
+  try{
+    const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(CANVAS_W,CANVAS_H); const ctx=r.getContext();
+    const st=new VF.Stave(PAD_L,STAVE_Y,STAVE_W); st.addClef(clef).addTimeSignature(time);
+    st.setEndBarType(VF.Barline.type.END); st.setContext(ctx); st.draw();
+    const key='b/4';
+    const vf=m.notes.map(n=>{ const isRest=n.rest||n.dur.endsWith('r'); const base=n.dur.replace('d','').replace('r','');
+      const sn=new VF.StaveNote({clef,keys:[key],duration:base+(isRest?'r':'')});
+      if(n.dur.replace('r','').endsWith('d')) VF.Dot.buildAndAttach([sn]); return sn; });
+    const beamable=d=>['8','16','32'].includes(d.replace('d','').replace('r',''));
+    const isRestN=n=>!!(n.rest||n.dur.endsWith('r'));
+    const beams=[]; (m.beams||[]).forEach(idx=>{ const run=idx.filter(i=>vf[i]&&!isRestN(m.notes[i])&&beamable(m.notes[i].dur)).map(i=>vf[i]); if(run.length>1) beams.push(new VF.Beam(run)); });
+    const [num,den]=time.split('/').map(Number);
+    const voice=new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); voice.addTickables(vf);
+    new VF.Formatter().joinVoices([voice]).format([voice], STAVE_W-92); voice.draw(ctx,st);
+    beams.forEach(b=>b.setContext(ctx).draw());
+    (m.ties||[]).forEach(pair=>{ const a=pair[0],b=pair[1]; if(vf[a]&&vf[b]){ try{ new VF.StaveTie({first_note:vf[a],last_note:vf[b],first_indices:[0],last_indices:[0]}).setContext(ctx).draw(); }catch(e){} } });
+    const svg=host.querySelector('svg');
+    if(svg){ const staveTop=st.getYForLine(0), staveBot=st.getYForLine(4); const lastX=(st.getX()+st.getWidth())+4;
+      const vbX=Math.max(0,PAD_L-4), vbY=Math.max(0,staveTop-22), vbW=Math.min(CANVAS_W-vbX,(lastX-vbX)+8), vbH=(staveBot+26)-vbY;
+      svg.setAttribute('viewBox',`${vbX.toFixed(1)} ${vbY.toFixed(1)} ${vbW.toFixed(1)} ${vbH.toFixed(1)}`);
+      svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height'); }
+    return svg?svg.outerHTML:'';
+  }catch(e){ return '<div style="color:#999;font-size:12px">—</div>'; }
+}
+
+/* ===== audio ===== */
+let AC=null,MASTER=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function master(){ const c=ac(); if(!c)return null; if(!MASTER){ MASTER=c.createGain(); MASTER.gain.value=0.72; MASTER.connect(c.destination); } return MASTER; }
+function knock(t0,gain){ const c=ac(); if(!c)return; const m=master();
+  const len=Math.floor(c.sampleRate*0.018); const b=c.createBuffer(1,len,c.sampleRate); const d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.2);
+  const s=c.createBufferSource(); s.buffer=b; const g=c.createGain(); g.gain.value=(gain==null?0.62:gain);
+  const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1900; f.Q.value=0.8;
+  s.connect(f); f.connect(g); g.connect(m); s.start(t0); s.stop(t0+0.05); }
+/* SONIDO DE RITMO (común a toda la app): ataque percusivo + cuerpo sostenido que dura lo que la figura,
+   tono neutro (sin melodía), para distinguir largo/corto y silencios. */
+let REF_FREQ=110;   // nota de referencia (octava 2); en lección = tónica en esa octava
+function ritmoSound(t0, durSec, gain){
+  const c=ac(); if(!c)return; const out=master(); const peak=(gain==null?0.32:gain);
+  const aLen=Math.floor(c.sampleRate*0.012); const ab=c.createBuffer(1,aLen,c.sampleRate); const ad=ab.getChannelData(0);
+  for(let i=0;i<aLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/aLen,2.0);
+  const as=c.createBufferSource(); as.buffer=ab;
+  const af=c.createBiquadFilter(); af.type='bandpass'; af.frequency.value=850; af.Q.value=.6;
+  const ag=c.createGain(); ag.gain.value=peak*1.0; as.connect(af); af.connect(ag); ag.connect(out); as.start(t0); as.stop(t0+0.03);
+  const sustain=Math.max(0.05,durSec-0.05);
+  const o=c.createOscillator(); o.type='sine'; o.frequency.value=REF_FREQ;
+  const g=c.createGain(); o.connect(g); g.connect(out);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.01);
+  g.gain.setValueAtTime(peak*0.42,t0+Math.max(0.05,sustain*0.6));
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
+  o.start(t0); o.stop(t0+sustain+0.03); }
+
+/* ===== bucle de una célula (uno a la vez) ===== */
+let loop=null;
+function stopLoop(){ if(!loop)return; loop.stopped=true; if(loop.raf)cancelAnimationFrame(loop.raf); (loop.timers||[]).forEach(t=>clearTimeout(t));
+  if(loop.noteEls)loop.noteEls.forEach(e=>e&&e.classList.remove('vf-spark'));
+  if(loop.btn){ loop.btn.classList.remove('on'); loop.btn.textContent='▶'; }
+  if(loop.cardEl)loop.cardEl.classList.remove('playing'); loop=null; }
+function ripple(btn){ const w=document.createElement('span'); w.className='cc-wave'; btn.appendChild(w); setTimeout(()=>w.remove(),560); }
+function playCell(m, btn, cardEl, svgEl){
+  const wasThis=(loop&&loop.btn===btn); stopLoop(); if(wasThis)return; const c=ac(); if(!c)return;
+  const [n,d]=m.time.split('/').map(Number); const comp=(d===8&&n%3===0);
+  const pulseBpm=comp?CARD.bpmComp:CARD.bpmSimple; const secPerPulse=60/pulseBpm; const spq=comp?secPerPulse/1.5:secPerPulse;
+  const durs=noteBeats(m), pulses=pulseOnsets(m), cap=meterCapQ(m.time), loopSec=cap*spq;
+  const noteEls=svgEl?[...svgEl.querySelectorAll('g.vf-stavenote')]:[];
+  loop={stopped:false,btn,cardEl,m,durs,pulses,spq,loopSec,tied:new Set((m.ties||[]).map(p=>p[1])),noteEls,raf:null,timers:[],startWall:0,lastNote:-2,lastPulse:-1};
+  btn.classList.add('on'); btn.textContent='⏸'; if(cardEl)cardEl.classList.add('playing');
+  const runLoop=()=>{ if(!loop||loop.stopped)return; const t0=c.currentTime+0.04;
+    let acc=0; m.notes.forEach((nt,i)=>{ if(nt.rest){acc+=durs[i];return;} if(loop.tied.has(i)){acc+=durs[i];return;}
+      let dq=durs[i],j=i+1; while(loop.tied.has(j)){ dq+=durs[j]; j++; } ritmoSound(t0+acc*spq, dq*spq, 0.5); acc+=durs[i]; });
+    loop.startWall=performance.now()+40; loop.lastNote=-2; loop.lastPulse=-1;
+    loop.timers.push(setTimeout(runLoop, loopSec*1000)); };
+  const tick=()=>{ if(!loop||loop.stopped)return;
+    const pos=Math.max(0,(performance.now()-loop.startWall)/1000)/spq;
+    let active=-1,acc=0; for(let i=0;i<m.notes.length;i++){ const dd=durs[i]; if(!m.notes[i].rest&&pos>=acc-1e-3&&pos<acc+dd-1e-3){active=i;break;} acc+=dd; }
+    if(active!==loop.lastNote){ noteEls.forEach((e,k)=>{ if(e)e.classList.toggle('vf-spark',k===active); }); loop.lastNote=active; }
+    let pIdx=-1; for(let k=0;k<pulses.length;k++){ if(pos>=pulses[k]-1e-3)pIdx=k; }
+    if(pIdx!==loop.lastPulse){ loop.lastPulse=pIdx; if(pIdx>=0) ripple(btn); }
+    loop.raf=requestAnimationFrame(tick); };
+  loop.raf=requestAnimationFrame(tick); runLoop();
+}
+
+/* ===== confeti ===== */
+const PAL=['#34d399','#5bd0ff','#ff9a3c','#ff5ccd','#a974ff','#ffd678'];
+function burst(){ const host=document.getElementById('confetti'); const cx=innerWidth/2, cy=innerHeight*0.34;
+  for(let i=0;i<32;i++){ const p=document.createElement('i'); const ang=Math.random()*Math.PI*2, dist=120+Math.random()*260;
+    p.style.left=cx+'px'; p.style.top=cy+'px'; p.style.background=PAL[i%PAL.length];
+    p.style.setProperty('--dx',Math.cos(ang)*dist+'px'); p.style.setProperty('--dy',(Math.sin(ang)*dist+Math.random()*120)+'px');
+    p.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+    p.style.animation='conf '+(900+Math.random()*700)+'ms cubic-bezier(.15,.7,.3,1) forwards';
+    host.appendChild(p); setTimeout(()=>p.remove(),1700); } }
+
+/* ===== construir ===== */
+function buildCarta(){
+  document.getElementById('cartaKicker').textContent=CARD.kicker;
+  document.getElementById('cartaName').textContent=CARD.name;
+  document.getElementById('cartaNote').textContent=CARD.note;
+  document.getElementById('introTitle').textContent=CARD.kicker;
+  const ms=orderedMeasures(CARD);
+  document.getElementById('cartaPaper').innerHTML=renderMiniMeasure(ms[0])||'';
+}
+function buildGrid(){
+  stopLoop(); const ms=orderedMeasures(CARD); const grid=document.getElementById('cellsGrid'); grid.innerHTML='';
+  ms.forEach((m,i)=>{ const cardEl=document.createElement('div'); cardEl.className='cell-card';
+    cardEl.innerHTML=`<p class="cc-tag">Ritmo ${i+1}</p><div class="cc-paper">${renderMiniMeasure(m)}</div>`;
+    const btn=document.createElement('button'); btn.className='cc-play'; btn.textContent='▶'; btn.title='Escuchar en bucle';
+    const svgEl=cardEl.querySelector('.cc-paper svg'); btn.onclick=()=>playCell(m,btn,cardEl,svgEl);
+    cardEl.appendChild(btn); grid.appendChild(cardEl); });
+}
+
+/* ===== flujo ===== */
+document.getElementById('qstarBtn').onclick=()=>{ ac(); document.body.classList.add('quiz'); document.getElementById('ovIntro').classList.add('show'); };
+document.getElementById('introGo').onclick=()=>{ try{ ac(); }catch(e){} document.body.classList.add('quiz'); document.getElementById('ovIntro').classList.remove('show');
+  document.getElementById('stageCarta').style.display='none'; document.getElementById('faseEscucha').classList.add('show'); try{ buildGrid(); }catch(e){ console.error(e); } };
+document.getElementById('continueBtn').onclick=()=>{ stopLoop(); document.getElementById('ovTrans').classList.add('show'); burst(); };
+document.getElementById('transBack').onclick=()=>{ document.getElementById('ovTrans').classList.remove('show');
+  document.getElementById('faseEscucha').classList.remove('show'); document.getElementById('stageCarta').style.display='block'; document.body.classList.remove('quiz'); };
+document.getElementById('ovIntro').addEventListener('click',(e)=>{ if(e.target.id==='ovIntro') e.currentTarget.classList.remove('show'); });
+
+buildCarta();
+</script>
+<!--__quiz_bridge_done__-->
+<script>
+/* ===== puente de embebido (shell quiz_completo) ===== */
+(function(){
+  if(window.top===window.self) return;                 // suelto: no hace nada
+  var P=new URLSearchParams(location.search);
+  var isLast=P.get('last')==='1';
+  var st=document.createElement('style');
+  st.textContent='.topbar{display:none!important}';
+  document.head.appendChild(st);
+  // Fase 1: arrancar directo al embeber (la app real ya presenta la carta antes)
+  try{
+    if(document.getElementById('introGo')){
+      document.body.classList.add('quiz');
+      var sc=document.getElementById('stageCarta'); if(sc) sc.style.display='none';
+      var ov=document.getElementById('ovIntro'); if(ov) ov.classList.remove('show');
+      var fe=document.getElementById('faseEscucha'); if(fe) fe.classList.add('show');
+      if(typeof buildGrid==='function'){ try{ buildGrid(); }catch(e){} }
+    }
+  }catch(e){}
+  var done=false;
+  function fireDone(){ if(done)return; done=true; parent.postMessage({type:'quizPhaseDone',last:isLast},'*'); }
+  ['ovTrans','ovWin'].forEach(function(id){ var ov=document.getElementById(id); if(!ov)return;
+    new MutationObserver(function(){ if(ov.classList.contains('show')) fireDone(); }).observe(ov,{attributes:true,attributeFilter:['class']}); });
+  function wire(btnId){ var b=document.getElementById(btnId); if(!b)return; b.textContent=isLast?'Terminar quiz ▶':'Siguiente fase ▶'; b.onclick=function(){ parent.postMessage({type:'quizAdvanceNow'},'*'); }; }
+  ['transBack','winBtn'].forEach(wire);
+})();
+</script>
+</body>
+</html>

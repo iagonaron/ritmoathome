@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz · Fase 4 — Escucha y escribe (prototipo)</title>
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<style>
+:root{
+  --text:#f6f3ff; --muted:#cfc7f2; --paper:#f7f6ff; --ink:#16132b;
+  --line:rgba(255,255,255,.16); --panel:rgba(22,16,48,.5);
+  --grad:linear-gradient(120deg,#a974ff 0%,#5bd0ff 22%,#34d399 44%,#ff9a3c 66%,#ff5ccd 84%,#a974ff 100%);
+  --font:"Helvetica Neue",Arial,system-ui,sans-serif;
+}
+*{box-sizing:border-box} html,body{margin:0;padding:0}
+body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.45;min-height:100vh;position:relative;overflow-x:hidden;
+  background:linear-gradient(160deg,#241a52 0%,#180f3c 38%,#0e0a2c 72%,#080518 100%);background-attachment:fixed;}
+.sky{position:fixed;inset:-12% -8%;z-index:-1;filter:blur(40px) saturate(1.15);opacity:.92;pointer-events:none}
+.sky b{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:.55}
+.b1{width:46vw;height:42vw;left:-6%;top:-10%;background:#34d399;animation:d1 19s ease-in-out infinite}
+.b2{width:44vw;height:40vw;right:-8%;top:-6%;background:#5bd0ff;animation:d2 23s ease-in-out infinite}
+.b3{width:50vw;height:46vw;right:6%;bottom:-16%;background:#a974ff;animation:d3 21s ease-in-out infinite}
+.b4{width:42vw;height:40vw;left:-4%;bottom:-14%;background:#ff9a3c;animation:d4 25s ease-in-out infinite}
+.b5{width:34vw;height:32vw;left:32%;top:42%;background:#ff5ccd;animation:d5 27s ease-in-out infinite;opacity:.4}
+@keyframes d1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(7vw,5vh) scale(1.12)}}
+@keyframes d2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-6vw,6vh) scale(1.1)}}
+@keyframes d3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,-6vh) scale(1.14)}}
+@keyframes d4{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,-5vh) scale(1.12)}}
+@keyframes d5{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-8vw,-4vh) scale(1.2)}}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 20px 50px;position:relative}
+
+.topbar{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.brand{font-size:22px;font-weight:900;letter-spacing:-.4px}.brand .a{color:var(--text)}.brand .h{color:var(--muted);font-weight:300}
+.brand .home{font-style:italic;font-family:Georgia,serif;font-size:.62em;color:var(--muted)}
+.protlbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 11px;margin-left:auto}
+.fase-head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.fase-step{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:900;color:var(--muted)}
+.fase-head h2{margin:0;font-size:24px;font-weight:900;letter-spacing:-.5px}
+.fase-sub{color:var(--muted);font-size:13px;margin:3px 0 14px;max-width:720px}.fase-sub b{color:var(--text)}
+
+.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.bar-wrap{flex:1;height:16px;border-radius:999px;background:rgba(8,5,22,.5);border:1px solid var(--line);overflow:hidden}
+.bar-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(180deg,#3ee9a6,#22c98a);transition:width .4s cubic-bezier(.2,.9,.3,1)}
+.bar-fill.bad{background:linear-gradient(180deg,#ff6b80,#ff2d6a)!important}
+.bar-tag{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
+
+.staff-panel{background:var(--paper);border-radius:14px;padding:14px 12px 6px;box-shadow:0 14px 38px rgba(0,0,0,.34);overflow-x:auto;position:relative}
+.staff-panel.ok{box-shadow:0 0 0 2px #34d399,0 16px 42px rgba(52,211,153,.4)}
+.staff-panel svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.give-lit path{fill:#ff8a3c !important;stroke:#ff8a3c !important}
+.give-lit{filter:drop-shadow(0 0 6px rgba(255,154,60,.9))}
+.pulse-tags{display:flex;justify-content:center;gap:0;margin-top:-2px}
+
+.controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 8px}
+.btn{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:14px;font-weight:900;cursor:pointer;border:none;padding:11px 18px;border-radius:13px;transition:transform .07s,filter .15s}
+.btn-play{color:#16132b;background:var(--grad);background-size:200% 100%;box-shadow:0 10px 28px rgba(169,116,255,.45);animation:slide 20s linear infinite}
+@keyframes slide{to{background-position:200% 0}}
+.btn:hover{filter:brightness(1.07)} .btn:active{transform:translateY(1px)}
+.inf{font-size:19px;font-weight:900;opacity:.92}
+.hint{font-size:12.5px;color:var(--muted)}
+
+/* editor */
+.editor{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:4px;backdrop-filter:blur(8px)}
+.ed-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.ed-row:last-child{margin-bottom:0}
+.ed-lbl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:900;color:var(--muted);width:74px;flex-shrink:0}
+.fig{width:50px;height:56px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.06);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:4px;transition:.12s}
+.fig:hover{background:rgba(255,255,255,.13);border-color:#5bd0ff}
+.fig svg{pointer-events:none;filter:invert(1) brightness(1.6)}      /* glifo blanco sobre panel oscuro */
+.fig.rest svg{opacity:.92}
+.tool{font:inherit;font-size:13px;font-weight:800;color:var(--text);background:rgba(255,255,255,.06);border:1px solid var(--line);
+  border-radius:11px;padding:10px 14px;cursor:pointer;transition:.12s}
+.tool:hover{background:rgba(255,255,255,.13)}
+.tool.on{background:linear-gradient(120deg,#5bd0ff,#a974ff);color:#16132b;border-color:transparent}
+.tool.danger{color:#ffd0d8}
+.btn-check{color:#06281b;background:linear-gradient(120deg,#34d399,#22c98a);margin-left:auto}
+.btn-check:disabled{opacity:.5;cursor:default}
+
+.toast{position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-20px);z-index:90;opacity:0;
+  padding:11px 20px;border-radius:13px;font-weight:900;font-size:16px;color:#16132b;box-shadow:0 14px 40px rgba(0,0,0,.4);transition:opacity .2s,transform .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:linear-gradient(120deg,#34d399,#5bd0ff)} .toast.no{background:linear-gradient(120deg,#ff9a3c,#ff5c72)}
+
+.confetti{position:fixed;inset:0;z-index:95;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;width:9px;height:14px;border-radius:2px;opacity:0}
+@keyframes conf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot))}}
+
+.round-ov{position:fixed;inset:0;z-index:85;display:flex;align-items:center;justify-content:center;background:rgba(10,7,24,0);opacity:0;pointer-events:none;transition:opacity .35s,background .35s}
+.round-ov.show{opacity:1;background:rgba(10,7,24,.74)}
+.round-ov span{font-size:30px;font-weight:900;color:#fff;transform:scale(.86);transition:transform .42s cubic-bezier(.2,1.3,.4,1)}
+.round-ov.show span{transform:scale(1)}
+
+.ov{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(8,5,22,.5);backdrop-filter:blur(4px)}
+.ov.show{display:flex}
+.cartel{position:relative;text-align:center;padding:30px 34px 28px;border-radius:26px;max-width:440px;overflow:hidden;background:linear-gradient(180deg,rgba(40,28,92,.92),rgba(14,10,42,.95));border:1px solid var(--line);box-shadow:0 28px 80px rgba(169,116,255,.45)}
+.cartel::before{content:"";position:absolute;inset:-2px;border-radius:28px;padding:2px;pointer-events:none;background:var(--grad);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.85;animation:spin 18s linear infinite}
+@keyframes spin{to{filter:hue-rotate(360deg)}}
+.cartel .badge{font-size:12px;letter-spacing:.26em;text-transform:uppercase;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.cartel h1{font-size:28px;margin:8px 0 2px;font-weight:900} .cartel .sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+.cbtn{font:inherit;font-size:16px;font-weight:900;color:#16132b;cursor:pointer;border:none;padding:12px 28px;border-radius:14px;background:var(--grad);background-size:200% 100%;box-shadow:0 12px 36px rgba(169,116,255,.5);animation:slide 20s linear infinite}
+.proto-foot{margin-top:22px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="sky"><b class="b1"></b><b class="b2"></b><b class="b3"></b><b class="b4"></b><b class="b5"></b></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <span class="brand"><span class="a">RITMO</span> <span class="h">at home · 4º GE</span></span>
+    <span class="protlbl">prototipo · fase 4</span>
+  </div>
+  <div class="fase-head"><span class="fase-step">Fase 4 de 5</span><h2>Escucha y escribe</h2></div>
+  <p class="fase-sub">Escucha el compás y <b>escribe el primer pulso</b> con el editor. El segundo pulso ya está puesto.
+    Cuando lo tengas, pulsa <b>Corregir</b>.</p>
+
+  <div class="bar-row"><div class="bar-wrap"><div class="bar-fill" id="barFill"></div></div><span class="bar-tag" id="barTag"></span></div>
+
+  <div class="staff-panel" id="staffPanel"><div id="staffHost"></div></div>
+
+  <div class="controls">
+    <button class="btn btn-play" id="playBtn"><span>▶ Escuchar</span> <span class="inf">∞</span></button>
+    <span class="hint" id="hint">Escribe el primer pulso.</span>
+  </div>
+
+  <div class="editor">
+    <div class="ed-row"><span class="ed-lbl">Figuras</span><div id="figNotes" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
+    <div class="ed-row"><span class="ed-lbl">Silencios</span><div id="figRests" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
+    <div class="ed-row"><span class="ed-lbl">Acciones</span>
+      <button class="tool" id="dotBtn">Puntillo</button>
+      <button class="tool" id="tieBtn" style="display:none">Ligadura</button>
+      <button class="tool danger" id="delBtn">⌫ Borrar última</button>
+      <button class="btn btn-check" id="checkBtn">Corregir</button>
+    </div>
+  </div>
+
+  <p class="proto-foot">Prototipo · carta 1.1 (6/8) · escribes el 1.er pulso; el 2.º es la figura de pulso.<br>
+    Tantas rondas como variaciones (máx. 3). El agrupado de corchetes es automático.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="confetti" id="confetti"></div>
+<div class="round-ov" id="roundOv"><span>Ronda siguiente</span></div>
+<div class="ov" id="ovWin"><div class="cartel">
+  <div class="badge">¡Bien!</div><h1>Fase 4 superada</h1><p class="sub">Siguiente — Fase 5 · Minijuego</p>
+  <button class="cbtn" id="winBtn">Reiniciar prototipo</button>
+</div></div>
+
+<script>
+const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
+
+/* carta 1.1 */
+const CARD={ bpmComp:42, cells:[   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
+  ["16","16","8","8"],["8","16","16","8"],["8","8","16","16"]
+]};
+const COMPOUND=true, MEAS="6/8", PULSE_Q=1.5, GIVEN=COMPOUND?"qd":"q";
+const NVAR=CARD.cells.length; const ROUNDS = NVAR===1 ? 2 : NVAR;   // tantas rondas como variaciones (si solo hay 1 → 2, alternando el pulso dado)
+const HAS_TIES=false;   // 1.1 no usa ligaduras
+
+/* helpers */
+function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
+  const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
+function sumQ(toks){ return toks.reduce((a,t)=>a+durQ(t),0); }
+function autoBeam(toks){ const beamable=t=>['8','16','32'].includes(t.replace('d','').replace('r','')) && !t.endsWith('r');
+  const out=[]; let run=[]; toks.forEach((t,i)=>{ if(beamable(t)) run.push(i); else { if(run.length>1)out.push(run); run=[]; } }); if(run.length>1)out.push(run); return out; }
+/* descompone un hueco (en negras) en silencios estándar transparentes */
+function padRests(rem){ const order=[1.5,1,0.5,0.25,0.125]; const map={1.5:'qd',1:'q',0.5:'8',0.25:'16',0.125:'32'}; const out=[];
+  let r=Math.round(rem*1000)/1000; for(const v of order){ while(r>=v-1e-6){ out.push(map[v]); r=Math.round((r-v)*1000)/1000; } } return out; }
+
+/* ===== glifo de una figura ===== */
+function noteGlyph(dur){
+  const C='#16132b';   // se invierte a blanco por el CSS de .fig svg
+  const headF=`<ellipse cx="15" cy="47" rx="7.2" ry="5.2" transform="rotate(-22 15 47)" fill="${C}"/>`;
+  const headH=`<ellipse cx="15" cy="47" rx="7.2" ry="5.2" transform="rotate(-22 15 47)" fill="none" stroke="${C}" stroke-width="2.6"/>`;
+  const stem=`<line x1="21.6" y1="44.5" x2="21.6" y2="13" stroke="${C}" stroke-width="2.2" stroke-linecap="round"/>`;
+  const flags=(n)=>{ let f=''; for(let i=0;i<n;i++){ const y=13+i*8.5; f+=`<path d="M21.6 ${y} C 31 ${y+3}, 32 ${y+11}, 26 ${y+16}" fill="none" stroke="${C}" stroke-width="2.4" stroke-linecap="round"/>`; } return f; };
+  let inner='';
+  if(dur==='w') inner=`<ellipse cx="22" cy="40" rx="10.5" ry="6.8" fill="none" stroke="${C}" stroke-width="3.6"/>`;
+  else if(dur==='h') inner=headH+stem;
+  else if(dur==='q') inner=headF+stem;
+  else if(dur==='8') inner=headF+stem+flags(1);
+  else if(dur==='16') inner=headF+stem+flags(2);
+  else if(dur==='32') inner=headF+stem+flags(3);
+  return `<svg viewBox="0 0 44 64" xmlns="http://www.w3.org/2000/svg" style="height:40px;width:auto;display:block">${inner}</svg>`;
+}
+function figIcon(dur,isRest){
+  if(!isRest) return noteGlyph(dur);
+  // SILENCIOS con VexFlow (glifos correctos); redonda/blanca llevan su pequeña línea
+  const host=document.createElement('div');
+  try{ const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(56,100); const ctx=r.getContext();
+    const st=new VF.Stave(2,34,48); if(st.setConfigForLines) st.setConfigForLines([{visible:false},{visible:false},{visible:false},{visible:false},{visible:false}]);
+    st.setContext(ctx).draw();
+    const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:dur+'r'});
+    const voice=new VF.Voice({num_beats:4,beat_value:4}).setStrict(false); voice.addTickables([sn]);
+    new VF.Formatter().joinVoices([voice]).format([voice],24); voice.draw(ctx,st);
+    const svg=host.querySelector('svg'); let bb=null; try{ bb=sn.getBoundingBox(); }catch(e){}
+    if(svg&&bb){ const x=(bb.getX?bb.getX():bb.x), y=(bb.getY?bb.getY():bb.y), w=(bb.getW?bb.getW():bb.w), h=(bb.getH?bb.getH():bb.h);
+      if(dur==='w'||dur==='h'){ const ln=document.createElementNS('http://www.w3.org/2000/svg','line'); const ly=(dur==='w'?y:y+h);
+        ln.setAttribute('x1',(x-7).toFixed(1)); ln.setAttribute('x2',(x+w+7).toFixed(1)); ln.setAttribute('y1',ly.toFixed(1)); ln.setAttribute('y2',ly.toFixed(1)); ln.setAttribute('stroke','#000'); ln.setAttribute('stroke-width','2'); svg.appendChild(ln); }
+      const pad=8; svg.setAttribute('viewBox',`${(x-pad).toFixed(1)} ${(y-pad).toFixed(1)} ${(w+2*pad).toFixed(1)} ${(h+2*pad).toFixed(1)}`);
+      svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.height='40px'; svg.style.width='auto'; }
+    return svg?svg.outerHTML:'';
+  }catch(e){ return '∅'; }
+}
+
+/* ===== render del compás (pulso del alumno + pulso dado en negro) ===== */
+let givenEls=[];
+function renderMeasure(written, correct){
+  const host=document.getElementById('staffHost'); host.innerHTML=''; givenEls=[];
+  const PAD_L=10, STAVE_W=460, CW=PAD_L+STAVE_W+16, CH=170, SY=46;
+  try{
+    const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(CW,CH); const ctx=r.getContext();
+    const st=new VF.Stave(PAD_L,SY,STAVE_W); st.addClef('treble').addTimeSignature(MEAS); st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw();
+    const mk=(tok,opt)=>{ const isRest=tok.endsWith('r'); const base=tok.replace('d','').replace('r','');
+      const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:base+(isRest?'r':'')}); if(tok.replace('r','').endsWith('d'))VF.Dot.buildAndAttach([sn]);
+      if(opt&&opt.color) sn.setStyle({fillStyle:opt.color,strokeStyle:opt.color}); return sn; };
+    const notes=[]; const writtenNotes=[];
+    const buildWritten=()=>{ const start=notes.length;
+      written.forEach(t=>{ const sn=mk(t,{color:correct?'#16a86f':'#16132b'}); notes.push(sn); writtenNotes.push(sn); });
+      const rem=Math.max(0, PULSE_Q - sumQ(written));
+      padRests(rem).forEach(d=>{ const sn=mk(d+'r'); sn.setStyle({fillStyle:'rgba(0,0,0,0)',strokeStyle:'rgba(0,0,0,0)'}); notes.push(sn); });
+      return {start, len:notes.length-start}; };
+    const buildGiven=()=>{ const start=notes.length; givenToks.forEach(t=>notes.push(mk(t,{color:'#16132b'}))); return {start, len:notes.length-start}; };
+    let givenRange;
+    if(writeSlot===0){ buildWritten(); givenRange=buildGiven(); }   // alumno a la IZQUIERDA · dado a la DERECHA
+    else { givenRange=buildGiven(); buildWritten(); }
+    const voice=new VF.Voice({num_beats:6,beat_value:8}).setStrict(false); voice.addTickables(notes);
+    const beams=autoBeam(written).map(g=>{ try{ return new VF.Beam(g.map(k=>writtenNotes[k]).filter(Boolean)); }catch(e){ return null; } }).filter(Boolean);
+    new VF.Formatter({softmaxFactor:5}).joinVoices([voice]).format([voice],STAVE_W-70);
+    voice.draw(ctx,st); beams.forEach(b=>{ try{ b.setContext(ctx).draw(); }catch(e){} });
+    const svg=host.querySelector('svg');
+    const allEls=[...svg.querySelectorAll('g.vf-stavenote')];
+    givenEls = allEls.slice(givenRange.start, givenRange.start+givenRange.len);   // para iluminar el pulso dado al sonar
+    const bot=st.getYForLine(4); const vbH=bot+26;
+    svg.setAttribute('viewBox',`0 0 ${CW} ${vbH}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.maxWidth='100%';
+  }catch(e){ host.textContent='(error)'; }
+}
+function lightGiven(on){ givenEls.forEach(e=>{ if(e) e.classList.toggle('give-lit', on); }); }
+
+/* ===== audio ===== */
+let AC=null,MASTER=null,REF_FREQ=110;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function master(){ const c=ac(); if(!c)return null; if(!MASTER){ MASTER=c.createGain(); MASTER.gain.value=.72; MASTER.connect(c.destination);} return MASTER; }
+function click(t0,accent,dest){ const c=ac(); if(!c)return; const out=dest||master(); const o=c.createOscillator(),g=c.createGain();
+  o.frequency.value=accent?1500:1050; g.gain.value=.0001; o.connect(g); g.connect(out);
+  g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(accent?.58:.36,t0+.004); g.gain.exponentialRampToValueAtTime(.0001,t0+.08); o.start(t0); o.stop(t0+.09); }
+function ritmoSound(t0,durSec,gain,dest){ const c=ac(); if(!c)return; const out=dest||master(); const peak=(gain==null?.32:gain);
+  const aLen=Math.floor(c.sampleRate*0.012); const ab=c.createBuffer(1,aLen,c.sampleRate); const ad=ab.getChannelData(0);
+  for(let i=0;i<aLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/aLen,2.0);
+  const as=c.createBufferSource(); as.buffer=ab; const af=c.createBiquadFilter(); af.type='bandpass'; af.frequency.value=850; af.Q.value=.6;
+  const ag=c.createGain(); ag.gain.value=peak; as.connect(af); af.connect(ag); ag.connect(out); as.start(t0); as.stop(t0+0.03);
+  const sustain=Math.max(0.05,durSec-0.05);
+  const o=c.createOscillator(); o.type='sine'; o.frequency.value=REF_FREQ; const g=c.createGain(); o.connect(g); g.connect(out);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.01); g.gain.setValueAtTime(peak*0.42,t0+Math.max(0.05,sustain*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
+  o.start(t0); o.stop(t0+sustain+0.03); }
+const spq=(60/CARD.bpmComp)/1.5, secPerPulse=PULSE_Q*spq;
+let phraseBus=null, playing=false, playTimers=[], idleLabel='▶ Escuchar';
+function stopPhrase(){ const c=ac(); if(phraseBus&&c){ try{ phraseBus.gain.setTargetAtTime(0.0001,c.currentTime,.015);}catch(e){} const pb=phraseBus; setTimeout(()=>{try{pb.disconnect();}catch(e){}},140); phraseBus=null;} playing=false; setSounding(false); playTimers.forEach(clearTimeout); playTimers=[]; lightGiven(false); }
+function setSounding(on){ const b=document.getElementById('playBtn').querySelector('span'); if(b) b.textContent=on?'⏸ Parar':idleLabel; }
+function playMeasure(){
+  if(playing){ stopPhrase(); return; } const c=ac(); if(!c)return;
+  playing=true; setSounding(true); phraseBus=c.createGain(); phraseBus.gain.value=1; phraseBus.connect(master());
+  const t0=c.currentTime+0.15, measSec=2*secPerPulse;   // SIN compás de claqueta: va directo
+  const slot0 = writeSlot===0 ? target : givenToks;
+  const slot1 = writeSlot===0 ? givenToks : target;
+  let acc=0; slot0.forEach(t=>{ if(!t.endsWith('r')) ritmoSound(t0+acc*spq, durQ(t)*spq,.34,phraseBus); acc+=durQ(t); });
+  acc=PULSE_Q; slot1.forEach(t=>{ if(!t.endsWith('r')) ritmoSound(t0+acc*spq, durQ(t)*spq,.34,phraseBus); acc+=durQ(t); });
+  for(let p=0;p<2;p++) click(t0+p*secPerPulse, p===0, phraseBus);   // metrónomo de los 2 pulsos (referencia)
+  // iluminar el pulso DADO cuando suena (ahí termina lo que el alumno descifra)
+  playTimers.forEach(clearTimeout); playTimers=[];
+  const givenStartSec=(writeSlot===0 ? PULSE_Q : 0)*spq;
+  playTimers.push(setTimeout(()=>lightGiven(true), (0.15+givenStartSec)*1000));
+  playTimers.push(setTimeout(()=>lightGiven(false), (0.15+measSec)*1000+140));
+  setTimeout(()=>{ playing=false; phraseBus=null; setSounding(false); }, (0.15+measSec)*1000+260);
+}
+
+/* ===== estado ===== */
+let target=[], written=[], roundIdx=0, score=0, failUsedThisRound=false, order=[], writeSlot=0, givenToks=[GIVEN];
+const PER=100/ROUNDS, HALF=PER/2;
+
+function buildEditor(){
+  const notes=[['w','redonda'],['h','blanca'],['q','negra'],['8','corchea'],['16','semicorchea'],['32','fusa']];
+  const nh=document.getElementById('figNotes'), rh=document.getElementById('figRests'); nh.innerHTML=''; rh.innerHTML='';
+  notes.forEach(([d,name])=>{ const b=document.createElement('button'); b.className='fig'; b.title=name; b.innerHTML=figIcon(d,false); b.onclick=()=>addFig(d,false); nh.appendChild(b); });
+  notes.forEach(([d,name])=>{ const b=document.createElement('button'); b.className='fig rest'; b.title='silencio de '+name; b.innerHTML=figIcon(d,true); b.onclick=()=>addFig(d,true); rh.appendChild(b); });
+  document.getElementById('tieBtn').style.display = HAS_TIES?'inline-flex':'none';
+}
+function addFig(d,isRest){ ac(); const tok=d+(isRest?'r':'');
+  if(sumQ(written)+durQ(tok) > PULSE_Q+1e-6){ toast('Te has pasado de las figuras que caben en este pulso','no'); return; }
+  written.push(tok); renderMeasure(written,false);
+  document.getElementById('hint').textContent = Math.abs(sumQ(written)-PULSE_Q)<1e-6 ? 'Pulso completo. Pulsa Corregir.' : 'Sigue escribiendo tu pulso.';
+}
+function applyDot(){ if(!written.length) return; const last=written[written.length-1]; if(last.endsWith('r')) return; // (silencios con puntillo: simplificado, no)
+  if(last.endsWith('d')) return; const base=last; const dotted=base+'d';
+  if(sumQ(written.slice(0,-1))+durQ(dotted) > PULSE_Q+1e-6){ toast('Con puntillo no cabe en el pulso','no'); return; }
+  written[written.length-1]=dotted; renderMeasure(written,false); }
+function delLast(){ if(written.length){ written.pop(); renderMeasure(written,false); document.getElementById('hint').textContent='Sigue escribiendo tu pulso.'; } }
+
+function setBar(){ document.getElementById('barFill').style.width=Math.max(0,Math.min(100,score))+'%';
+  document.getElementById('barTag').textContent = roundIdx>=ROUNDS?'¡Completada!':`Ronda ${roundIdx+1} de ${ROUNDS}`; }
+function flashBad(){ const f=document.getElementById('barFill'); f.classList.add('bad'); setTimeout(()=>f.classList.remove('bad'),700); }
+
+function check(){
+  const ok = written.length===target.length && written.every((t,i)=>t===target[i]);
+  if(ok){ score=Math.min(100,score+PER); setBar(); renderMeasure(written,true);
+    document.getElementById('staffPanel').classList.add('ok'); toast('¡Correcto!','ok'); burst(); playMeasure();
+    roundIdx++;
+    setTimeout(()=>{ document.getElementById('staffPanel').classList.remove('ok');
+      if(roundIdx>=ROUNDS){ document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 2200);
+  } else {
+    if(!failUsedThisRound){ failUsedThisRound=true; score=Math.max(0,score-HALF); flashBad(); setBar(); }   // media de un segmento, solo el 1er fallo
+    idleLabel='▶ Inténtalo otra vez'; if(!playing) setSounding(false);
+    toast('No es exacto','no'); document.getElementById('hint').textContent='No es exacto. Vuelve a escucharlo y corrige.';
+  }
+}
+function roundTransition(cb){ const ov=document.getElementById('roundOv'); ov.classList.add('show'); setTimeout(cb,720); setTimeout(()=>ov.classList.remove('show'),1320); }
+
+/* util */
+function toast(t,k){ const e=document.getElementById('toast'); e.textContent=t; e.className='toast '+k; void e.offsetWidth; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),1200); }
+const PAL=['#34d399','#5bd0ff','#ff9a3c','#ff5ccd','#a974ff','#ffd678'];
+function burst(){ const host=document.getElementById('confetti'); const cx=innerWidth/2, cy=innerHeight*0.3;
+  for(let i=0;i<28;i++){ const p=document.createElement('i'); const a=Math.random()*Math.PI*2,d=120+Math.random()*240;
+    p.style.left=cx+'px'; p.style.top=cy+'px'; p.style.background=PAL[i%PAL.length];
+    p.style.setProperty('--dx',Math.cos(a)*d+'px'); p.style.setProperty('--dy',(Math.sin(a)*d+Math.random()*120)+'px'); p.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+    p.style.animation='conf '+(900+Math.random()*700)+'ms cubic-bezier(.15,.7,.3,1) forwards'; host.appendChild(p); setTimeout(()=>p.remove(),1700); } }
+
+/* ronda */
+function newRound(){ stopPhrase(); failUsedThisRound=false; written=[]; idleLabel='▶ Escuchar'; setSounding(false);
+  const spec=order[roundIdx]; const variation=CARD.cells[spec.cell].slice();
+  if(spec.swap){ writeSlot=1; givenToks=variation; target=[GIVEN]; }   // raro: escribe la figura de pulso, dado = la variación
+  else { writeSlot=0; givenToks=[GIVEN]; target=variation; }
+  renderMeasure(written,false); setBar(); document.getElementById('hint').textContent='Escucha y escribe tu pulso.';
+}
+document.getElementById('playBtn').onclick=()=>{ ac(); playMeasure(); };
+document.getElementById('dotBtn').onclick=()=>applyDot();
+document.getElementById('delBtn').onclick=()=>delLast();
+document.getElementById('checkBtn').onclick=()=>check();
+document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); roundIdx=0; score=0; startGame(); };
+
+function startGame(){
+  const idxs=CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5);
+  order = (CARD.cells.length===1) ? [{cell:0,swap:false},{cell:0,swap:true}] : idxs.map(i=>({cell:i,swap:false}));
+  buildEditor(); newRound();
+}
+startGame();
+</script>
+<!--__quiz_bridge_done__-->
+<script>
+/* ===== puente de embebido (shell quiz_completo) ===== */
+(function(){
+  if(window.top===window.self) return;                 // suelto: no hace nada
+  var P=new URLSearchParams(location.search);
+  var isLast=P.get('last')==='1';
+  var st=document.createElement('style');
+  st.textContent='.topbar{display:none!important}';
+  document.head.appendChild(st);
+  // Fase 1: arrancar directo al embeber (la app real ya presenta la carta antes)
+  try{
+    if(document.getElementById('introGo')){
+      document.body.classList.add('quiz');
+      var sc=document.getElementById('stageCarta'); if(sc) sc.style.display='none';
+      var ov=document.getElementById('ovIntro'); if(ov) ov.classList.remove('show');
+      var fe=document.getElementById('faseEscucha'); if(fe) fe.classList.add('show');
+      if(typeof buildGrid==='function'){ try{ buildGrid(); }catch(e){} }
+    }
+  }catch(e){}
+  var done=false;
+  function fireDone(){ if(done)return; done=true; parent.postMessage({type:'quizPhaseDone',last:isLast},'*'); }
+  ['ovTrans','ovWin'].forEach(function(id){ var ov=document.getElementById(id); if(!ov)return;
+    new MutationObserver(function(){ if(ov.classList.contains('show')) fireDone(); }).observe(ov,{attributes:true,attributeFilter:['class']}); });
+  function wire(btnId){ var b=document.getElementById(btnId); if(!b)return; b.textContent=isLast?'Terminar quiz ▶':'Siguiente fase ▶'; b.onclick=function(){ parent.postMessage({type:'quizAdvanceNow'},'*'); }; }
+  ['transBack','winBtn'].forEach(wire);
+})();
+</script>
+</body>
+</html>
