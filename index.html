@@ -3052,6 +3052,16 @@ function renderLesson(container,L){
   });
   let prevTime=null;
   const lw=lines.map(ln=>ln.ms.map((m,j)=>{ const first=(j===0); const showTime=(prevTime===null)||(m.time!==prevTime); prevTime=m.time; return measureWidth(ctx,m,ln.clef,ln.keysig,first,showTime); }));
+  // reservar un hueco al FINAL del último compás del sistema cuando el siguiente cambia de clave o de compás:
+  // así la clave/compás de cortesía van DENTRO de ese compás (antes de la barra), no colgando por fuera.
+  for(let li=0; li<lines.length-1; li++){
+    const cur=lines[li], nx=lines[li+1], lastIdx=cur.ms.length-1;
+    const clefChange = nx.clef!==cur.clef;
+    const meterChange = nx.ms[0].time !== cur.ms[lastIdx].time;
+    let extra=0; if(clefChange) extra+=26; if(meterChange) extra+=18; if(extra) extra+=6;
+    cur._endExtra=extra; cur._endClef=clefChange; cur._endMeter=meterChange;
+    if(extra) lw[li][lastIdx]+=extra;
+  }
   const lineTotals=lw.map(ws=>PAD*2+ws.reduce((a,b)=>a+b,0));
   const W=Math.max(...lineTotals);
   // justificar cada línea al ancho común W (reparto proporcional)
@@ -3080,7 +3090,8 @@ function renderLesson(container,L){
       const beams=[];(m.beams||[]).forEach(g=>{ const run=g.filter(k=>{ const n=m.notes[k]; return n && !n.rest && db(n.dur)<1; }); if(run.length>1) beams.push(new VF.Beam(run.map(k=>vf[k]))); });   // el corchete pasa por encima de los silencios intermedios
       const tups=[];(m.tuplets||[]).forEach(t=>{const g=t.group;tups.push(new VF.Tuplet(t.idx.map(k=>vf[k]),{num_notes:g.ratioNum,notes_occupied:g.ratioDen,ratioed:false}));});
       const voice=voiceOf(m); voice.addTickables(vf);
-      const leftMod=stave.getNoteStartX()-x; const innerW=w-leftMod-14;
+      const endRes=(j===ln.ms.length-1)?(ln._endExtra||0):0;
+      const leftMod=stave.getNoteStartX()-x; const innerW=w-leftMod-14-endRes;
       new VF.Formatter().joinVoices([voice]).format([voice],Math.max(60,innerW));
       voice.draw(ctx,stave);
       beams.forEach(b=>b.setContext(ctx).draw());
@@ -3104,10 +3115,10 @@ function renderLesson(container,L){
     const nx=lines[li+1];
     if(nx && lastStave){
       const curMeter=ln.ms[ln.ms.length-1].time, nextMeter=nx.ms[0].time;
-      const topY=lastStave.getYForLine(0), midY=lastStave.getYForLine(2);
-      let gx = x + 4;
+      const topY=lastStave.getYForLine(0);
+      let gx = x - (ln._endExtra||0) + 4;                 // DENTRO del último compás, antes de la barra
       // clave de cortesía
-      if(nx.clef!==ln.clef){ try{ const code=CLEF_GLYPH[nx.clef]; if(code){ const cy = nx.clef==='treble'?lastStave.getYForLine(3): nx.clef==='bass'?lastStave.getYForLine(1):lastStave.getYForLine(2); VF.Glyph.renderGlyph(ctx, gx, cy, 28, code); gx+=22; } }catch(e){} }
+      if(nx.clef!==ln.clef){ try{ const code=CLEF_GLYPH[nx.clef]; if(code){ const cy = nx.clef==='treble'?lastStave.getYForLine(3): nx.clef==='bass'?lastStave.getYForLine(1):lastStave.getYForLine(2); VF.Glyph.renderGlyph(ctx, gx, cy, 28, code); gx+=24; } }catch(e){} }
       // compás de cortesía
       if(nextMeter!==curMeter){ const [nn,dd]=nextMeter.split('/'); ctx.save(); ctx.setFont('Arial',16,'bold'); ctx.setFillStyle('#1a2233');
         ctx.fillText(nn, gx, lastStave.getYForLine(1)+5); ctx.fillText(dd, gx, lastStave.getYForLine(3)+5); ctx.restore(); }
@@ -3987,31 +3998,15 @@ function meterKind(time, wide){ const [n,d]=time.split('/').map(Number);
   return {regular:false, pulseDurQ:null};                            // irregular (5/8, 7/8)
 }
 function tempoMap(L, basePulseBPM){
-  const out=[]; let prev=null;
+  const out=[]; let prev=null; const DISPAR_SECQ=120/126;   // 5/8/7/8: corchea fija = 126 (la del 6/8 a 42)
   L.phrases.forEach(ph=>ph.measures.forEach(m=>{
-    const k=meterKind(m.time, m.wideTernary); let secPerQ;
-    if(!prev){
-      // primer compás. Si es REGULAR, fija el pulso (negra o negra c/puntillo) a basePulseBPM.
-      // Si es IRREGULAR (5/8, 7/8), NO hay pulso único: tomamos la NEGRA como referencia a basePulseBPM
-      // (la corchea = mitad). Así un 7/8 inicial no se dispara.
-      if(k.regular){ secPerQ = (60/basePulseBPM) / k.pulseDurQ; }
-      else { secPerQ = 60/basePulseBPM; }    // negra a basePulseBPM; corchea a basePulseBPM/2... ·0.5
-      out.push({secPerQ, regular:k.regular, equiv:null, time:m.time});
-    } else {
-      const bothRegular = prev.regular && k.regular;
-      if(bothRegular){
-        // PULSO = PULSO: mantener segundos por pulso
-        const prevSecPerPulse = prev.secPerQ * prev.pulseDurQ;
-        secPerQ = prevSecPerPulse / k.pulseDurQ;
-        out.push({secPerQ, regular:true, equiv:'pulse', from:prev.time, time:m.time});
-      } else {
-        // FIGURA = FIGURA: la corchea (0.5 negras) dura igual -> secPerQ constante
-        secPerQ = prev.secPerQ;
-        out.push({secPerQ, regular:k.regular, equiv:'figure', from:prev.time, time:m.time});
-      }
-    }
-    const last=out[out.length-1]; last.pulseDurQ = k.regular ? k.pulseDurQ : 0.5;
-    prev={secPerQ:last.secPerQ, pulseDurQ:last.pulseDurQ, regular:k.regular, time:m.time};
+    const k=meterKind(m.time, m.wideTernary); let secPerQ, equiv;
+    if(!k.regular){ secPerQ=DISPAR_SECQ; equiv = prev?'figure':null; }          // disparejo: motor de corchea fijo (126)
+    else if(!prev){ secPerQ=(60/basePulseBPM)/k.pulseDurQ; equiv=null; }         // primer compás regular: fija el pulso
+    else if(prev.regular){ secPerQ=(prev.secPerQ*prev.pulseDurQ)/k.pulseDurQ; equiv='pulse'; }   // PULSO = PULSO
+    else { secPerQ=prev.secPerQ; equiv='figure'; }                              // FIGURA = FIGURA (venía de disparejo)
+    out.push({secPerQ, regular:k.regular, equiv, from:prev?prev.time:undefined, time:m.time, pulseDurQ:k.regular?k.pulseDurQ:0.5});
+    prev={secPerQ, pulseDurQ:k.regular?k.pulseDurQ:0.5, regular:k.regular, time:m.time};
   }));
   return out;   // 1 entrada por compás, en orden global
 }
@@ -4370,15 +4365,15 @@ const VEL_STEP = 8;         // BPM por nivel del selector
 function firstMeasureCompound(){ const m0=currentLesson&&currentLesson.phrases&&currentLesson.phrases[0]&&currentLesson.phrases[0].measures[0]; if(!m0) return false; if(m0.wideTernary) return true; const [n,d]=m0.time.split('/').map(Number); return d===8 && n%3===0; }
 function stdPulseBPM(){
   if(currentCourse==='gp1' && currentLesson && currentLesson.gp1){
-    const W=gp1World(currentLesson.worldId);
+    // esquema de tempos (Iago): binario negra=50 (44 con fusas) · blanca=50 · 6/8 negra c/puntillo=42 · 5/8 negra=63 (corchea=126)
     const cfg=gp1Config(currentLesson.worldId, currentLesson.cards||[]);
-    const comp=firstMeasureCompound();
-    let bpm = comp ? (W.basePulseComp||W.basePulse) : W.basePulse;
-    if(comp) bpm -= 8;                       // 6/8 y compuestos: más lentos que el estándar
-    if(currentLesson.mixSlow) bpm -= 4;      // mezcla binario+ternario: bajar un poco más (el compuesto no debe correr)
-    else if(currentLesson.simpleSlow5) bpm -= 5;
-    if(cfg.slow) bpm = Math.max(8, bpm-8);   // subdivisión densa -> más lento
-    return bpm;
+    const m0=currentLesson.phrases[0].measures[0];
+    const k=meterKind(m0.time, m0.wideTernary);
+    const fusas = !!(cfg.dense || cfg.slow);
+    if(!k.regular) return 63;                // 5/8 inicial: negra=63 ↔ corchea=126
+    if(k.pulseDurQ===1.5) return 42;         // compuesto 6/8: negra con puntillo = 42
+    if(k.pulseDurQ===2)   return 50;         // compás de blanca: blanca = 50
+    return fusas ? 44 : 50;                  // simple binario: negra = 50 (44 con fusas)
   }
   const t3=(currentTrim==='t3'); const comp=firstMeasureCompound();
   let bpm = t3 ? (comp?STD_COMPOUND_T3:STD_SIMPLE_T3) : (comp?STD_COMPOUND:STD_SIMPLE);
