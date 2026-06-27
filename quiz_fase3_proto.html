@@ -230,7 +230,7 @@ function stopPhrase(){ const c=ac(); if(phraseBus&&c){ try{ phraseBus.gain.setTa
 function setSounding(on){ const b=document.getElementById('playBtn').querySelector('span'); if(b) b.textContent=on?'⏸ Parar':idleLabel; }
 
 /* ===== estado de ronda ===== */
-let solution=[], pool=[], placed=[], round={hits:0,score:0,firstFailUsed:false};
+let solution=[], pool=[], placed=[], clickCursor=0, round={hits:0,score:0,firstFailUsed:false};
 
 function buildSolution(){
   // 2 variaciones objetivo (distintas si se puede) + relleno
@@ -292,12 +292,7 @@ function renderPhrase(){
   svg.setAttribute('viewBox',`0 0 ${CW} ${vbH}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.width='100%'; svg.style.maxWidth='100%';
   svgGeom={CW, vbH, staveTop, staveBot, pulseY};
 }
-function lightPulse(idx){ const svg=document.querySelector('#staffHost svg'); if(!svg||!svgGeom)return;
-  Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6')); if(arrowEls[idx]) arrowEls[idx].setAttribute('fill','#34d399');
-  const hl=svg.querySelector('#pulseHL'); if(!hl)return; const i=Math.floor(idx/PULSES_PER_MEAS),p=idx%PULSES_PER_MEAS,g=measGeom[i],span=g.x1-g.x0;
-  hl.setAttribute('x',g.x0+span*(p/PULSES_PER_MEAS)+2); hl.setAttribute('y',svgGeom.staveTop-8);
-  hl.setAttribute('width',span/PULSES_PER_MEAS-4); hl.setAttribute('height',(svgGeom.pulseY-svgGeom.staveTop)+12);
-  hl.setAttribute('fill','rgba(52,211,153,.16)'); hl.setAttribute('visibility','visible'); }
+function lightPulse(idx){ Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6')); if(arrowEls[idx]) arrowEls[idx].setAttribute('fill','#34d399'); }
 function clearLight(){ const svg=document.querySelector('#staffHost svg'); if(svg){ const hl=svg.querySelector('#pulseHL'); if(hl) hl.setAttribute('visibility','hidden'); } Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6')); }
 function pulseAt(clientX,clientY){
   const svg=document.querySelector('#staffHost svg'); if(!svg||!svgGeom)return null; const rect=svg.getBoundingClientRect();
@@ -307,13 +302,11 @@ function pulseAt(clientX,clientY){
     const p=vx<g.x0+span*0.5?0:1; return i*PULSES_PER_MEAS+p; } }
   return null;
 }
-function showPulseHL(idx){ const svg=document.querySelector('#staffHost svg'); const hl=svg&&svg.querySelector('#pulseHL'); if(!hl)return;
-  if(idx==null || placed[idx]){ hl.setAttribute('visibility','hidden'); return; }
-  const i=Math.floor(idx/PULSES_PER_MEAS), p=idx%PULSES_PER_MEAS, g=measGeom[i], span=g.x1-g.x0;
-  hl.setAttribute('x',g.x0+span*(p/PULSES_PER_MEAS)+2); hl.setAttribute('y',svgGeom.staveTop-8);
-  hl.setAttribute('width',span/PULSES_PER_MEAS-4); hl.setAttribute('height',(svgGeom.pulseY-svgGeom.staveTop)+12); hl.setAttribute('visibility','visible'); }
-function hidePulseHL(){ const hl=document.querySelector('#staffHost svg #pulseHL'); if(hl) hl.setAttribute('visibility','hidden'); }
+function showPulseHL(idx){ Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6'));
+  if(idx==null || placed[idx]) return; if(arrowEls[idx]) arrowEls[idx].setAttribute('fill','#5bd0ff'); }
+function hidePulseHL(){ Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6')); }
 function firstFreePulse(){ for(let i=0;i<N_PULSES;i++){ if(!placed[i]) return i; } return null; }
+function nextFreeFrom(start){ for(let i=Math.max(0,start);i<N_PULSES;i++){ if(!placed[i]) return i; } return null; }
 
 /* ===== cartas flotantes ===== */
 let raf=null;
@@ -357,27 +350,29 @@ function attachDrag(card){
     if(Math.abs(dx)+Math.abs(dy)>6) moved=true; card.x=ox+dx; card.y=oy+dy; el.style.left=card.x+'px'; el.style.top=card.y+'px';
     showPulseHL(pulseAt(e.clientX,e.clientY)); });
   const up=(e)=>{ if(!card.drag)return; card.drag=false; el.classList.remove('drag'); hidePulseHL();
-    const idx=moved?pulseAt(e.clientX,e.clientY):firstFreePulse();
+    const idx = moved ? pulseAt(e.clientX,e.clientY) : nextFreeFrom(clickCursor);
     if(idx!=null && !placed[idx]){ placeCard(card, idx); }
     else { const ang=Math.random()*Math.PI*2, sp=10+Math.random()*14; card.vx=Math.cos(ang)*sp; card.vy=Math.sin(ang)*sp; } };
   el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
 }
 function placeCard(card, idx){
   placed[idx]={toks:card.ct.toks.slice(),beams:(card.ct.beams||[]).map(b=>b.slice())};
+  clickCursor=idx+1;                                   // las clicadas siguientes van a partir de aquí
   pool=pool.filter(c=>c!==card); card.el.remove();
   renderPhrase(); updateCheck(); ping();
 }
 function unplace(idx){
-  const ct=placed[idx]; placed[idx]=null; renderPhrase(); updateCheck(); makeFloatCard(ct);
+  const ct=placed[idx]; placed[idx]=null; clickCursor=Math.min(clickCursor,idx); renderPhrase(); updateCheck(); makeFloatCard(ct);
 }
 function updateCheck(){ const allFilled=placed.every(p=>p); document.getElementById('checkBtn').disabled=!allFilled;
   document.getElementById('hint').textContent = allFilled?'¡Listo! Pulsa Comprobar.':'Coloca todas las cartas para comprobar.'; }
-function clearAll(){ const back=[]; for(let i=0;i<N_PULSES;i++){ if(placed[i]){ back.push(placed[i]); placed[i]=null; } }
+function clearAll(){ const back=[]; for(let i=0;i<N_PULSES;i++){ if(placed[i]){ back.push(placed[i]); placed[i]=null; } } clickCursor=0;
   renderPhrase(); back.forEach(ct=>makeFloatCard(ct)); updateCheck(); }
 
 /* ===== audio de la frase (ilimitado) ===== */
 function playPhrase(noClick){
   if(playing){ stopPhrase(); return; } const c=ac(); if(!c)return;
+  if(!noClick) clickCursor=0;                          // al escuchar de nuevo, las clicadas vuelven a ir por orden
   playing=true; setSounding(true); phraseBus=c.createGain(); phraseBus.gain.value=1; phraseBus.connect(master());
   const lead=noClick?0.12:0.15; const t0=c.currentTime+lead, measSec=PULSES_PER_MEAS*secPerPulse;
   const start = noClick ? t0 : t0+measSec;                       // refuerzo: sin compás de claqueta previo
@@ -400,8 +395,8 @@ function flashBad(){ const f=document.getElementById('barFill'); f.classList.add
 function check(){
   const ok = placed.every((p,i)=> tokKey(p.toks)===tokKey(solution[i].toks));   // por patrón rítmico de cada pulso
   if(ok){ round.hits++; round.score=Math.min(100,round.score+33.34); toast('¡Correcto!','ok'); burst(); setBar();
-    playPhrase(true); document.getElementById('checkBtn').disabled=true;          // refuerzo SIN claqueta
-    setTimeout(()=>{ if(round.hits>=3){ stopPhrase(); document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 2200);
+    document.getElementById('checkBtn').disabled=true;                            // sin reproducir: solo confirma
+    setTimeout(()=>{ if(round.hits>=3){ document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 1300);
   } else {
     if(!round.firstFailUsed){ round.firstFailUsed=true; round.score=Math.max(0,round.score-16.5); flashBad(); setBar(); }  // medio segmento, solo el 1er fallo
     idleLabel='▶ Inténtalo otra vez'; if(!playing) setSounding(false);
@@ -424,7 +419,7 @@ function ping(){ const c=ac(); if(!c)return; const t0=c.currentTime+0.01; const 
 
 /* ===== ronda ===== */
 function newRound(){
-  stopPhrase(); round.firstFailUsed=false; idleLabel='▶ Escuchar la frase'; setSounding(false); placed=new Array(N_PULSES).fill(null);
+  stopPhrase(); round.firstFailUsed=false; idleLabel='▶ Escuchar la frase'; setSounding(false); placed=new Array(N_PULSES).fill(null); clickCursor=0;
   solution=buildSolution(); renderPhrase(); spawnPool(); updateCheck(); setBar();
 }
 window.addEventListener('resize', ()=>{ renderPhrase(); });

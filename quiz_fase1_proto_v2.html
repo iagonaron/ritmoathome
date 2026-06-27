@@ -206,14 +206,11 @@ body.quiz .sky{opacity:.92}
       <span class="fase-step">Fase 1 de 5</span>
       <h2>Escucha las cartas</h2>
     </div>
-    <p class="fase-sub">Cada tarjeta es uno de los ritmos de esta carta. Pulsa <b>▶</b> y sonará en bucle:
+    <p class="fase-sub">Cada tarjeta es uno de los ritmos de esta carta. Pulsa <b>▶</b> y sonará una vez:
       el <b>primer pulso</b> es la dificultad y el <b>segundo</b>, un pulso de reposo. Escúchalas todas antes de seguir.</p>
     <div class="cells-grid" id="cellsGrid"></div>
     <div class="fase-foot"><button class="continue" id="continueBtn">He escuchado todas · Continuar ▶</button></div>
   </div>
-
-  <p class="proto-foot">Prototipo aislado · estética 100&nbsp;% multicolor · una sola carta (1.1).<br>
-    La nota activa cicla de color; el cartel de transición muestra el estilo entre fases.</p>
 </div>
 
 <div class="confetti" id="confetti"></div>
@@ -326,7 +323,7 @@ function playCell(m, btn, cardEl, svgEl){
     let acc=0; m.notes.forEach((nt,i)=>{ if(nt.rest){acc+=durs[i];return;} if(loop.tied.has(i)){acc+=durs[i];return;}
       let dq=durs[i],j=i+1; while(loop.tied.has(j)){ dq+=durs[j]; j++; } ritmoSound(t0+acc*spq, dq*spq, 0.5); acc+=durs[i]; });
     loop.startWall=performance.now()+40; loop.lastNote=-2; loop.lastPulse=-1;
-    loop.timers.push(setTimeout(runLoop, loopSec*1000)); };
+    loop.timers.push(setTimeout(()=>{ if(loop&&!loop.stopped) stopLoop(); }, loopSec*1000+70)); };
   const tick=()=>{ if(!loop||loop.stopped)return;
     const pos=Math.max(0,(performance.now()-loop.startWall)/1000)/spq;
     let active=-1,acc=0; for(let i=0;i<m.notes.length;i++){ const dd=durs[i]; if(!m.notes[i].rest&&pos>=acc-1e-3&&pos<acc+dd-1e-3){active=i;break;} acc+=dd; }

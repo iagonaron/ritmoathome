@@ -174,9 +174,6 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
     </div>
     <div class="t-txt">Este ritmo está escondido en <b>un</b> pulso de la frase.</div>
   </div>
-
-  <p class="proto-foot">Prototipo aislado · carta 1.1 (6/8) · frase de 4 compases = 8 pulsos.<br>
-    Ritmo puro percutido · cada ronda cambia el ritmo objetivo · al responder se revela y suena el pulso.</p>
 </div>
 
 <div class="dim" id="dim"></div>
@@ -332,7 +329,7 @@ function ritmoSound(t0,durSec,gain,dest){
 }
 
 /* ===== estado de ronda ===== */
-let round=null, score=0, hits=0, answered=false, targetCellIdx=-1;
+let round=null, score=0, hits=0, answered=false, targetCellIdx=-1, lastTargetPulse=-1;
 const spq = COMPOUND ? (60/CARD.bpmComp)/1.5 : 60/CARD.bpmSimple;   // seg por negra
 const secPerPulse = PULSE_Q*spq;
 
@@ -347,7 +344,8 @@ function newRound(){
   // construir pulsos: uno es el objetivo, el resto relleno (que NO clone al objetivo)
   const targetTokens=cellTokens(target);
   const tgtKey=targetTokens.join(',');
-  const targetPulse=Math.floor(Math.random()*N_PULSES);
+  let targetPulse; do{ targetPulse=Math.floor(Math.random()*N_PULSES); }while(N_PULSES>1 && targetPulse===lastTargetPulse);
+  lastTargetPulse=targetPulse;
   const pulses=[];
   for(let i=0;i<N_PULSES;i++){
     if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:patternQ(targetTokens), target:true}); }

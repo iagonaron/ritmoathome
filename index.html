@@ -540,6 +540,12 @@ footer .lock{color:var(--gold1);}
 .cq-step.done .cq-n{background:#34d399;color:#062a1d;}
 .cq-step.done .cq-n span{display:none;}
 .cq-step.done .cq-n::after{content:"\2713";}
+.cq-step.locked{opacity:.45;cursor:not-allowed;}
+.cq-step.locked .cq-n{background:rgba(255,255,255,.22);color:rgba(255,255,255,.55);}
+.cq-step.locked .cq-n span{display:none;}
+.cq-step.locked .cq-n::after{content:"\1F512";font-size:11px;}
+.cq-step.shake{animation:cqshake .42s;}
+@keyframes cqshake{0%,100%{transform:translateX(0);}20%{transform:translateX(-4px);}40%{transform:translateX(4px);}60%{transform:translateX(-3px);}80%{transform:translateX(3px);}}
 .cardquiz-x{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.16);
   background:rgba(255,255,255,.05);color:#f6f3ff;font-size:15px;cursor:pointer;display:grid;place-items:center;transition:.15s;}
 .cardquiz-x:hover{background:rgba(255,255,255,.13);}
@@ -4994,7 +5000,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     {file:'quiz_fase4_proto.html',    name:'Escucha y escribe'},
     {file:'quiz_fase5_proto.html',    name:'Sigue el ritmo'},
   ];
-  let ov=null, frame=null, stepsEl=null, idx=0, done=[];
+  let ov=null, frame=null, stepsEl=null, idx=0, done=[], maxReached=0;
 
   function build(){
     ov=document.createElement('div'); ov.className='cardquiz-ov'; ov.id='cardQuizOv';
@@ -5018,18 +5024,27 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     stepsEl.innerHTML='';
     PHASES.forEach((p,i)=>{ const s=document.createElement('div'); s.className='cq-step';
       s.innerHTML='<span class="cq-n"><span>'+(i+1)+'</span></span><span class="cq-nm">'+p.name+'</span>';
-      s.onclick=()=>load(i); stepsEl.appendChild(s); });
+      s.onclick=()=>goTo(i); stepsEl.appendChild(s); });
   }
-  function paint(){ [...stepsEl.children].forEach((el,i)=>{ el.classList.toggle('cur',i===idx); el.classList.toggle('done',!!done[i]&&i!==idx); }); }
+  // navegación del alumno: solo permite fases ya desbloqueadas (no se puede saltar)
+  function goTo(i){ if(i<=maxReached) load(i); else flashLocked(i); }
+  function flashLocked(i){ const el=stepsEl.children[i]; if(!el) return;
+    el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+  function paint(){ [...stepsEl.children].forEach((el,i)=>{
+    el.classList.toggle('cur',i===idx);
+    el.classList.toggle('done',!!done[i]&&i!==idx);
+    el.classList.toggle('locked', i>maxReached);
+  }); }
   function load(i){ idx=Math.max(0,Math.min(PHASES.length-1,i)); const p=PHASES[idx];
     const last=(idx===PHASES.length-1)?'&last=1':''; ov.classList.add('loading');
     frame.src=p.file+'?embed=1'+last; paint(); }
   function onMsg(e){ if(!frame||e.source!==frame.contentWindow) return; const d=e.data||{};
-    if(d.type==='quizPhaseDone'){ done[idx]=true; paint(); }
-    else if(d.type==='quizAdvanceNow'){ done[idx]=true; if(idx<PHASES.length-1) load(idx+1); else paint(); } }
+    if(d.type==='quizPhaseDone'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); paint(); }
+    else if(d.type==='quizAdvanceNow'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1));
+      if(idx<PHASES.length-1) load(idx+1); else paint(); } }
   function open(card,worldId){
     if(!ov) build();
-    done=PHASES.map(()=>false); idx=0;
+    done=PHASES.map(()=>false); idx=0; maxReached=0;
     document.body.style.overflow='hidden';
     ov.classList.add('show'); load(0);
   }
