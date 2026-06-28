@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz 5/8 · Fase 3 — Caza los cinco por ocho</title>
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<style>
+:root{ --text:#f6f3ff; --muted:#cfc7f2; --paper:#f7f6ff; --ink:#16132b; --line:rgba(255,255,255,.16);
+  --grad:linear-gradient(120deg,#a974ff 0%,#5bd0ff 22%,#34d399 44%,#ff9a3c 66%,#ff5ccd 84%,#a974ff 100%);
+  --font:"Helvetica Neue",Arial,system-ui,sans-serif; }
+*{box-sizing:border-box} html,body{margin:0;padding:0}
+body{ color:var(--text); font-family:var(--font); -webkit-font-smoothing:antialiased; line-height:1.45; min-height:100vh; position:relative; overflow-x:hidden;
+  background:linear-gradient(160deg,#241a52 0%,#180f3c 38%,#0e0a2c 72%,#080518 100%); background-attachment:fixed; }
+.sky{position:fixed;inset:-12% -8%;z-index:-1;filter:blur(40px) saturate(1.15);opacity:.9;pointer-events:none}
+.sky b{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:.5}
+.b1{width:46vw;height:42vw;left:-6%;top:-10%;background:#34d399;animation:d1 19s ease-in-out infinite}
+.b2{width:44vw;height:40vw;right:-8%;top:-6%;background:#5bd0ff;animation:d2 23s ease-in-out infinite}
+.b3{width:50vw;height:46vw;right:6%;bottom:-16%;background:#a974ff;animation:d3 21s ease-in-out infinite}
+.b4{width:42vw;height:40vw;left:-4%;bottom:-14%;background:#ff9a3c;animation:d4 25s ease-in-out infinite}
+@keyframes d1{0%,100%{transform:translate(0,0)}50%{transform:translate(7vw,5vh)}}
+@keyframes d2{0%,100%{transform:translate(0,0)}50%{transform:translate(-6vw,6vh)}}
+@keyframes d3{0%,100%{transform:translate(0,0)}50%{transform:translate(-5vw,-6vh)}}
+@keyframes d4{0%,100%{transform:translate(0,0)}50%{transform:translate(6vw,-5vh)}}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 18px 24px;position:relative}
+.topbar{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.brand{font-size:22px;font-weight:900;letter-spacing:-.4px}
+.brand .a{color:var(--text)} .brand .h{color:var(--muted);font-weight:300}
+.gtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.kicker{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.title{font-size:26px;font-weight:900;letter-spacing:-.5px;margin:4px 0 0}
+.lead{color:var(--muted);max-width:820px;margin:7px 0 0;font-size:14.5px}
+.lead b{color:var(--text)}
+.meta{display:flex;justify-content:space-between;align-items:center;margin:10px 0 0}
+.dots{display:flex;gap:7px}
+.dot{width:15px;height:15px;border-radius:50%;background:rgba(255,255,255,.14);transition:.25s}
+.dot.on{background:var(--grad);transform:scale(1.12)}
+.rtag{font-weight:800;color:var(--muted)}
+
+.stage{position:relative;width:100%;height:min(70vh,640px);margin-top:8px}
+.card{position:absolute;background:var(--paper);border-radius:14px;border:3px solid transparent;
+  box-shadow:0 14px 32px rgba(0,0,0,.42);padding:10px 12px;cursor:pointer;
+  width:186px;min-height:80px;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  transition:border-color .15s,box-shadow .2s,opacity .35s; will-change:left,top}
+.card svg{display:block;width:100%;height:auto;max-height:60px}
+.card:hover{box-shadow:0 18px 42px rgba(0,0,0,.55);z-index:5}
+.card.ok{border-color:#34d399;box-shadow:0 0 0 3px #34d399 inset,0 14px 32px rgba(52,211,153,.45)!important;cursor:default;z-index:6}
+.card.no{border-color:#ff5c7a;box-shadow:0 0 0 3px #ff5c7a inset!important;animation:wob .42s}
+.card.dim{opacity:.3;pointer-events:none}
+@keyframes wob{0%,100%{transform:rotate(var(--rot,0deg))}30%{transform:rotate(calc(var(--rot,0deg) - 4deg))}70%{transform:rotate(calc(var(--rot,0deg) + 4deg))}}
+
+.hint{color:var(--muted);text-align:center;margin-top:4px;min-height:1.4em;font-size:14.5px}
+
+.flash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:50;pointer-events:none}
+.flash.show{display:flex;animation:flashIn .5s ease}
+.flash .msg{font-size:38px;font-weight:900;letter-spacing:-.5px;padding:18px 36px;border-radius:18px;background:rgba(10,7,28,.78);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.flash.good .msg{color:#0b0a18;background:var(--grad)}
+.flash.bad .msg{color:#fff;background:linear-gradient(120deg,#ff5c7a,#ff9a3c)}
+@keyframes flashIn{0%{opacity:0;transform:scale(.8)}40%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+
+.ov{position:fixed;inset:0;background:rgba(8,5,24,.72);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+.ov.show{display:flex}
+.cartel{background:linear-gradient(180deg,#241a52,#140d36);border:1px solid var(--line);border-radius:20px;padding:26px 30px;max-width:440px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.cartel h1{margin:.2em 0;font-size:26px}
+.badge{display:inline-block;font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:#0b0a18;background:var(--grad);border-radius:999px;padding:4px 12px;font-weight:800}
+.cbtn{font-family:inherit;font-weight:800;font-size:16px;color:#0b0a18;border:none;border-radius:14px;padding:12px 26px;cursor:pointer;background:var(--grad);box-shadow:0 10px 30px rgba(0,0,0,.34)}
+</style>
+</head>
+<body>
+<div class="sky"><b class="b1"></b><b class="b2"></b><b class="b3"></b><b class="b4"></b></div>
+<div class="wrap">
+  <div class="topbar"><span class="brand"><span class="a">RITMO</span> <span class="h">at home · 4º GE</span></span></div>
+  <span class="kicker">Fase 3 de 5 · el 5/8</span>
+  <h1 class="title gtext">Caza los cinco por ocho</h1>
+  <p class="lead">Estas cartas no llevan compás escrito: solo el ritmo. Toca las <b>cinco que suman un 5/8</b> (cinco corcheas). Las demás suman un 2/4 o un 6/8. Acierta las <b>cinco seguidas</b>; un fallo reinicia el intento.</p>
+  <div class="meta"><div class="dots" id="dots"></div><span class="rtag" id="rtag">Ronda 1 de 3</span></div>
+  <div class="stage" id="stage"></div>
+  <div class="hint" id="hint">Encuentra las cinco. Cuenta las corcheas: el 5/8 suma cinco.</div>
+</div>
+
+<div class="flash" id="flash"><div class="msg" id="flashMsg"></div></div>
+<div class="ov" id="ovWin"><div class="cartel">
+  <div class="badge">Fase superada</div>
+  <h1>¡Cinco de cinco, tres veces!</h1>
+  <p style="color:var(--muted)">Reconoces un 5/8 solo por su ritmo, sin ver el compás.</p>
+  <div style="margin-top:14px"><button class="cbtn" id="winBtn">Continuar ▶</button></div>
+</div></div>
+
+<script>
+const VF=Vex.Flow;
+function Q(arr){ return arr.reduce((s,f)=>{ let v={h:2,q:1,'8':.5,'16':.25}[f.d]; if(f.dot)v*=1.5; return s+v; },0); }
+const POOL_58=[
+  [{d:'q',dot:1},{d:'q'}], [{d:'q'},{d:'q',dot:1}],
+  [{d:'8'},{d:'8'},{d:'8'},{d:'8'},{d:'8'}],
+  [{d:'q',dot:1},{d:'8'},{d:'8'}], [{d:'8'},{d:'8'},{d:'q',dot:1}],
+  [{d:'q'},{d:'8'},{d:'8'},{d:'8'}], [{d:'8'},{d:'8'},{d:'8'},{d:'q'}],
+  [{d:'q',dot:1},{d:'16'},{d:'16'},{d:'8'}], [{d:'8'},{d:'8'},{d:'q'},{d:'8'}],
+];
+const POOL_OTHER=[
+  [{d:'q'},{d:'q'}], [{d:'q',dot:1},{d:'8'}], [{d:'8'},{d:'8'},{d:'q'}],
+  [{d:'q'},{d:'8'},{d:'8'}], [{d:'8'},{d:'8'},{d:'8'},{d:'8'}],
+  [{d:'q',dot:1},{d:'q',dot:1}], [{d:'q'},{d:'q'},{d:'q'}],
+  [{d:'8'},{d:'8'},{d:'8'},{d:'8'},{d:'8'},{d:'8'}], [{d:'q',dot:1},{d:'q'},{d:'8'}],
+];
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pick(pool,n){ return shuffle(pool.slice()).slice(0,n).map(x=>x.slice()); }
+
+function rhythmSVG(figs){
+  const host=document.createElement('div'); host.style.cssText='position:absolute;left:-9999px;top:0;visibility:hidden';
+  document.body.appendChild(host);
+  try{
+    const totalQ=Q(figs); const W=Math.max(150, 56+figs.length*30), H=110, SY=40;
+    const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(W,H); const ctx=r.getContext();
+    const st=new VF.Stave(2,SY,W-6); st.addClef('treble'); st.setContext(ctx).draw();
+    const notes=figs.map(f=>{ const n=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:f.d}); if(f.dot){ try{ VF.Dot.buildAndAttach([n],{all:true}); }catch(e){} } return n; });
+    const beams=[]; let run=[]; function flush(){ if(run.length>=2) beams.push(new VF.Beam(run)); run=[]; }
+    figs.forEach((f,i)=>{ if(f.d==='8'||f.d==='16'){ run.push(notes[i]); } else { flush(); } }); flush();
+    const voice=new VF.Voice({num_beats:totalQ,beat_value:4}).setStrict(false); voice.addTickables(notes);
+    let startX=44; try{ startX=st.getNoteStartX(); }catch(e){}
+    new VF.Formatter().joinVoices([voice]).format([voice], Math.max(50,(2+(W-6))-startX-12)); voice.draw(ctx,st);
+    beams.forEach(b=>{ try{ b.setContext(ctx).draw(); }catch(e){} });
+    const svg=host.querySelector('svg');
+    if(svg){ let bb=null; try{ bb=svg.getBBox(); }catch(e){}
+      if(bb && bb.width>0){ const p=7; svg.setAttribute('viewBox',(bb.x-p)+' '+(bb.y-p)+' '+(bb.width+2*p)+' '+(bb.height+2*p)); }
+      else svg.setAttribute('viewBox','0 0 '+W+' '+H);
+      svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height'); }
+    const out=host.innerHTML; document.body.removeChild(host); return out;
+  }catch(e){ try{document.body.removeChild(host);}catch(_){} return '<div style="color:#999;font-size:11px">—</div>'; }
+}
+
+/* ===== juego con deriva ===== */
+let roundN=1, cleared=0, found=0, locked=false;
+const TOTAL_ROUNDS=3, CW=186, CH=88;
+let states=[], driftRaf=null;
+function setDots(){ const host=document.getElementById('dots'); host.innerHTML=''; for(let i=0;i<5;i++){ const d=document.createElement('div'); d.className='dot'+(i<found?' on':''); host.appendChild(d); } }
+function flash(cls,msg,ms,cb){ const f=document.getElementById('flash'); document.getElementById('flashMsg').textContent=msg; f.className='flash '+cls+' show'; setTimeout(()=>{ f.className='flash'; if(cb)cb(); }, ms||850); }
+
+function newRound(){
+  found=0; locked=false; setDots();
+  document.getElementById('rtag').textContent='Ronda '+roundN+' de '+TOTAL_ROUNDS;
+  document.getElementById('hint').textContent='Encuentra las cinco. Cuenta las corcheas: el 5/8 suma cinco.';
+  const cards=[]; pick(POOL_58,5).forEach(f=>cards.push({figs:f,good:true})); pick(POOL_OTHER,5).forEach(f=>cards.push({figs:f,good:false}));
+  shuffle(cards);
+  const stage=document.getElementById('stage'); stage.innerHTML=''; states=[];
+  const sw=stage.clientWidth||1100, sh=stage.clientHeight||560;
+  cards.forEach((cd)=>{
+    // posición inicial repartida por TODO el escenario, con varios intentos para no amontonar
+    let x,y,tries=0; do{ x=Math.random()*(sw-CW); y=Math.random()*(sh-CH); tries++; }
+      while(tries<14 && states.some(s=>Math.abs(s.x-x)<CW*0.7 && Math.abs(s.y-y)<CH*0.9));
+    const rot=(Math.random()*10-5);
+    const ang=Math.random()*Math.PI*2, sp=0.32+Math.random()*0.42;   // deriva lenta
+    const el=document.createElement('div'); el.className='card';
+    el.style.left=x+'px'; el.style.top=y+'px'; el.style.setProperty('--rot',rot.toFixed(1)+'deg'); el.style.transform='rotate('+rot.toFixed(1)+'deg)';
+    el.innerHTML=rhythmSVG(cd.figs);
+    const s={el,x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,rot,good:cd.good,locked:false};
+    el.onclick=()=>onPick(s);
+    stage.appendChild(el); states.push(s);
+  });
+  if(!driftRaf) driftRaf=requestAnimationFrame(drift);
+}
+function drift(){
+  const stage=document.getElementById('stage'); const sw=stage.clientWidth||1100, sh=stage.clientHeight||560;
+  states.forEach(s=>{ if(s.locked) return; s.x+=s.vx; s.y+=s.vy;
+    if(s.x<0){s.x=0;s.vx=Math.abs(s.vx);} else if(s.x>sw-CW){s.x=sw-CW;s.vx=-Math.abs(s.vx);}
+    if(s.y<0){s.y=0;s.vy=Math.abs(s.vy);} else if(s.y>sh-CH){s.y=sh-CH;s.vy=-Math.abs(s.vy);}
+    s.el.style.left=s.x+'px'; s.el.style.top=s.y+'px';
+  });
+  driftRaf=requestAnimationFrame(drift);
+}
+function onPick(s){
+  if(locked || s.locked) return;
+  if(s.good){
+    s.locked=true; s.el.classList.add('ok'); found++; setDots();
+    if(found>=5){ locked=true; cleared++;
+      if(cleared>=TOTAL_ROUNDS){ document.getElementById('hint').textContent='¡Las cinco!'; setTimeout(()=>document.getElementById('ovWin').classList.add('show'),550); }
+      else { flash('good','¡Nueva ronda!',950,()=>{ roundN++; newRound(); }); }
+    }
+  } else {
+    locked=true; states.forEach(x=>x.locked=true); s.el.classList.add('no');
+    states.forEach(x=>{ if(x!==s) x.el.classList.add('dim'); });
+    flash('bad','¡Error! Nuevo intento',1000,()=>{ newRound(); });
+  }
+}
+window.addEventListener('resize',()=>{ if(!locked) newRound(); });
+document.getElementById('winBtn').onclick=()=>{ /* standalone */ };
+newRound();
+</script>
+<!--__quiz_bridge_done__-->
+<script>
+(function(){ if(window.top===window.self) return;
+  var P=new URLSearchParams(location.search); var isLast=P.get('last')==='1';
+  var st=document.createElement('style'); st.textContent='.topbar{display:none!important}'; document.head.appendChild(st);
+  var ov=document.getElementById('ovWin');
+  new MutationObserver(function(){ if(ov.classList.contains('show')) parent.postMessage({type:'quizPhaseDone',last:isLast},'*'); }).observe(ov,{attributes:true,attributeFilter:['class']});
+  var b=document.getElementById('winBtn'); if(b){ b.textContent=isLast?'Terminar quiz ▶':'Siguiente fase ▶'; b.onclick=function(){ parent.postMessage({type:'quizAdvanceNow'},'*'); }; }
+})();
+</script>
+</body>
+</html>

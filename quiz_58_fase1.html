@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz 5/8 · Fase 1 — El compás dispar</title>
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<style>
+:root{
+  --text:#f6f3ff; --muted:#cfc7f2; --paper:#f7f6ff; --ink:#16132b;
+  --line:rgba(255,255,255,.16);
+  --grad:linear-gradient(120deg,#a974ff 0%,#5bd0ff 22%,#34d399 44%,#ff9a3c 66%,#ff5ccd 84%,#a974ff 100%);
+  --font:"Helvetica Neue",Arial,system-ui,sans-serif;
+}
+*{box-sizing:border-box} html,body{margin:0;padding:0}
+body{ color:var(--text); font-family:var(--font); -webkit-font-smoothing:antialiased; line-height:1.45; min-height:100vh; position:relative; overflow-x:hidden;
+  background:linear-gradient(160deg,#241a52 0%,#180f3c 38%,#0e0a2c 72%,#080518 100%); background-attachment:fixed; }
+.sky{position:fixed;inset:-12% -8%;z-index:-1;filter:blur(40px) saturate(1.15);opacity:.92;pointer-events:none}
+.sky b{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:.55}
+.b1{width:46vw;height:42vw;left:-6%;top:-10%;background:#34d399;animation:drift1 19s ease-in-out infinite}
+.b2{width:44vw;height:40vw;right:-8%;top:-6%;background:#5bd0ff;animation:drift2 23s ease-in-out infinite}
+.b3{width:50vw;height:46vw;right:6%;bottom:-16%;background:#a974ff;animation:drift3 21s ease-in-out infinite}
+.b4{width:42vw;height:40vw;left:-4%;bottom:-14%;background:#ff9a3c;animation:drift4 25s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(7vw,5vh) scale(1.12)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-6vw,6vh) scale(1.1)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,-6vh) scale(1.14)}}
+@keyframes drift4{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,-5vh) scale(1.12)}}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 20px 64px;position:relative}
+.topbar{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.brand{font-size:22px;font-weight:900;letter-spacing:-.4px}
+.brand .a{color:var(--text)} .brand .h{color:var(--muted);font-weight:300}
+.gtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+
+.head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.kicker{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.title{font-size:30px;font-weight:900;letter-spacing:-.5px;margin:0}
+.lead{color:var(--muted);max-width:760px;margin:8px 0 6px;font-size:15.5px}
+.lead b{color:var(--text)}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+@media(max-width:760px){ .cards{grid-template-columns:1fr} }
+.exc{position:relative;background:linear-gradient(180deg, rgba(34,24,70,.62), rgba(16,11,40,.62));
+  border:1px solid var(--line);border-radius:18px;padding:16px 16px 18px;box-shadow:0 16px 44px rgba(0,0,0,.36);transition:transform .15s,border-color .15s}
+.exc:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.32)}
+.exc .lab{font-size:22px;font-weight:900;letter-spacing:.02em}
+.exc .sub{color:var(--muted);font-size:12.5px;margin-top:2px;min-height:2.4em}
+.exc .paper{background:var(--paper);border-radius:12px;padding:10px 8px;margin:12px 0 14px;display:flex;align-items:center;justify-content:center;min-height:96px;overflow:hidden}
+.exc .paper svg{display:block;width:100%;height:auto;max-height:84px}
+.playb{width:100%;font-family:inherit;font-weight:800;font-size:15px;color:#0b0a18;border:none;border-radius:12px;padding:11px;cursor:pointer;background:var(--grad);background-size:200% 200%;transition:transform .1s, filter .15s}
+.playb:hover{filter:brightness(1.06)} .playb:active{transform:scale(.98)}
+.playb.on{animation:pulseb 1.1s ease-in-out infinite}
+@keyframes pulseb{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
+
+.foot{display:flex;justify-content:center;margin-top:30px}
+.cbtn{font-family:inherit;font-weight:800;font-size:16px;color:#0b0a18;border:none;border-radius:14px;padding:12px 28px;cursor:pointer;background:var(--grad);background-size:200% 200%;box-shadow:0 10px 30px rgba(0,0,0,.34)}
+.cbtn:active{transform:scale(.98)}
+.note{color:var(--muted);font-size:13px;text-align:center;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="sky"><b class="b1"></b><b class="b2"></b><b class="b3"></b><b class="b4"></b></div>
+<div class="wrap">
+  <div class="topbar"><span class="brand"><span class="a">RITMO</span> <span class="h">at home · 4º GE</span></span></div>
+
+  <div class="head">
+    <span class="kicker">Fase 1 de 5 · el 5/8</span>
+  </div>
+  <h1 class="title gtext">El compás de cinco por ocho es <span style="white-space:nowrap">un compás dispar</span></h1>
+  <p class="lead">Se llama <b>dispar</b> porque sus pulsos <b>no son iguales</b>: se agrupan las cinco corcheas en
+  pulsos <b>desiguales</b>, uno largo (tres corcheas) y otro corto (dos corcheas). El orden puede cambiar — <b>3+2</b> o
+  <b>2+3</b> — e incluso repartirse en <b>tres pulsos</b> (1+2+2), como en el <b>zortziko</b> vasco.
+  Pulsa cada ejemplo y fíjate en cómo cambia el «cojeo».</p>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="foot"><button class="cbtn" id="continueBtn">He escuchado los tres · Continuar ▶</button></div>
+  <p class="note" id="foot">La corchea suena igual en los tres (mismo «motor»): lo que cambia es cómo se agrupan en pulsos.</p>
+</div>
+
+<script>
+/* ===== datos: agrupaciones del 5/8 ===== */
+const GROUPINGS=[
+  {key:'32', lab:'3 + 2', sub:'pulso largo, luego corto', pulses:[3,2]},
+  {key:'23', lab:'2 + 3', sub:'pulso corto, luego largo', pulses:[2,3]},
+  {key:'zk', lab:'1 + 2 + 2', sub:'zortziko vasco · tres pulsos', pulses:[1,2,2]},
+];
+const SE = 60/126;   // segundos por corchea (motor del 5/8, igual que la del 6/8 a 42)
+
+/* ===== audio ===== */
+let AC=null,MASTER=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function master(){ const c=ac(); if(!c)return null; if(!MASTER){ MASTER=c.createGain(); MASTER.gain.value=0.74; MASTER.connect(c.destination); } return MASTER; }
+function knock(t0,gain){ const c=ac(); if(!c)return; const m=master();
+  const len=Math.floor(c.sampleRate*0.018); const b=c.createBuffer(1,len,c.sampleRate); const d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.2);
+  const s=c.createBufferSource(); s.buffer=b; const g=c.createGain(); g.gain.value=(gain==null?0.5:gain);
+  const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1900; f.Q.value=0.8;
+  s.connect(f); f.connect(g); g.connect(m); s.start(t0); s.stop(t0+0.05); }
+const REF_FREQ=146.83;   // Re3 — tono neutro del cuerpo del ritmo
+function ritmoSound(t0,durSec,gain){ const c=ac(); if(!c)return; const out=master(); const peak=(gain==null?0.34:gain);
+  const aLen=Math.floor(c.sampleRate*0.012); const ab=c.createBuffer(1,aLen,c.sampleRate); const ad=ab.getChannelData(0);
+  for(let i=0;i<aLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/aLen,2.0);
+  const as=c.createBufferSource(); as.buffer=ab; const af=c.createBiquadFilter(); af.type='bandpass'; af.frequency.value=850; af.Q.value=.6;
+  const ag=c.createGain(); ag.gain.value=peak*1.0; as.connect(af); af.connect(ag); ag.connect(out); as.start(t0); as.stop(t0+0.03);
+  const sustain=Math.max(0.05,durSec-0.05);
+  const o=c.createOscillator(); o.type='sine'; o.frequency.value=REF_FREQ; const g=c.createGain(); o.connect(g); g.connect(out);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.01);
+  g.gain.setValueAtTime(peak*0.42,t0+Math.max(0.05,sustain*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
+  o.start(t0); o.stop(t0+sustain+0.03); }
+
+/* ===== reproducción con stepper: para en el acto, solo una a la vez, ilumina la corchea ===== */
+let stepTimer=null, curEx=null;
+function noteEl(n){ try{ if(n.getSVGElement) return n.getSVGElement(); }catch(e){} try{ return n.attrs && n.attrs.el; }catch(e){} return null; }
+function clearHL(ex){ const e=ex||curEx; if(e&&e.noteEls){ e.noteEls.forEach(el=>{ if(el) el.querySelectorAll('path,rect').forEach(p=>p.setAttribute('fill','#16132b')); }); } }
+function highlight(ex, ni){ ex.noteEls.forEach((el,i)=>{ if(!el)return; el.querySelectorAll('path,rect').forEach(p=>p.setAttribute('fill', i===ni?'#ff5ccd':'#16132b')); }); }
+function stopPlay(){ if(stepTimer){ clearTimeout(stepTimer); stepTimer=null; } if(curEx){ clearHL(curEx); curEx.btn.classList.remove('on'); curEx.btn.textContent='▶ Escuchar'; curEx=null; } }
+function buildEvents(pulses){ const evs=[]; for(let rep=0;rep<2;rep++){ let ni=0; pulses.forEach((L,pi)=>{ for(let k=0;k<L;k++){ evs.push({ni, strong:(k===0), down:(pi===0)}); ni++; } }); } return evs; }
+function playGrouping(ex){
+  const wasThis=(curEx===ex); stopPlay(); if(wasThis) return;   // re-pulsar = parar; otra = interrumpe
+  ac(); curEx=ex; ex.btn.classList.add('on'); ex.btn.textContent='⏸ Pausa';
+  const evs=buildEvents(ex.pulses); let i=0;
+  (function step(){ if(i>=evs.length){ stopPlay(); return; } const ev=evs[i++]; const c=ac(); const t=c.currentTime+0.02;
+    if(ev.strong) knock(t, ev.down?0.62:0.5);
+    ritmoSound(t, SE, ev.strong?0.5:0.34);
+    highlight(ex, ev.ni);
+    stepTimer=setTimeout(step, SE*1000);
+  })();
+}
+
+/* ===== mini pentagrama: render vivo, devuelve refs de las cabezas ===== */
+function renderMini(host, pulses){
+  try{
+    const VF=Vex.Flow; const W=264, H=120, SY=44;
+    const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(W,H); const ctx=r.getContext();
+    const st=new VF.Stave(6,SY,W-14); st.addClef('treble').addTimeSignature('5/8'); st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw();
+    const vf=[]; for(let i=0;i<5;i++) vf.push(new VF.StaveNote({clef:'treble',keys:['b/4'],duration:'8'}));
+    const beams=[]; let idx=0;
+    pulses.forEach(L=>{ if(L>=2){ beams.push(new VF.Beam(vf.slice(idx,idx+L))); } idx+=L; });
+    const voice=new VF.Voice({num_beats:5,beat_value:8}).setStrict(false); voice.addTickables(vf);
+    let startX=6+58; try{ startX=st.getNoteStartX(); }catch(e){}
+    new VF.Formatter().joinVoices([voice]).format([voice], Math.max(70,(6+(W-14))-startX-16)); voice.draw(ctx,st);
+    beams.forEach(b=>{ try{ b.setContext(ctx).draw(); }catch(e){} });
+    const svg=host.querySelector('svg'); const bot=st.getYForLine(4)+16;
+    const xs=vf.map(n=>{ try{return n.getAbsoluteX();}catch(e){return 0;} });
+    let acc=0;
+    pulses.forEach((L,pi)=>{ const xA=xs[acc]-7, xB=xs[acc+L-1]+7;
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d',`M ${xA} ${bot-5} L ${xA} ${bot} L ${xB} ${bot} L ${xB} ${bot-5}`);
+      path.setAttribute('fill','none'); path.setAttribute('stroke', pi===0?'#34d399':'#5bd0ff'); path.setAttribute('stroke-width','2');
+      svg.appendChild(path); acc+=L; });
+    if(svg){ const top=st.getYForLine(0)-20; svg.setAttribute('viewBox',`0 ${top} ${W} ${bot+12-top}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height'); }
+    return vf.map(noteEl);
+  }catch(e){ host.innerHTML='<div style="color:#999;font-size:12px">—</div>'; return []; }
+}
+
+/* ===== construir ===== */
+function build(){
+  const host=document.getElementById('cards'); host.innerHTML='';
+  GROUPINGS.forEach(g=>{
+    const el=document.createElement('div'); el.className='exc';
+    el.innerHTML=`<div class="lab">${g.lab}</div><div class="sub">${g.sub}</div><div class="paper"></div><button class="playb">▶ Escuchar</button>`;
+    const noteEls=renderMini(el.querySelector('.paper'), g.pulses);
+    const btn=el.querySelector('.playb');
+    const ex={g, btn, noteEls, pulses:g.pulses};
+    btn.onclick=()=>{ ac(); playGrouping(ex); };
+    host.appendChild(el);
+  });
+}
+build();
+
+document.getElementById('continueBtn').onclick=()=>{ stopPlay(); /* standalone: no hace nada extra */ };
+</script>
+<!--__quiz_bridge_done__-->
+<script>
+/* ===== puente de embebido ===== */
+(function(){
+  if(window.top===window.self) return;
+  var P=new URLSearchParams(location.search); var isLast=P.get('last')==='1';
+  var st=document.createElement('style'); st.textContent='.topbar{display:none!important}'; document.head.appendChild(st);
+  var b=document.getElementById('continueBtn');
+  if(b){ b.textContent=isLast?'Terminar quiz ▶':'Siguiente fase ▶';
+    b.onclick=function(){ parent.postMessage({type:'quizAdvanceNow'},'*'); }; }
+})();
+</script>
+</body>
+</html>

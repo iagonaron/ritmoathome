@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz 5/8 · Fase 4 — Escribe un 5/8</title>
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<style>
+:root{ --text:#f6f3ff; --muted:#cfc7f2; --paper:#f7f6ff; --ink:#16132b;
+  --line:rgba(255,255,255,.16);
+  --grad:linear-gradient(120deg,#a974ff 0%,#5bd0ff 22%,#34d399 44%,#ff9a3c 66%,#ff5ccd 84%,#a974ff 100%);
+  --font:"Helvetica Neue",Arial,system-ui,sans-serif; }
+*{box-sizing:border-box} html,body{margin:0;padding:0}
+body{ color:var(--text); font-family:var(--font); -webkit-font-smoothing:antialiased; line-height:1.45; min-height:100vh; position:relative; overflow-x:hidden;
+  background:linear-gradient(160deg,#241a52 0%,#180f3c 38%,#0e0a2c 72%,#080518 100%); background-attachment:fixed; }
+.sky{position:fixed;inset:-12% -8%;z-index:-1;filter:blur(40px) saturate(1.15);opacity:.9;pointer-events:none}
+.sky b{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:.5}
+.b1{width:46vw;height:42vw;left:-6%;top:-10%;background:#34d399;animation:d1 19s ease-in-out infinite}
+.b2{width:44vw;height:40vw;right:-8%;top:-6%;background:#5bd0ff;animation:d2 23s ease-in-out infinite}
+.b3{width:50vw;height:46vw;right:6%;bottom:-16%;background:#a974ff;animation:d3 21s ease-in-out infinite}
+.b4{width:42vw;height:40vw;left:-4%;bottom:-14%;background:#ff9a3c;animation:d4 25s ease-in-out infinite}
+@keyframes d1{0%,100%{transform:translate(0,0)}50%{transform:translate(7vw,5vh)}}
+@keyframes d2{0%,100%{transform:translate(0,0)}50%{transform:translate(-6vw,6vh)}}
+@keyframes d3{0%,100%{transform:translate(0,0)}50%{transform:translate(-5vw,-6vh)}}
+@keyframes d4{0%,100%{transform:translate(0,0)}50%{transform:translate(6vw,-5vh)}}
+.wrap{max-width:900px;margin:0 auto;padding:22px 20px 64px;position:relative}
+.topbar{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.brand{font-size:22px;font-weight:900;letter-spacing:-.4px}
+.brand .a{color:var(--text)} .brand .h{color:var(--muted);font-weight:300}
+.gtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.kicker{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.title{font-size:27px;font-weight:900;letter-spacing:-.5px;margin:4px 0 0}
+.lead{color:var(--muted);max-width:680px;margin:8px 0 4px;font-size:15px}
+.meta{display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin:12px 0 0}
+.dots{display:flex;gap:7px}
+.dot{width:15px;height:15px;border-radius:50%;background:rgba(255,255,255,.14);transition:.25s}
+.dot.on{background:var(--grad);transform:scale(1.12)}
+.staff{background:var(--paper);border-radius:14px;box-shadow:0 14px 36px rgba(0,0,0,.34);padding:16px 14px;margin:14px 0;min-height:104px;display:flex;align-items:center;justify-content:center;overflow-x:auto}
+.staff svg{display:block;height:auto;max-height:96px}
+.staff .empty{color:#9a93b8;font-size:14px}
+.pad{display:flex;gap:8px;justify-content:center;flex-wrap:nowrap}
+.fig{flex:1 1 0;min-width:0;background:var(--paper);border:none;border-radius:12px;height:76px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:6px;transition:.12s;box-shadow:0 6px 16px rgba(0,0,0,.28)}
+.fig:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.34)} .fig:active{transform:scale(.96)}
+.fig svg{height:58px;width:auto;max-width:100%}
+.row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.btn{font-family:inherit;font-weight:800;font-size:15px;border:none;border-radius:13px;padding:11px 18px;cursor:pointer}
+.btn.ghost{background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--text)}
+.btn.go{color:#0b0a18;background:var(--grad);box-shadow:0 10px 28px rgba(0,0,0,.32)}
+.btn:active{transform:scale(.98)}
+.verdict{text-align:center;margin-top:16px;min-height:1.5em;font-size:16px;font-weight:700;line-height:1.4}
+.verdict.ok{color:#34d399} .verdict.no{color:#ff7a93} .verdict.warn{color:#ffd27a}
+.ov{position:fixed;inset:0;background:rgba(8,5,24,.72);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
+.ov.show{display:flex}
+.cartel{background:linear-gradient(180deg,#241a52,#140d36);border:1px solid var(--line);border-radius:20px;padding:26px 30px;max-width:440px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.cartel h1{margin:.2em 0;font-size:26px}
+.badge{display:inline-block;font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:#0b0a18;background:var(--grad);border-radius:999px;padding:4px 12px;font-weight:800}
+.cbtn{font-family:inherit;font-weight:800;font-size:16px;color:#0b0a18;border:none;border-radius:14px;padding:12px 26px;cursor:pointer;background:var(--grad);box-shadow:0 10px 30px rgba(0,0,0,.34)}
+</style>
+</head>
+<body>
+<div class="sky"><b class="b1"></b><b class="b2"></b><b class="b3"></b><b class="b4"></b></div>
+<div class="wrap">
+  <div class="topbar"><span class="brand"><span class="a">RITMO</span> <span class="h">at home · 4º GE</span></span></div>
+  <span class="kicker">Fase 4 de 5 · el 5/8</span>
+  <h1 class="title gtext">Escribe un compás de 5/8</h1>
+  <p class="lead">Añade figuras hasta que creas que completas <b>un 5/8</b>. No te diré si te sobra o te falta: cuando lo tengas, pulsa <b>Validar</b>. Y cada compás debe ser <b>realmente distinto</b> del anterior.</p>
+  <div class="meta"><span>Compás en 5/8 · clave de Sol</span><div class="dots" id="dots"></div></div>
+  <div class="staff" id="staff"><span class="empty">Toca figuras abajo para empezar…</span></div>
+  <div class="pad" id="pad"></div>
+  <div class="row">
+    <button class="btn ghost" id="undoBtn">◀ Borrar última</button>
+    <button class="btn ghost" id="clearBtn">Limpiar</button>
+    <button class="btn go" id="validateBtn">Validar ✓</button>
+  </div>
+  <div class="verdict" id="verdict"></div>
+</div>
+<div class="ov" id="ovWin"><div class="cartel">
+  <div class="badge">Fase superada</div>
+  <h1>¡Sabes construir un 5/8!</h1>
+  <p style="color:var(--muted)">Tres compases completos y distintos, exactos a cinco corcheas.</p>
+  <div style="margin-top:14px"><button class="cbtn" id="winBtn">Continuar ▶</button></div>
+</div></div>
+
+<script>
+const VF=Vex.Flow;
+/* ===== audio ===== */
+let AC=null,MASTER=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function master(){ const c=ac(); if(!c)return null; if(!MASTER){ MASTER=c.createGain(); MASTER.gain.value=0.74; MASTER.connect(c.destination); } return MASTER; }
+function knock(t0,gain){ const c=ac(); if(!c)return; const m=master();
+  const len=Math.floor(c.sampleRate*0.018); const b=c.createBuffer(1,len,c.sampleRate); const d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.2);
+  const s=c.createBufferSource(); s.buffer=b; const g=c.createGain(); g.gain.value=(gain==null?0.5:gain);
+  const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1900; f.Q.value=0.8; s.connect(f); f.connect(g); g.connect(m); s.start(t0); s.stop(t0+0.05); }
+function ritmoSound(t0,durSec,gain){ const c=ac(); if(!c)return; const out=master(); const peak=(gain==null?0.34:gain);
+  const aLen=Math.floor(c.sampleRate*0.012); const ab=c.createBuffer(1,aLen,c.sampleRate); const ad=ab.getChannelData(0);
+  for(let i=0;i<aLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/aLen,2.0);
+  const as=c.createBufferSource(); as.buffer=ab; const af=c.createBiquadFilter(); af.type='bandpass'; af.frequency.value=850; af.Q.value=.6;
+  const ag=c.createGain(); ag.gain.value=peak; as.connect(af); af.connect(ag); ag.connect(out); as.start(t0); as.stop(t0+0.03);
+  const sustain=Math.max(0.05,durSec-0.05); const o=c.createOscillator(); o.type='sine'; o.frequency.value=146.83; const g=c.createGain(); o.connect(g); g.connect(out);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.01);
+  g.gain.setValueAtTime(peak*0.42,t0+Math.max(0.05,sustain*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain); o.start(t0); o.stop(t0+sustain+0.03); }
+
+/* ===== figuras INDIVIDUALES del pad ===== */
+const DUR={h:2,q:1,'8':.5,'16':.25};
+const PAD=[
+  {d:'q',         t:'negra'},
+  {d:'q',dot:1,   t:'negra c/p'},
+  {d:'h',         t:'blanca'},
+  {d:'8',         t:'corchea'},
+  {d:'16',        t:'semicorchea'},
+  {d:'q',rest:1,  t:'sil. de negra'},
+  {d:'8',rest:1,  t:'sil. de corchea'},
+  {d:'16',rest:1, t:'sil. de semic.'},
+];
+let seq=[];
+function tokQ(f){ let v=DUR[f.d]; if(f.dot)v*=1.5; return v; }
+function sumQ(){ return seq.reduce((s,f)=>s+tokQ(f),0); }
+
+/* ===== glifo individual (VexFlow sobre mini-papel, negro sobre blanco) ===== */
+function figGlyph(tok){
+  const host=document.createElement('div');
+  try{
+    const W=70,H=86;
+    const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(W,H); const ctx=r.getContext();
+    const st=new VF.Stave(2,30,64); st.setContext(ctx);            // sin draw -> sin pentagrama
+    const n=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:tok.d+(tok.rest?'r':'')});
+    if(tok.dot&&!tok.rest){ try{VF.Dot.buildAndAttach([n],{all:true});}catch(e){} }
+    const voice=new VF.Voice({num_beats:4,beat_value:4}).setStrict(false); voice.addTickables([n]);
+    new VF.Formatter().joinVoices([voice]).format([voice], 26); voice.draw(ctx,st);
+    const svg=host.querySelector('svg'); let vb='20 6 30 70';
+    try{ const bb=n.getBoundingBox(); if(bb){ const x=(bb.x!=null?bb.x:bb.getX()), y=(bb.y!=null?bb.y:bb.getY()), w=(bb.w!=null?bb.w:bb.getW()), h=(bb.h!=null?bb.h:bb.getH()); const p=8; vb=(x-p)+' '+(y-p)+' '+(w+2*p)+' '+(h+2*p); } }catch(e){}
+    if(svg){ svg.setAttribute('viewBox',vb); svg.removeAttribute('width'); svg.removeAttribute('height'); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); }
+    return host.innerHTML;
+  }catch(e){ return tok.t; }
+}
+
+/* ===== render del compás escrito (sin pistas de relleno) ===== */
+function draw(){
+  const host=document.getElementById('staff'); host.innerHTML='';
+  if(!seq.length){ host.innerHTML='<span class="empty">Toca figuras abajo para empezar…</span>'; return; }
+  try{
+    const W=Math.max(180, 80+seq.length*32), H=104, SY=26;
+    const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(W,H); const ctx=r.getContext();
+    const st=new VF.Stave(4,SY,W-10); st.addClef('treble').addTimeSignature('5/8'); st.setContext(ctx).draw();
+    const notes=seq.map(f=>{ const n=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:f.d+(f.rest?'r':'')}); if(f.dot&&!f.rest){ try{VF.Dot.buildAndAttach([n],{all:true});}catch(e){} } return n; });
+    const beams=[]; let run=[]; function flush(){ if(run.length>=2) beams.push(new VF.Beam(run)); run=[]; }
+    seq.forEach((f,i)=>{ if((f.d==='8'||f.d==='16')&&!f.rest){ run.push(notes[i]); } else flush(); }); flush();
+    const total=Math.max(sumQ(),0.25);
+    const voice=new VF.Voice({num_beats:total,beat_value:4}).setStrict(false); voice.addTickables(notes);
+    let startX=60; try{ startX=st.getNoteStartX(); }catch(e){}
+    new VF.Formatter().joinVoices([voice]).format([voice], Math.max(60,(4+(W-10))-startX-14)); voice.draw(ctx,st);
+    beams.forEach(b=>{ try{b.setContext(ctx).draw();}catch(e){} });
+    const svg=host.querySelector('svg'); if(svg){ svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.removeAttribute('width'); }
+  }catch(e){ host.innerHTML='<span class="empty">—</span>'; }
+}
+
+/* ===== reproducir lo escrito (cada figura suena; acentos en 0 y 1.5) ===== */
+function playSeq(){
+  const c=ac(); if(!c)return; const secQ=60/63;
+  let t=c.currentTime+0.08, acc=0; const pulses=[0,1.5];
+  seq.forEach(f=>{ const dq=tokQ(f); const strong=pulses.some(p=>Math.abs(p-acc)<0.02);
+    if(strong) knock(t, acc===0?0.6:0.5);
+    if(!f.rest) ritmoSound(t, dq*secQ, strong?0.44:0.34);
+    t+=dq*secQ; acc+=dq;
+  });
+}
+
+/* ===== anti-repetición ===== */
+const history=[];   // {exact, ms}
+function keyExact(s){ return s.map(f=>(f.rest?'r':'n')+(DUR[f.d]*(f.dot?1.5:1))).join(','); }
+function keyMs(s){ return s.map(f=>(f.rest?'r':'n')+(DUR[f.d]*(f.dot?1.5:1))).sort().join(','); }
+
+/* ===== rondas ===== */
+let solved=0;
+function setDots(){ const host=document.getElementById('dots'); host.innerHTML=''; for(let i=0;i<3;i++){ const d=document.createElement('div'); d.className='dot'+(i<solved?' on':''); host.appendChild(d); } }
+function add(tok){ seq.push(Object.assign({},tok)); document.getElementById('verdict').textContent=''; draw(); }
+function buildPad(){ const host=document.getElementById('pad'); host.innerHTML=''; PAD.forEach(p=>{ const b=document.createElement('button'); b.className='fig'; b.innerHTML=figGlyph(p); b.title=p.t; b.onclick=()=>{ ac(); add(p); }; host.appendChild(b); }); }
+document.getElementById('undoBtn').onclick=()=>{ seq.pop(); document.getElementById('verdict').textContent=''; draw(); };
+document.getElementById('clearBtn').onclick=()=>{ seq=[]; document.getElementById('verdict').textContent=''; draw(); };
+document.getElementById('validateBtn').onclick=()=>{
+  const v=document.getElementById('verdict'); const s=sumQ();
+  if(Math.abs(s-2.5)>=0.001){ v.className='verdict no'; v.textContent='✗ No. Ese compás no suma un 5/8 (cinco corcheas). Revisa y vuelve a intentarlo.'; return; }
+  const ke=keyExact(seq), km=keyMs(seq);
+  if(history.some(h=>h.exact===ke)){ v.className='verdict warn'; v.textContent='⚠ Es exactamente igual a uno que ya escribiste. Haz uno realmente distinto.'; return; }
+  if(history.some(h=>h.ms===km)){ v.className='verdict warn'; v.textContent='⚠ Técnicamente es distinto, pero se parece muchísimo (las mismas figuras en otro orden). Piensa una combinación realmente diferente.'; return; }
+  history.push({exact:ke, ms:km}); v.className='verdict ok'; v.textContent='✓ ¡Sí! Eso es un 5/8 (cinco corcheas exactas).'; playSeq(); solved++; setDots();
+  setTimeout(()=>{ if(solved>=3){ document.getElementById('ovWin').classList.add('show'); } else { seq=[]; draw(); v.className='verdict ok'; v.textContent='Bien. Ahora escribe un 5/8 DISTINTO.'; } },1100);
+};
+buildPad(); setDots(); draw();
+document.getElementById('winBtn').onclick=()=>{ /* standalone */ };
+</script>
+<!--__quiz_bridge_done__-->
+<script>
+(function(){ if(window.top===window.self) return;
+  var P=new URLSearchParams(location.search); var isLast=P.get('last')==='1';
+  var st=document.createElement('style'); st.textContent='.topbar{display:none!important}'; document.head.appendChild(st);
+  var ov=document.getElementById('ovWin');
+  new MutationObserver(function(){ if(ov.classList.contains('show')) parent.postMessage({type:'quizPhaseDone',last:isLast},'*'); }).observe(ov,{attributes:true,attributeFilter:['class']});
+  var b=document.getElementById('winBtn'); if(b){ b.textContent=isLast?'Terminar quiz ▶':'Siguiente fase ▶'; b.onclick=function(){ parent.postMessage({type:'quizAdvanceNow'},'*'); }; }
+})();
+</script>
+</body>
+</html>
