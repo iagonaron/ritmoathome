@@ -48,6 +48,9 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 .bar-fill{height:100%;width:0%;border-radius:999px;background:var(--grad);background-size:200% 100%;transition:width .5s cubic-bezier(.2,.9,.3,1);animation:slide 20s linear infinite}
 .bar-fill.bad{background:linear-gradient(120deg,#ff5c72,#ff2d6a)!important;animation:none}
 .bar-seg{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25)}
+/* modo extremo: es UNA sola tirada de corrido → barra CONTINUA, sin las
+   marcas de 3 rondas (que hacían pensar en "tres fases" y agobiaban) */
+body.fire .bar-seg{display:none}
 @keyframes slide{to{background-position:200% 0}}
 .bar-tag{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
 
@@ -287,7 +290,16 @@ body.fire .green-cap{background:#ff4d00;box-shadow:0 0 16px rgba(255,90,0,.9)}
   <div class="studyvars" id="studyVars"></div>
   <div class="booknote">📖 <b>Recuerda:</b> tienes pendiente la lección del <b>libro</b> que te puso el profe. Jugar está genial, pero <b>esto es el trabajo de verdad</b> — no te lo saltes.
     <span class="soon">(este aviso solo aparecerá a los alumnos vinculados a un usuario · pendiente de enlazar con tus tablas de clase)</span></div>
-  <div class="cbtns"><button class="cbtn" id="studyGoBtn">Empezar la lección ▶</button><button class="cbtn ghost" id="studyResetBtn">Reiniciar prototipo</button></div>
+  <div class="cbtns" id="studyBtns"><button class="cbtn" id="studyBookBtn" style="display:none">📖 Ver lecciones pendientes</button><button class="cbtn ghost" id="studyGoBtn">Generar ejercicio con estas dificultades ▶</button></div>
+</div></div>
+
+<!-- FASE 7.1 · galería de lecciones del libro (capturas subidas por el profe desde el Diario) -->
+<div class="ov" id="ovLecciones"><div class="cartel wide" style="max-height:88vh;display:flex;flex-direction:column">
+  <div class="badge">Del libro</div>
+  <h1 style="margin-bottom:6px">Tus lecciones pendientes</h1>
+  <p class="sub" style="margin-top:0">Esto es lo que el profe quiere que trabajes esta semana.</p>
+  <div id="leccionesHost" style="flex:1 1 auto;overflow:auto;display:flex;flex-direction:column;gap:14px;padding:4px 2px 10px;-webkit-overflow-scrolling:touch"></div>
+  <div class="cbtns" style="margin-top:12px"><button class="cbtn ghost" id="leccionesBackBtn">← Volver</button></div>
 </div></div>
 
 <script>
@@ -525,6 +537,8 @@ function musPos(now){ const A=musAnchors; if(!A.length) return -LEAD_PULSES;
   return a.p + (now-a.t)/effSecPerPulse(); }
 function frame(){ if(!running) return; const now=ac().currentTime, mp=musPos(now), sp=effSecPerPulse();
   document.getElementById('track').style.transform='translateX('+(GREEN_X - mp*PXPERPULSE)+'px)';
+  // modo extremo: la barra avanza de forma CONTINUA con la pista (una sola tirada)
+  if(extremeMode){ document.getElementById('barFill').style.width=Math.max(0,Math.min(100,(mp/lastP)*100))+'%'; }
   for(let i=0;i<attacks.length;i++){ const a=attacks[i]; if(!a.matched && !a.missed){ if(mp > a.tP+VIS_DELAY_P + TOL/sp){ a.missed=true; lineRed(); } } }
   roundsMeta.forEach(m=>{ if(!m.done && mp > m.boundaryP + 0.35){ m.done=true; evalRound(m); } });
   if(mp > lastP + 0.5){ finishQuiz(); return; }
@@ -664,7 +678,29 @@ function studyScreen(){ extremeMode=false; document.body.classList.remove('fire'
   ['ovWin','ovExtResult','ovResult','ovExtWarn'].forEach(id=>document.getElementById(id).classList.remove('show'));
   const host=document.getElementById('studyVars'); host.innerHTML='';
   CARD.cells.forEach((toks,i)=>{ const d=document.createElement('div'); d.className='svar'; d.innerHTML=`<span>Ritmo ${i+1}</span>`+renderPreview(toks.concat(['qd'])); host.appendChild(d); });
+  // FASE 7.1 · lecciones del libro (capturas subidas por Iago desde el Diario,
+  // llegan por _CFG.lecciones): botón protagonista + nota ajustada
+  const LECC=(_CFG && Array.isArray(_CFG.lecciones)) ? _CFG.lecciones : [];
+  const bk=document.getElementById('studyBookBtn'), note=document.querySelector('#ovStudy .booknote');
+  if(LECC.length){
+    bk.style.display='';
+    bk.textContent='📖 Ver lecciones pendientes ('+LECC.length+')';
+    if(note) note.innerHTML='📖 <b>Recuerda:</b> el profe te ha dejado <b>'+LECC.length+(LECC.length===1?' lección':' lecciones')+' del libro</b> para trabajar esta semana. Jugar está genial, pero <b>esto es el trabajo de verdad</b> — las tienes en el botón de abajo.';
+  } else {
+    bk.style.display='none';
+    if(note) note.innerHTML='📖 <b>Recuerda:</b> tienes pendiente la lección del <b>libro</b> que te puso el profe. Jugar está genial, pero <b>esto es el trabajo de verdad</b> — no te lo saltes.';
+  }
   document.getElementById('ovStudy').classList.add('show');
+}
+function mostrarLecciones(){
+  const LECC=(_CFG && Array.isArray(_CFG.lecciones)) ? _CFG.lecciones : [];
+  const host=document.getElementById('leccionesHost'); host.innerHTML='';
+  LECC.forEach((url,i)=>{ const w=document.createElement('div');
+    w.innerHTML='<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#ffb86b;margin:0 0 5px 2px">Lección '+(i+1)+'</div>'+
+      '<img src="'+url+'" alt="Lección '+(i+1)+'" style="display:block;width:100%;height:auto;border-radius:10px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.35)" loading="lazy">';
+    host.appendChild(w); });
+  document.getElementById('ovStudy').classList.remove('show');
+  document.getElementById('ovLecciones').classList.add('show');
 }
 
 /* ===== controles ===== */
@@ -691,7 +727,7 @@ if(isTouch) document.body.classList.add('touch');
 function padHit(e){ e.preventDefault(); ac(); onTap(); }
 document.getElementById('padL').addEventListener('pointerdown',padHit);
 document.getElementById('padR').addEventListener('pointerdown',padHit);
-function anyOvShown(){ return ['ovResult','ovWin','ovExtWarn','ovExtResult','ovStudy'].some(id=>document.getElementById(id).classList.contains('show')); }
+function anyOvShown(){ return ['ovResult','ovWin','ovExtWarn','ovExtResult','ovStudy','ovLecciones'].some(id=>document.getElementById(id).classList.contains('show')); }
 window.addEventListener('keydown',e=>{ if(e.code!=='Space') return; e.preventDefault(); ac();
   if(running){ onTap(); } else if(!anyOvShown()){ startQuiz(); } });
 // win → elegir reto extremo o terminar
@@ -700,8 +736,10 @@ document.getElementById('toStudyBtn').onclick=()=>studyScreen();
 document.getElementById('extGoBtn').onclick=()=>startExtreme();
 document.getElementById('extNoBtn').onclick=()=>document.getElementById('ovExtWarn').classList.remove('show');
 document.getElementById('extDoneBtn').onclick=()=>studyScreen();
-document.getElementById('studyGoBtn').onclick=()=>{ const b=document.getElementById('studyGoBtn'); b.textContent='Abriendo modo estudio…'; setTimeout(()=>{ b.textContent='(En la app real: Ritmo aislado · Lectura · Entonación)'; },700); };
-document.getElementById('studyResetBtn').onclick=()=>{ extremeMode=false; document.body.classList.remove('fire'); document.getElementById('faseTitle').textContent='Sigue el ritmo'; ['ovStudy','ovWin','ovResult','ovExtResult','ovExtWarn'].forEach(id=>document.getElementById(id).classList.remove('show')); roundsPassed=0; document.getElementById('track').innerHTML=''; resetSegs(); updateBar(); document.getElementById('hint').textContent='Pulsa «Empezar» o la barra espaciadora.'; };
+document.getElementById('studyGoBtn').onclick=()=>{ const b=document.getElementById('studyGoBtn'); b.textContent='Generando ejercicio…'; setTimeout(()=>{ b.textContent='(En la app real: Ritmo aislado · Lectura · Entonación)'; },700); };
+// FASE 7.1 · galería de lecciones del libro
+document.getElementById('studyBookBtn').onclick=()=>mostrarLecciones();
+document.getElementById('leccionesBackBtn').onclick=()=>{ document.getElementById('ovLecciones').classList.remove('show'); document.getElementById('ovStudy').classList.add('show'); };
 window.addEventListener('resize',()=>{ drawStaff(); if(!running) document.getElementById('track').innerHTML=''; });
 
 /* init */

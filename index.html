@@ -5019,6 +5019,8 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       bpmComp: compound?bpmPulse:42,         // referencia c/puntillo (para fases que lo usan)
       bpmSimple: Math.round(1/ (spq/60) ),   // bpm de negra = 60/spq
       bpmExtreme: Math.round(bpmPulse*(70/42)),
+      // FASE 7.1 · capturas del libro del envío del profe (llegan a la fase 5)
+      lecciones: (window.__SUITE_QUIZ_LECCIONES||[]),
       cells: cells.map(ce=>({ts:ce.ts, beat:ce.beat, notes:(ce.notes||[]).slice(), beams:(ce.beams||[]).map(b=>b.slice()), ties:(ce.ties||[]).map(t=>t.slice())}))
     };
   }
@@ -5174,12 +5176,24 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     }finally{ _enviando=false; }
   }
 
-  function autoArranque(){
+  async function autoArranque(){
     if(!CARTA) return;
     const hit=buscarCarta(CARTA);
     if(!hit){ console.warn('[suite-quiz] carta no encontrada:', CARTA); return; }
-    // precalienta supabase en segundo plano (el aviso llegará al final)
-    if(ENVIO && CUENTA) sb();
+    // FASE 7.1 · traer las capturas del libro del envío ANTES de lanzar
+    // (van dentro del cfg que viaja a las fases; máx. 2,5 s de espera)
+    if(ENVIO && CUENTA){
+      try{
+        const c=await Promise.race([ sb(), new Promise(r=>setTimeout(()=>r(null),2500)) ]);
+        if(c){
+          const { data } = await Promise.race([
+            c.rpc('suite_quiz_lecciones_de',{ p_envio_id:ENVIO }),
+            new Promise(r=>setTimeout(()=>r({data:null}),2500))
+          ]);
+          if(data && data.ok===true && Array.isArray(data.lecciones)) window.__SUITE_QUIZ_LECCIONES=data.lecciones;
+        }
+      }catch(e){ console.warn('[suite-quiz] lecciones', e); }
+    }
     // lanza el quiz directamente sobre lo que haya (overlay a pantalla completa)
     setTimeout(()=>{ try{ if(window.launchCardQuiz) window.launchCardQuiz(hit.c, hit.w.id); }catch(e){ console.error('[suite-quiz] lanzar', e); } }, 120);
   }
