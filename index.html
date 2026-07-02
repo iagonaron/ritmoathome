@@ -441,11 +441,11 @@ footer .lock{color:var(--gold1);}
 .setup-card.on{border-color:var(--gold1);box-shadow:0 0 0 1px var(--gold1) inset,0 8px 22px rgba(212,175,55,.16);}
 .setup-card.base{cursor:default;}
 .setup-card.disabled{opacity:.4;pointer-events:none;filter:grayscale(.5);}
-.setup-card .sc-head{display:flex;align-items:flex-start;gap:8px;min-height:2.5em;padding-right:26px;}
+.setup-card .sc-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .setup-card .c-chk{width:17px;height:17px;flex:0 0 17px;border:1.5px solid var(--line);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all .12s;}
 .setup-card.on .c-chk{background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-color:var(--gold1);color:#06281b;}
 .setup-card.base .c-chk{background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-color:var(--gold1);color:#06281b;opacity:.7;}
-.setup-card .c-n{font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:-.2px;flex:1 1 auto;line-height:1.18;}
+.setup-card .c-n{font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:-.2px;}
 .setup-card.on .c-n{color:var(--gold-soft);}
 .setup-card .gp1-tag{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);background:rgba(212,175,55,.08);border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-weight:700;margin-left:auto;}
 .setup-card.multi .gp1-tag{color:var(--gold-soft);}
@@ -4995,31 +4995,10 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     {file:'quiz_fase4_proto.html',    name:'Escucha y escribe'},
     {file:'quiz_fase5_proto.html',    name:'Sigue el ritmo'},
   ];
-  // quiz DEDICADO al 5/8 (compás dispar): fases propias 1-4 + boss normal reutilizado
-  const PHASES_58=[
-    {file:'quiz_58_fase1.html', name:'El compás dispar'},
-    {file:'quiz_58_fase2.html', name:'¿Cuál es el 5/8?'},
-    {file:'quiz_58_fase3.html', name:'Caza los 5/8'},
-    {file:'quiz_58_fase4.html', name:'Escribe un 5/8'},
-    {file:'quiz_58_fase5.html', name:'Sigue el pulso'},
-  ];
-  let curPhases=PHASES;
-  let ov=null, frame=null, stepsEl=null, idx=0, done=[], maxReached=0, cfgB64='', qCard=null, qWorld=null;
-
-  // al terminar el quiz: seleccionar SOLO esa carta de ese mundo y entrar a una lección generada (como "Generar lectura")
-  function finishToLesson(){
-    if(!qCard || !qWorld){ close(); return; }
-    try{
-      gp1Mode='uno'; gp1WorldId=qWorld; gp1ActiveCards=[qCard.id]; gp1WorldB=null; gp1CardsB=[];
-      close();
-      enterAppGP1();
-    }catch(e){ console.error('quiz->leccion',e); close(); }
-  }
+  let ov=null, frame=null, stepsEl=null, idx=0, done=[], maxReached=0, cfgB64='';
 
   // ---- config por carta (células + compás + parámetros métricos + fillers + tempo del esquema) ----
   function cardQuizConfig(card){
-    const DQ={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125};
-    const dq=t=>{ let s=(''+t).replace('r',''); let dot=false; if(s.endsWith('d')){dot=true;s=s.slice(0,-1);} let v=DQ[s]!=null?DQ[s]:1; return dot?v*1.5:v; };
     const cells=(card.cells||[]).filter(ce=>!ce.equiv);
     const meas=(cells[0]&&cells[0].ts)||'6/8';
     const [N,D]=meas.split('/').map(Number);
@@ -5031,24 +5010,10 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     else if(D===2){ pulsesPerMeas=N; pulseQ=2; given='h'; fillers=[['h'],['q','q'],['q','8','8'],['8','8','q']]; bpmPulse=50; spq=(60/50)/2; }
     else if(dispar){ pulsesPerMeas=2; pulseQ=1.5; given='qd'; fillers=[['qd'],['8','8','8'],['q','8']]; bpmPulse=63; spq=60/63; }   // 5/8 (aprox): corchea=126
     else { pulsesPerMeas=N; pulseQ=1; given='q'; fillers=[['q'],['8','8'],['16','16','8'],['8','16','16'],['16','16','16','16']]; bpmPulse=hasFusas?44:50; spq=60/bpmPulse; }
-    const measureQ = N*4/D;                                   // duración real del compás en negras
-    const cellQ = cells.length ? cells[0].notes.reduce((s,t)=>s+dq(t),0) : pulseQ;
-    const unitIsMeasure = cellQ >= measureQ - 0.01;           // la célula ocupa el COMPÁS entero (síncopas, blanca, 5/8…)
-    const cellPulses = Math.max(1, Math.round(cellQ/pulseQ));
-    // rellenos de COMPÁS entero (más sencillos que el objetivo), por familia métrica
-    let measFillers;
-    if(dispar){ measFillers=[['qd','q'],['q','qd'],['qd','8','8'],['8','8','q']]; }
-    else { const base=Array(pulsesPerMeas).fill(given); measFillers=[base.slice()];
-      const sub=(given==='h')?['q','q']:['8','8'];
-      if(pulsesPerMeas>=1){ measFillers.push(sub.concat(Array(Math.max(0,pulsesPerMeas-1)).fill(given)));
-        measFillers.push(Array(Math.max(0,pulsesPerMeas-1)).fill(given).concat(sub)); } }
     const nMeas=Math.max(2, Math.round(8/pulsesPerMeas));
-    const slotsPerMeas = unitIsMeasure ? 1 : pulsesPerMeas;   // casillas de elección por compás
-    const slotQ        = unitIsMeasure ? measureQ : pulseQ;   // duración de una casilla en negras
     return {
       atlasId:card.atlasId||'', name:card.name||'', meas, compound, dispar,
       pulsesPerMeas, pulseQ, given, fillers, nMeas, hasFusas,
-      measureQ, cellQ, cellPulses, unitIsMeasure, slotsPerMeas, slotQ, measFillers,
       spq,                                   // segundos por NEGRA (motor de tempo)
       bpm:bpmPulse,                          // bpm del PULSO
       bpmComp: compound?bpmPulse:42,         // referencia c/puntillo (para fases que lo usan)
@@ -5078,7 +5043,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   }
   function buildSteps(){
     stepsEl.innerHTML='';
-    curPhases.forEach((p,i)=>{ const s=document.createElement('div'); s.className='cq-step';
+    PHASES.forEach((p,i)=>{ const s=document.createElement('div'); s.className='cq-step';
       s.innerHTML='<span class="cq-n"><span>'+(i+1)+'</span></span><span class="cq-nm">'+p.name+'</span>';
       s.onclick=()=>goTo(i); stepsEl.appendChild(s); });
   }
@@ -5091,28 +5056,137 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     el.classList.toggle('done',!!done[i]&&i!==idx);
     el.classList.toggle('locked', i>maxReached);
   }); }
-  function load(i){ idx=Math.max(0,Math.min(curPhases.length-1,i)); const p=curPhases[idx];
-    const last=(idx===curPhases.length-1)?'&last=1':''; const cfgQ=cfgB64?('&cfg='+cfgB64):''; ov.classList.add('loading');
+  function load(i){ idx=Math.max(0,Math.min(PHASES.length-1,i)); const p=PHASES[idx];
+    const last=(idx===PHASES.length-1)?'&last=1':''; const cfgQ=cfgB64?('&cfg='+cfgB64):''; ov.classList.add('loading');
     frame.src=p.file+'?embed=1'+last+cfgQ; paint(); }
   function onMsg(e){ if(!frame||e.source!==frame.contentWindow) return; const d=e.data||{};
-    if(d.type==='quizPhaseDone'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, curPhases.length-1)); paint(); }
-    else if(d.type==='quizAdvanceNow'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, curPhases.length-1));
-      if(idx<curPhases.length-1) load(idx+1); else close(); }
-    else if(d.type==='quizFinish'){ close(); }
-    else if(d.type==='quizToLesson'){ finishToLesson(); } }
+    if(d.type==='quizPhaseDone'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); paint(); quizTerminadoSiToca(); }
+    else if(d.type==='quizAdvanceNow'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); quizTerminadoSiToca();
+      if(idx<PHASES.length-1) load(idx+1); else paint(); } }
+  // FASE 7 · si la ÚLTIMA fase acaba de completarse y venimos de la campana
+  // del portal (?envio&cuenta), se avisa a Iago (una sola vez por envío).
+  function quizTerminadoSiToca(){
+    if(idx!==PHASES.length-1 || !done[idx]) return;
+    if(window.SuiteQuizRitmo && typeof window.SuiteQuizRitmo.completar==='function') window.SuiteQuizRitmo.completar();
+  }
   function open(card,worldId){
     if(!ov) build();
-    qCard=card; qWorld=worldId;
-    cfgB64=''; let cfg=null; try{ cfg=cardQuizConfig(card); cfgB64=encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(cfg))))); }catch(e){ console.error('cfg',e); }
-    curPhases=(cfg&&cfg.dispar)?PHASES_58:PHASES;   // 5/8 -> quiz dedicado
-    buildSteps();
-    done=curPhases.map(()=>false); idx=0; maxReached=0;
+    cfgB64=''; try{ const cfg=cardQuizConfig(card); cfgB64=encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(cfg))))); }catch(e){ console.error('cfg',e); }
+    done=PHASES.map(()=>false); idx=0; maxReached=0;
     document.body.style.overflow='hidden';
     ov.classList.add('show'); load(0);
   }
   function close(){ if(!ov) return; ov.classList.remove('show'); frame.src='about:blank';
     document.body.style.overflow=''; }
   window.launchCardQuiz=open;
+})();
+
+/* ============================================================
+   SUITE AT HOME · FASE 7 · Quiz enviado desde el Diario
+   ------------------------------------------------------------
+   Entrada del ALUMNO por URL (desde la campana del portal):
+     ?quizCarta=1.1&envio=<uuid>&cuenta=<uuid>
+   → localiza la carta por atlasId en GE_WORLDS y lanza el quiz
+     directamente (sin pasar por la landing).
+   Al completar la fase 5 (lo dispara el overlay del quiz):
+     RPC suite_quiz_completar(cuenta, envio) → la campana del
+     Diario avisa a Iago. Sin nota: solo el "hecho".
+   supabase-js se carga PEREZOSAMENTE solo si hay parámetros de
+   quiz en la URL: el uso normal de la app no cambia en nada.
+   ============================================================ */
+(function(){
+  const SUPA_URL='https://woiptkyrxkbpnvioypit.supabase.co';
+  const SUPA_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvaXB0a3lyeGticG52aW95cGl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzI2ODYsImV4cCI6MjA5MjA0ODY4Nn0.B2nKgj5rD0rkdLeMIrd9KgD8lUPWsBT4Y7aCtmnvbjA';
+
+  const qs=new URLSearchParams(location.search);
+  const CARTA=qs.get('quizCarta'), ENVIO=qs.get('envio'), CUENTA=qs.get('cuenta');
+  let _sb=null, _enviado=false, _enviando=false;
+
+  function cargarSupabase(){
+    return new Promise((res)=>{
+      if(window.supabase && window.supabase.createClient) return res(true);
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      s.onload=()=>res(true); s.onerror=()=>res(false);
+      document.head.appendChild(s);
+    });
+  }
+  async function sb(){
+    if(_sb) return _sb;
+    const ok=await cargarSupabase();
+    if(!ok || !(window.supabase && window.supabase.createClient)) return null;
+    _sb=window.supabase.createClient(SUPA_URL, SUPA_ANON);
+    return _sb;
+  }
+
+  function buscarCarta(atlasId){
+    const mundos=(typeof GE_WORLDS!=='undefined' && GE_WORLDS) || [];
+    for(const w of mundos){
+      for(const c of (w.cards||[])){
+        if(c.atlasId===atlasId && c.cells && c.cells.length && !c.equivCard && !c.base && !c.pending) return {c,w};
+      }
+    }
+    return null;
+  }
+
+  /* banner de estado en la barra del quiz (verde=avisado, rosa=fallo+reintento) */
+  function banner(txt, tipo){
+    let el=document.getElementById('suiteQuizBanner');
+    if(!el){
+      el=document.createElement('div'); el.id='suiteQuizBanner';
+      el.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:100001;'+
+        'max-width:min(92vw,560px);padding:11px 18px;border-radius:14px;font:800 14px/1.45 "Helvetica Neue",Arial,sans-serif;'+
+        'text-align:center;backdrop-filter:blur(6px);box-shadow:0 14px 40px rgba(0,0,0,.4)';
+      document.body.appendChild(el);
+    }
+    if(tipo==='ok'){ el.style.background='rgba(52,211,153,.18)'; el.style.border='1.5px solid rgba(52,211,153,.6)'; el.style.color='#7ef0c0'; }
+    else if(tipo==='err'){ el.style.background='rgba(255,92,128,.16)'; el.style.border='1.5px solid rgba(255,92,128,.55)'; el.style.color='#ffb4c8'; }
+    else { el.style.background='rgba(255,255,255,.08)'; el.style.border='1.5px solid rgba(255,255,255,.2)'; el.style.color='#e8e4ff'; }
+    el.innerHTML=txt;
+    const b=el.querySelector('#suiteQuizRetry');
+    if(b) b.onclick=()=>{ completar(); };
+    clearTimeout(el._t);
+    if(tipo==='ok'){ el._t=setTimeout(()=>{ el.remove(); }, 6000); }
+  }
+
+  async function completar(){
+    if(!ENVIO || !CUENTA || _enviado || _enviando) return;
+    _enviando=true;
+    banner('Avisando a Iago de que has terminado…');
+    const c=await sb();
+    if(!c){ _enviando=false; banner('⚠ No se pudo avisar (sin conexión). <button id="suiteQuizRetry" style="margin-left:8px;border:0;border-radius:8px;padding:5px 12px;font-weight:800;cursor:pointer;background:#ff5c80;color:#2b0812">↻ Reintentar</button>','err'); return; }
+    try{
+      const { data, error } = await c.rpc('suite_quiz_completar', { p_cuenta_id:CUENTA, p_envio_id:ENVIO });
+      if(error) throw error;
+      if(!data || data.ok!==true) throw new Error((data && data.error) || 'error');
+      _enviado=true;
+      try{ localStorage.setItem('suite_quiz_hecho_'+CUENTA+'_'+ENVIO, String(Date.now())); }catch(e){}
+      banner(data.ya_hecho ? 'ⓘ Este quiz ya lo habías completado antes. ¡Buen repaso!' : '✓ ¡Quiz completado! Iago ya sabe que lo has terminado. 🥁','ok');
+    }catch(e){
+      console.warn('[suite-quiz] completar', e);
+      const cod=(e && e.message) || 'red';
+      const mapa={ no_validado:'Tu cuenta aún no está validada: habla con Iago.', quiz_no_encontrado:'Este quiz ya no existe. Avisa a Iago.', cuenta_no_encontrada:'No encuentro tu cuenta. Entra otra vez desde la campana del portal.' };
+      const fijo=!!mapa[cod];
+      banner((fijo?('ⓘ '+mapa[cod]):('⚠ NO se pudo avisar a Iago ('+cod+').'))+
+        (fijo?'':' <button id="suiteQuizRetry" style="margin-left:8px;border:0;border-radius:8px;padding:5px 12px;font-weight:800;cursor:pointer;background:#ff5c80;color:#2b0812">↻ Reintentar</button>'),
+        fijo?'':'err');
+      if(cod==='ya_hecho'){ _enviado=true; }
+    }finally{ _enviando=false; }
+  }
+
+  function autoArranque(){
+    if(!CARTA) return;
+    const hit=buscarCarta(CARTA);
+    if(!hit){ console.warn('[suite-quiz] carta no encontrada:', CARTA); return; }
+    // precalienta supabase en segundo plano (el aviso llegará al final)
+    if(ENVIO && CUENTA) sb();
+    // lanza el quiz directamente sobre lo que haya (overlay a pantalla completa)
+    setTimeout(()=>{ try{ if(window.launchCardQuiz) window.launchCardQuiz(hit.c, hit.w.id); }catch(e){ console.error('[suite-quiz] lanzar', e); } }, 120);
+  }
+
+  window.SuiteQuizRitmo={ completar: completar };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', autoArranque);
+  else autoArranque();
 })();
 
 </script>

@@ -361,15 +361,31 @@ function softNote(t,freq,dur,vol,type){ const c=ac(); if(!c)return; const m=BUS|
   o.type=type||'sine'; o.frequency.value=freq; o.connect(g); g.connect(m);
   g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+.05); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.start(t); o.stop(t+dur+.05); }
-function softGroove(t,accent){ const sp=effSecPerPulse();
-  if(accent){                                   // 1.er pulso del compás: bajo La + acorde la menor cálido
-    softNote(t,110.00,sp*1.7,.075,'sine');      // A2
-    softNote(t,220.00,sp*1.3,.026,'triangle');  // A3
-    softNote(t,261.63,sp*1.3,.020,'triangle');  // C4
-    softNote(t,329.63,sp*1.3,.020,'triangle');  // E4
-  } else {                                      // 2.º pulso: bajo Mi más tenue
-    softNote(t, 82.41,sp*1.3,.050,'sine');      // E2
-    softNote(t,196.00,sp*1.0,.018,'triangle');  // G3
+/* Iago 2-jul: la base del modo normal era un la menor estático (repetitivo).
+   Ahora hay PROGRESIÓN ARMÓNICA en la menor que va resolviendo: bajo de
+   lamento descendente (la–sol–fa–mi) con dominante y cadencia auténtica
+   V7→i cada vuelta de 8 compases. Un acorde por compás (2 pulsos):
+     Am · G · F · E7 · Am · F · E7 · Am
+   Mismos timbres y volúmenes tenues que antes (bajo seno + voces triangle). */
+const SOFT_PROG=[
+  { b:110.00, up:[220.00,261.63,329.63], q: 82.41 },   // Am  (A2 · A3 C4 E4 · 5ª E2)
+  { b: 98.00, up:[246.94,293.66,392.00], q:146.83 },   // G   (G2 · B3 D4 G4 · 5ª D3)
+  { b: 87.31, up:[220.00,261.63,349.23], q:130.81 },   // F   (F2 · A3 C4 F4 · 5ª C3)
+  { b: 82.41, up:[207.65,246.94,293.66], q:123.47 },   // E7  (E2 · G#3 B3 D4 · 5ª B2)
+  { b:110.00, up:[220.00,261.63,329.63], q: 82.41 },   // Am
+  { b: 87.31, up:[220.00,261.63,349.23], q:130.81 },   // F
+  { b: 82.41, up:[207.65,246.94,293.66], q:123.47 },   // E7  → resuelve…
+  { b:110.00, up:[220.00,261.63,329.63], q: 82.41 }    // Am  (cadencia auténtica)
+];
+function softGroove(t,accent,p){ const sp=effSecPerPulse();
+  const mi=Math.floor((p||0)/2);                                   // compás = 2 pulsos
+  const ch=SOFT_PROG[((mi%SOFT_PROG.length)+SOFT_PROG.length)%SOFT_PROG.length];
+  if(accent){                                   // 1.er pulso: fundamental + acorde cálido
+    softNote(t,ch.b,sp*1.7,.075,'sine');
+    ch.up.forEach(function(f,i){ softNote(t,f,sp*1.3,(i===0?.026:.020),'triangle'); });
+  } else {                                      // 2.º pulso: la 5.ª del acorde, más tenue
+    softNote(t,ch.q,sp*1.3,.050,'sine');
+    softNote(t,ch.up[0],sp*1.0,.018,'triangle');
   }
 }
 
@@ -392,8 +408,17 @@ let lastTap=-1, spamCount=0, roundExtra=0, extraTotal=0, tapTimes=[];
 const GREEN_X=150, PXPERPULSE=118, LEAD_PULSES=3, SCHED_AHEAD=0.12;   // px por pulso · pulsos de entrada · lookahead del scheduler (s)
 const GAPS=[4,3,2], PRE=2, PHRASE=8, ROUND_PHRASES=3, GAPP=6;          // PHRASE=8 pulsos = 4 compases (6/8) · ronda = 3 frases
 const TOL=0.14, VIS_DELAY=0.10;                                        // retraso (s) de figura Y de la ventana de precisión
-const GRACE=0.072, STAR_WIN=0.110, MINGAP_FRAC=0.9, EXTRA_PEN=1.0;     // crédito pleno · estrellita · metralleta = 0.9 de una semicorchea · cada golpe de más = un acierto perdido
-const MAXTAPS_PER_PULSE=8;                                             // más golpes que esto dentro de un pulso = metralleta (máx. musical real = 6)
+const GRACE=0.072, STAR_WIN=0.110, EXTRA_PEN=1.0;                      // crédito pleno · estrellita · cada golpe de más = un acierto perdido
+/* ANTI-METRALLETA ADAPTATIVA (Iago 2-jul): antes el hueco mínimo entre
+   golpes era 0.9 de una semicorchea FIJA (sp/6) → en compuesto, unas
+   semicorcheas humanas ligeramente apretadas se marcaban como spam (línea
+   roja + penalización) aun tocando bien. Ahora el mínimo es el 50% de la
+   figura MÁS RÁPIDA que existe de verdad en esta carta (incluidas fusas),
+   y el tope de golpes por pulso se calcula de esa misma figura. */
+const MIN_DUR_Q=(function(){ let m=1e9; const scan=t=>{ if(!String(t).endsWith('r')) m=Math.min(m,durQ(t)); };
+  CARD.cells.forEach(cs=>cs.forEach(scan)); FILLERS.forEach(fs=>fs.forEach(scan));
+  if(!isFinite(m)||m<=0) m=0.25; return m; })();
+const MAXTAPS_PER_PULSE=Math.ceil(PULSE_Q/MIN_DUR_Q)+3;                // máx. musical real + margen humano
 
 /* ===== estado ===== */
 let roundsPassed=0;
@@ -487,7 +512,7 @@ function schedTick(){
     const per=curPer(), sp=effSecPerPulse();
     if(per>1){ for(let k=1;k<per;k++) click(schedT + k*sp/per, false, true); }
     if(extremeMode) drumPulse(schedT, sp/PULSE_Q, schedP);
-    else softGroove(schedT, accentAt(schedP));
+    else softGroove(schedT, accentAt(schedP), schedP);
     schedT += effSecPerPulse(); schedP++;
   }
   while(musAnchors.length>3 && musAnchors[1].t < aNow) musAnchors.shift();
@@ -508,16 +533,29 @@ function frame(){ if(!running) return; const now=ac().currentTime, mp=musPos(now
 function onTap(){
   if(!running) return; const now=ac().currentTime; const sp=effSecPerPulse();
   tapTimes.push(now); while(tapTimes.length && now-tapTimes[0] > sp) tapTimes.shift();   // golpes dentro del último pulso
-  const minGap = sp*MINGAP_FRAC/6;                 // 0.9 de una semicorchea, relativo al tempo
+  const minGap = MIN_DUR_Q*(sp/PULSE_Q)*0.5;       // 50% de la figura más rápida REAL de la carta, relativo al tempo
   const tooClose = (lastTap>=0 && now-lastTap < minGap);
   const burst = tapTimes.length > MAXTAPS_PER_PULSE;
   if(tooClose || burst){ spamCount++; lastTap=now; roundExtra++; extraTotal++; lineRed();
     if(spamCount>=2 || burst) showRedMsg('No hagas la metralleta que no cuela, crack.'); return; }
   spamCount=0; lastTap=now;
   const mp=musPos(now);
-  let bi=-1, bdP=1e9;
-  for(let i=0;i<attacks.length;i++){ if(attacks[i].matched) continue; const d=Math.abs(mp-(attacks[i].tP+VIS_DELAY_P)); if(d<bdP){bdP=d;bi=i;} }
-  const bd=bdP*sp;
+  /* EMPAREJAMIENTO CRONOLÓGICO (Iago 2-jul): antes cada golpe se casaba con
+     la figura MÁS CERCANA de toda la pista. Con semicorcheas, las ventanas de
+     ±TOL se solapan y un golpe apenas adelantado se "comía" la figura
+     siguiente → todo lo demás quedaba desfasado en cadena (rojos acumulados
+     tocando bien). Ahora el golpe se casa con la PRIMERA figura sin
+     emparejar cuya ventana contiene este instante: se consumen en orden,
+     como se tocan. */
+  let bi=-1;
+  for(let i=0;i<attacks.length;i++){
+    const a=attacks[i]; if(a.matched) continue;
+    const d=(mp-(a.tP+VIS_DELAY_P))*sp;            // + = golpe tarde · − = golpe pronto
+    if(d>TOL) continue;                            // esa figura ya pasó de ventana
+    if(d<-TOL) break;                              // aún no llegó (las siguientes, menos)
+    bi=i; break;                                   // primera en ventana → esa es
+  }
+  const bd=(bi>=0)?Math.abs(mp-(attacks[bi].tP+VIS_DELAY_P))*sp:1e9;
   if(bi>=0 && bd<=TOL){
     const credit = bd<=GRACE ? 1.0 : 1.0 - 0.5*((bd-GRACE)/(TOL-GRACE));   // impreciso → descuenta
     attacks[bi].matched=true; attacks[bi].credit=credit;
@@ -530,21 +568,25 @@ function killAudio(){ if(!BUS)return; const now=ac().currentTime; try{ BUS.gain.
 function stopRun(){ running=false; if(raf)cancelAnimationFrame(raf); if(schedTimer){clearInterval(schedTimer);schedTimer=null;} killAudio();
   setStartBtn(false); document.getElementById('track').style.transform='translateX(0px)'; document.getElementById('hint').textContent='Detenido. Pulsa «Empezar» o Espacio para reintentar.'; }
 
-/* puntuación con créditos graduados (impreciso descuenta) y castigo por golpes de más */
+/* puntuación con créditos graduados (impreciso descuenta) y castigo por golpes de más.
+   Iago 2-jul: la nota que cuenta es GLOBAL (todas las figuras juntas, sin
+   separar ritmo nuevo/relleno) y la ronda se supera con el 50%. */
 function roundScore(aStart,aEnd,extra){
   let tC=0,tT=0,nC=0,nT=0;
   for(let i=aStart;i<aEnd;i++){ const a=attacks[i], c=a.matched?(a.credit||0):0; if(a.isTarget){tT++;tC+=c;} else {nT++;nC+=c;} }
-  const total=(tT+nT)||1; const pen=extra*EXTRA_PEN;                  // cada golpe de más = un acierto perdido, repartido
+  const total=(tT+nT)||1; const pen=extra*EXTRA_PEN;                  // cada golpe de más = un acierto perdido
   const tAcc=tT?Math.max(0,Math.min(1,(tC - pen*(tT/total))/tT)):1;
   const nAcc=nT?Math.max(0,Math.min(1,(nC - pen*(nT/total))/nT)):1;
-  return {tAcc,nAcc,tp:Math.round(tAcc*100),np:Math.round(nAcc*100)};
+  const gAcc=Math.max(0,Math.min(1,(tC + nC - pen)/total));           // GLOBAL: todo junto
+  return {tAcc,nAcc,gAcc,tp:Math.round(tAcc*100),np:Math.round(nAcc*100),gp:Math.round(gAcc*100)};
 }
 function aggScore(){ return roundScore(0,attacks.length,extraTotal); }
+const PASS_MIN=0.50;   // umbral de ronda (antes 0.70 por categoría)
 
 /* evaluación de cada ronda al vuelo (sin cartel: solo un destello no bloqueante) */
 function evalRound(m){
   const s=roundScore(m.aStart,m.aEnd,roundExtra); roundExtra=0;
-  m.pass=(s.tAcc>=0.70 && s.nAcc>=0.70);
+  m.pass=(s.gAcc>=PASS_MIN);
   if(!extremeMode){ if(m.pass) roundsPassed++; updateBar(); flashRound(m.pass); }
 }
 function flashRound(pass){ const el=document.getElementById('roundflash'); if(!el)return;
@@ -562,14 +604,14 @@ function finishQuiz(){ running=false; if(raf)cancelAnimationFrame(raf); if(sched
 }
 function showWin(){
   const s=aggScore();
-  document.getElementById('winTgt').innerHTML=`<b>${s.tp}%</b>ritmo nuevo`; document.getElementById('winTgt').className='stat '+(s.tp>=70?'ok':'no');
-  document.getElementById('winNon').innerHTML=`<b>${s.np}%</b>el resto`; document.getElementById('winNon').className='stat '+(s.np>=70?'ok':'no');
+  document.getElementById('winTgt').innerHTML=`<b>${s.gp}%</b>de precisión`; document.getElementById('winTgt').className='stat '+(s.gp>=50?'ok':'no');
+  document.getElementById('winNon').style.display='none';
   document.getElementById('ovWin').classList.add('show'); burst();
 }
 function showFinalFail(){
   const ov=document.getElementById('ovResult'); const s=aggScore();
-  document.getElementById('resTgt').innerHTML=`<b>${s.tp}%</b>ritmo nuevo`; document.getElementById('resTgt').className='stat '+(s.tp>=70?'ok':'no');
-  document.getElementById('resNon').innerHTML=`<b>${s.np}%</b>el resto`; document.getElementById('resNon').className='stat '+(s.np>=70?'ok':'no');
+  document.getElementById('resTgt').innerHTML=`<b>${s.gp}%</b>de precisión`; document.getElementById('resTgt').className='stat '+(s.gp>=50?'ok':'no');
+  document.getElementById('resNon').style.display='none';
   document.getElementById('resBadge').textContent='Casi';
   document.getElementById('resTitle').textContent=`Superaste ${roundsPassed}/3 rondas`;
   document.getElementById('resSub').textContent='Te faltó alguna ronda. ¡Vuelve a intentarlo!';
@@ -595,9 +637,9 @@ function startExtreme(){ extremeMode=true; document.body.classList.add('fire');
   document.getElementById('ovExtWarn').classList.remove('show'); document.getElementById('ovWin').classList.remove('show');
   startQuiz(); }
 function showExtremeResult(){
-  const s=aggScore(), overall=Math.round((s.tAcc*.5+s.nAcc*.5)*100);
-  document.getElementById('extTgt').innerHTML=`<b>${s.tp}%</b>ritmo nuevo`;
-  document.getElementById('extNon').innerHTML=`<b>${s.np}%</b>el resto`;
+  const s=aggScore(), overall=s.gp;
+  document.getElementById('extTgt').innerHTML=`<b>${s.gp}%</b>de precisión`;
+  document.getElementById('extNon').style.display='none';
   document.getElementById('extResTitle').textContent = overall>=80?'¡Bestial!' : overall>=55?'¡Has sobrevivido!' : '¡Casi te achicharras!';
   document.getElementById('extResMsg').textContent = 'Salga lo que salga, da igual: esto no cuenta, era solo por llevarte al límite. 🔥';
   document.getElementById('ovExtResult').classList.add('show'); burst();
