@@ -627,6 +627,7 @@ footer .lock{color:var(--gold1);}
 .islide.leave{opacity:0;transform:translateX(-46px);pointer-events:none;}
 .islide>div{width:100%;max-width:980px;}
 .islide>.itree{max-width:1260px;}
+.islide>.igenesis,.islide>.icraft{max-width:1240px;}
 
 .ikicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-soft);font-weight:800;margin:0 0 10px;text-align:center;}
 .ititle{font-size:clamp(26px,4.6vw,42px);font-weight:900;letter-spacing:-.8px;margin:0 0 8px;text-align:center;line-height:1.1;}
@@ -663,11 +664,11 @@ footer .lock{color:var(--gold1);}
 .igen-holder{position:relative;display:flex;align-items:center;justify-content:center;min-height:160px;}
 .igen-holder .ipaper.big{padding:14px 22px;}
 .igen-holder .ipaper{position:relative;transition:opacity .72s ease,transform .72s ease;}
-.igen-holder .ipaper.bye{position:absolute;opacity:0;transform:scale(.82);pointer-events:none;}
+.igen-holder .ipaper.bye{position:absolute;opacity:0;transform:scale(1);pointer-events:none;}
 .igen-holder .ipaper.sprout{animation:isprout .55s cubic-bezier(.2,1.4,.4,1);}
 @keyframes isprout{0%{opacity:0;transform:scale(.6);}60%{opacity:1;transform:scale(1.07);}100%{transform:scale(1);}}
 .igen-holder .ipaper.melt{animation:imelt .8s ease;}
-@keyframes imelt{0%{opacity:0;transform:scale(1.1);filter:blur(4px);}45%{opacity:.55;}100%{opacity:1;transform:scale(1);filter:blur(0);}}
+@keyframes imelt{0%{opacity:0;transform:scale(1.015);}55%{opacity:.7;}100%{opacity:1;transform:scale(1);}}
 .igen-holder .ipaper.dimin{animation:idim .55s ease;}
 @keyframes idim{0%{opacity:.25;}100%{opacity:1;}}
 .igen-holder .ipaper.grow{animation:igrow .7s cubic-bezier(.2,1.2,.4,1);}
@@ -764,16 +765,23 @@ footer .lock{color:var(--gold1);}
 
 
 /* ===== 6.3 · equivalencias: demos, crafteo y quiz ===== */
-.ieq-row{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;width:100%;}
+.ieq-row{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;width:100%;}
+.ieq-row .ieq-mid{align-self:center;}
 .ieq-box{display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;transition:all .2s;}
 .ieq-box.playing{border-color:var(--gold1);box-shadow:0 0 24px rgba(34,201,138,.3);}
 .ieq-m{font-size:14px;font-weight:900;color:var(--gold-soft);margin:0;letter-spacing:.04em;}
 .ieq-mid{display:flex;align-items:center;}
 .ieq-badge{font-size:24px;font-weight:900;color:#06281b;background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-radius:12px;padding:8px 14px;white-space:nowrap;box-shadow:0 6px 20px rgba(34,201,138,.3);}
 .ieq-badge.small{font-size:16px;padding:5px 10px;}
+.ieq-badge.fig{display:inline-flex;align-items:center;gap:1px;padding:3px 12px;}
+.ieq-badge.fig .bfig svg{display:block;}
+.ieq-badge.fig .beq{font-size:22px;font-weight:900;color:#06281b;margin:0 2px;}
+.ieq-badge.fig.small{padding:2px 9px;}
+.ieq-badge.fig.small .beq{font-size:17px;}
+.ieq-sum.below{margin-top:2px;justify-content:center;width:100%;}
 .ieq-sum{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 .ieq-tag{font-size:13px;font-weight:800;border-radius:9px;padding:6px 12px;border:1.5px solid var(--line);color:var(--muted);}
-.ieq-tag.up{color:#ffd9a8;border-color:#8a6a2f;}
+.ieq-tag.up{color:#ffb1b1;border-color:#8a2f3d;}
 .ieq-tag.down{color:#a8d4ff;border-color:#2f5a8a;}
 .ieq-tag.same{color:var(--gold-soft);border-color:var(--gold1);}
 .ieq-note{font-size:11.5px;color:var(--muted2);align-self:center;}
@@ -786,13 +794,69 @@ footer .lock{color:var(--gold1);}
 .ibtn.action.dice{font-size:13px;padding:10px 16px;}
 .iwalk-bar.chg{display:flex;align-items:center;justify-content:center;}
 .iwalk-bar.chg::before{display:none;}
-.iwalk-eq{font-size:15px;font-weight:900;color:#0a6b46;background:rgba(34,201,138,.15);border:1.5px dashed rgba(26,158,108,.6);border-radius:8px;padding:4px 6px;white-space:nowrap;transform:rotate(-8deg);}
-/* quiz 6.3 */
-.eq-ov .intro-stage{overflow:auto;}
-.eq-steps{display:flex;gap:8px;margin:0 auto;}
-.eqstep{font-size:12px;font-weight:800;color:var(--muted2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;}
-.eqstep.cur{color:#06281b;background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-color:transparent;}
-.eqstep.done{color:var(--gold-soft);border-color:var(--gold1);}
+.iwalk-eq{font-size:15px;font-weight:900;color:#0a6b46;background:rgba(34,201,138,.95);color:#06281b;border:1.5px solid rgba(26,158,108,.7);border-radius:8px;padding:4px 8px;white-space:nowrap;position:relative;z-index:5;}
+/* quiz 6.3 — estética de los quiz de la suite */
+.eq-ov2{position:fixed;inset:0;z-index:9998;display:none;flex-direction:column;color:var(--ink);overflow:hidden;
+  background:linear-gradient(160deg,#14103a 0%,#0e0a2c 55%,#080518 100%);}
+.eq-ov2.show{display:flex;}
+.eq-blob{position:absolute;border-radius:50%;pointer-events:none;filter:blur(70px);}
+.eq-blob.b1{width:1000px;height:1000px;background:radial-gradient(circle,#34d399 0%,transparent 65%);top:-260px;left:-260px;opacity:.75;animation:eqb1 34s ease-in-out infinite alternate;}
+.eq-blob.b2{width:900px;height:900px;background:radial-gradient(circle,#5bd0ff 0%,transparent 65%);top:-180px;right:-260px;opacity:.7;animation:eqb2 29s ease-in-out infinite alternate;}
+.eq-blob.b3{width:1000px;height:1000px;background:radial-gradient(circle,#a974ff 0%,transparent 65%);bottom:-320px;left:28%;opacity:.75;animation:eqb3 37s ease-in-out infinite alternate;}
+.eq-blob.b4{width:820px;height:820px;background:radial-gradient(circle,#ff9a3c 0%,transparent 65%);bottom:-240px;left:-240px;opacity:.6;animation:eqb2 41s ease-in-out infinite alternate-reverse;}
+.eq-blob.b5{width:760px;height:760px;background:radial-gradient(circle,#ff5ccd 0%,transparent 65%);top:30%;right:-200px;opacity:.55;animation:eqb1 31s ease-in-out infinite alternate-reverse;}
+@keyframes eqb1{from{transform:translate(0,0) scale(1);}to{transform:translate(140px,110px) scale(1.14);}}
+@keyframes eqb2{from{transform:translate(0,0) scale(1.08);}to{transform:translate(-120px,90px) scale(0.94);}}
+@keyframes eqb3{from{transform:translate(0,0) scale(1);}to{transform:translate(120px,-90px) scale(1.12);}}
+.eq-bar{position:relative;z-index:2;height:56px;flex:0 0 56px;display:flex;align-items:center;gap:12px;padding:0 14px;
+  background:rgba(10,7,26,.72);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.16);}
+.eq-brand{font-size:17px;font-weight:900;letter-spacing:-.3px;white-space:nowrap;color:#f6f3ff;}
+.eq-brand span{color:#cfc7f2;font-weight:300;}
+.eq-x{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.05);color:#f6f3ff;font-size:15px;cursor:pointer;display:grid;place-items:center;}
+.eq-x:hover{background:rgba(255,255,255,.13);}
+.eq-stage{position:relative;z-index:1;flex:1 1 auto;overflow:hidden;}
+.eq-slide{position:absolute;inset:0;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:26px 20px 40px;
+  opacity:0;transform:translateX(46px);transition:opacity .42s ease,transform .42s ease;}
+.eq-slide.show{opacity:1;transform:translateX(0);}
+.eq-slide.leave{opacity:0;transform:translateX(-46px);pointer-events:none;}
+.eq-steps{display:flex;gap:7px;margin:0 auto;}
+.eq-step{display:flex;align-items:center;gap:8px;cursor:pointer;border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.05);border-radius:999px;height:34px;padding:0 6px;transition:.18s;flex:0 0 auto;}
+.eq-step:hover{border-color:rgba(255,255,255,.34);}
+.eq-stn{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#0e0a2c;background:rgba(255,255,255,.55);flex:0 0 auto;}
+.eq-stnm{font-size:13px;font-weight:700;color:#f6f3ff;white-space:nowrap;max-width:0;overflow:hidden;opacity:0;transition:.22s;}
+.eq-step.cur{border-color:transparent;background:linear-gradient(120deg,rgba(52,211,153,.25),rgba(169,116,255,.25));box-shadow:0 0 0 1.5px rgba(155,130,255,.6);padding-right:14px;}
+.eq-step.cur .eq-stn{background:linear-gradient(120deg,#34d399,#5bd0ff 30%,#ff9a3c 58%,#ff5ccd 78%,#a974ff);}
+.eq-step.cur .eq-stnm{max-width:220px;opacity:1;padding-left:2px;}
+.eq-step.done .eq-stn{background:#34d399;color:#062a1d;}
+.eq-step.shake{animation:cqshake .42s;}
+.eq-anim{opacity:0;transform:translateY(16px);transition:opacity .45s ease,transform .45s ease;width:auto;max-width:1240px;display:flex;flex-direction:column;gap:14px;align-items:center;margin:0 auto;
+  background:rgba(11,8,28,.78);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:22px 30px 24px;box-shadow:0 24px 70px rgba(0,0,0,.5);}
+.eq-anim.in{opacity:1;transform:translateY(0);}
+/* parpadeo de emoción antes de revelar */
+.hype{animation:eqhype .32s ease-in-out infinite;}
+@keyframes eqhype{0%,100%{filter:brightness(1);transform:scale(1);}50%{filter:brightness(1.55);transform:scale(1.06);box-shadow:0 0 22px rgba(255,255,255,.35);}}
+/* respuestas: lento AZUL · igual VERDE · rápido ROJO */
+.eq-tri .ibtn.seg.on[data-v="lento"]{background:linear-gradient(135deg,#8fc9ff,#2f6bd8);color:#04204a;border-color:transparent;}
+.eq-tri .ibtn.seg.on[data-v="igual"]{background:linear-gradient(135deg,var(--gold-soft),var(--gold2));color:#06281b;border-color:transparent;}
+.eq-tri .ibtn.seg.on[data-v="rapido"]{background:linear-gradient(135deg,#ff9f9f,#d83a4f);color:#3d060f;border-color:transparent;}
+/* pentagrama continuo de la fase 3 */
+.eq-staffline{display:flex;align-items:center;background:var(--paper);border-radius:12px;padding:6px 10px;box-shadow:0 8px 30px rgba(0,0,0,.35);}
+.eq-staffline .ipaper.flat{background:transparent;box-shadow:none;border-radius:0;padding:0 3px;}
+.eq-barline{width:1.5px;height:46px;background:#8a90a5;flex:0 0 auto;margin:0 2px;}
+/* ventana emergente de teoría junto al cambio */
+.eq-annot{position:relative;}
+.eq-annot.asking .ieq-badge{box-shadow:0 0 0 3px rgba(111,227,180,.65),0 0 26px rgba(34,201,138,.5);animation:ipulse 1.2s ease-in-out infinite;}
+.eq-pop{position:absolute;left:calc(100% + 12px);top:-12px;z-index:30;width:500px;background:rgba(16,12,40,.96);backdrop-filter:blur(8px);
+  border:1.5px solid var(--gold1);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 14px 44px rgba(0,0,0,.6);}
+.eq-pop::before{content:"";position:absolute;left:-8px;top:22px;border:8px solid transparent;border-right-color:var(--gold1);border-left:none;}
+.eq-pop .eq-tri{gap:5px;flex-wrap:nowrap;justify-content:flex-start;}
+.eq-pop .eq-tri-l{min-width:76px;font-size:12px;flex:0 0 auto;}
+.eq-pop .eq-tri .ibtn.seg{font-size:10.5px;padding:6px 9px;white-space:nowrap;flex:0 0 auto;}
+.eq-pop-t{font-size:12.5px;font-weight:900;color:var(--gold-soft);margin:0;}
+.ibtn.action.small{font-size:12px;padding:8px 14px;}
+@media(max-width:1100px){ .eq-pop{left:auto;right:0;top:calc(100% + 10px);} .eq-pop::before{display:none;} }
 .eqp{display:flex;flex-direction:column;gap:14px;align-items:center;width:100%;}
 .eq-tri{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;}
 .eq-tri-l{font-size:14px;font-weight:800;color:var(--ink);min-width:130px;text-align:right;}
@@ -807,6 +871,38 @@ footer .lock{color:var(--gold1);}
 .eq-an-res{font-size:10.5px;color:var(--gold-soft);font-weight:700;max-width:150px;text-align:center;}
 .eq-theory{display:flex;flex-direction:column;gap:10px;align-items:center;width:100%;}
 .eq-count{position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);font-size:110px;font-weight:900;color:var(--gold-soft);text-shadow:0 0 40px rgba(34,201,138,.6);pointer-events:none;z-index:20;}
+.ieq-chips{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;}
+.ieq-sum.inbox{margin-top:2px;}
+.eq-lines.craft{gap:6px;width:100%;}
+.eq-lines.craft .eq-line.playing .eq-staffline{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 2.5px var(--gold1);}
+.eq-bridge{display:flex;gap:10px;align-items:center;justify-content:center;margin:2px 0;position:relative;z-index:5;}
+.eq-bridge .eq-an-res{font-size:11.5px;max-width:none;}
+/* ejemplo animado de la tarjeta 6.3: tipografía VexFlow, alternando repaso/nuevo */
+.eqx-host{position:relative;}
+.eqx-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;opacity:0;animation:eqxA 8s ease-in-out infinite;}
+.eqx-state.b{animation-name:eqxB;}
+@keyframes eqxA{0%,42%{opacity:1;}50%,92%{opacity:0;}100%{opacity:1;}}
+@keyframes eqxB{0%,42%{opacity:0;}50%,92%{opacity:1;}100%{opacity:0;}}
+.eqx-k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5b647f;font-weight:800;margin:0 0 2px;}
+.eqx-row{display:flex;align-items:center;gap:4px;}
+.eqx-eq{font-size:26px;font-weight:900;color:#1a2036;}
+.eqx-fig svg{display:block;}
+.eq-fb.rel{color:#8fc9ff;}
+.eq-tri .ibtn.seg.rel{background:linear-gradient(135deg,#8fc9ff,#2f6bd8);color:#04204a;border-color:transparent;}
+/* barra espaciadora animada (versión ordenador) */
+.eq-space{display:flex;justify-content:center;margin:2px 0 0;}
+.eq-space-key{display:inline-block;min-width:220px;text-align:center;font-size:13px;font-weight:800;letter-spacing:.18em;color:#cfc7f2;
+  background:linear-gradient(180deg,#2a2350,#171232);border:1.5px solid rgba(255,255,255,.25);border-bottom-width:5px;border-radius:12px;
+  padding:10px 26px 9px;animation:eqpress 1.5s ease-in-out infinite;}
+@keyframes eqpress{0%,100%{transform:translateY(0);border-bottom-width:5px;}12%{transform:translateY(3px);border-bottom-width:2px;background:linear-gradient(180deg,#34d39944,#171232);}24%{transform:translateY(0);border-bottom-width:5px;}}
+/* pads táctiles laterales */
+.eq-pad{position:fixed;bottom:10%;width:150px;height:150px;border-radius:50%;z-index:40;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.16),rgba(255,255,255,.04));border:2px solid rgba(255,255,255,.3);
+  color:#f6f3ff;font-weight:900;letter-spacing:.2em;font-size:15px;user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;
+  backdrop-filter:blur(6px);box-shadow:0 12px 40px rgba(0,0,0,.45);}
+.eq-pad.l{left:26px;}
+.eq-pad.r{right:26px;}
+.eq-pad.hit{background:radial-gradient(circle at 35% 30%,rgba(52,211,153,.55),rgba(52,211,153,.15));border-color:#34d399;transform:scale(.96);}
 .eq-hit,.eq-hit *{fill:#0ea36f !important;stroke:#0ea36f !important;}
 .eq-miss,.eq-miss *{fill:#c2374b !important;stroke:#c2374b !important;}
 </style></head>
@@ -1108,7 +1204,7 @@ const GE_WORLDS=[
       ] },
     ]
   },
-  { id:"m2", name:"Compases de blanca", kicker:"1er trimestre · unidad = blanca", desc:"La unidad de tiempo deja de ser la negra y pasa a ser la blanca. Mismo lenguaje rítmico, otra escala de valores. Cada carta recoge el repertorio de combinaciones rítmicas habitual del compás.", range:"págs. 23–25",
+  { id:"m2", name:"Compases de pulso blanca", kicker:"1er trimestre · unidad = blanca", desc:"La unidad de tiempo deja de ser la negra y pasa a ser la blanca. Mismo lenguaje rítmico, otra escala de valores. Cada carta recoge el repertorio de combinaciones rítmicas habitual del compás.", range:"págs. 23–25",
     meterPool:["2/2","3/2","4/2"], basePulse:60, basePulseComp:60,
     cards:[
       { id:"c2_1", atlasId:"2.1", name:"Compás de 2/2  (¢)", ref:"pág. 23", note:"Compasillo binario. Vocabulario: blanca + negras, negra + dos corcheas, tresillo de negras, síncopa negra–blanca–negra, corcheas.",
@@ -1235,7 +1331,7 @@ const GE_WORLDS=[
         cells:[
         {"ts":"2/4","notes":["32","32","32","32","32","32","32","32","q"],"beams":[[0,1,2,3,4,5,6,7]]},
         {"ts":"2/4","notes":["8","32","32","32","32","q"],"beams":[[0,1,2,3,4]],"label":"corchea + 4 fusas"},
-        {"ts":"2/4","notes":["16","32","32","16","32","32","q"],"beams":[[0,1,2],[3,4,5]]}
+        {"ts":"2/4","notes":["16","32","32","16","32","32","q"],"beams":[[0,1,2,3,4,5]],"label":"semicorchea + 2 fusas"}
       ] },
       { id:"c6_2", atlasId:"6.2", name:"Dispar · compás de 5/8", ref:"pág. 65", note:"Compás de pulso irregular. Las dos agrupaciones: 3+2 y 2+3.", disp:true,
         cells:[
@@ -1244,7 +1340,7 @@ const GE_WORLDS=[
       ] },
       { id:"c6_e", atlasId:"6.3", name:"Cambios de compás · figura = figura", ref:"págs. 62–74",
         note:"La figura se mantiene constante al cambiar de compás (la corchea vale lo mismo); el que cambia es el PULSO. Presentación y quiz propios; la generación de lecturas llegará con el mundo de cambios de compás.",
-        introOnly:true, customQuiz:true, exText:"♪ = ♪", exSub:"figura = figura",
+        introOnly:true, customQuiz:true, equivEx:true, exText:"♪ = ♪", exSub:"figura = figura",
         cells:[] },
       { id:"c6_3", atlasId:"6.4", name:"Clave de Do", ref:"págs. 83 y 86", note:"Lectura en clave de Do en 3ª (contralto) y 4ª línea (tenor). Sólo negras, corcheas, blancas y silencios: lecturas muy sencillas.", clave:true,
         cells:[
@@ -4062,7 +4158,9 @@ function renderSetupCards(){
         if(cn) head.insertBefore(ib, cn.nextSibling); else head.insertBefore(ib, head.firstChild);
       }
       const exHost=el.querySelector('.sc-ex');
-      if(c.exText){
+      if(c.equivEx && window.__renderEquivEx){
+        window.__renderEquivEx(exHost);
+      } else if(c.exText){
         exHost.classList.add('ex-text-host');
         exHost.innerHTML=`<div class="ex-text">${c.exText}</div><div class="ex-sub">${c.exSub||''}</div>`;
       } else if(isCombMeter){
@@ -5560,7 +5658,7 @@ function iDraw(host,spec,o){
   if(o.ts){ try{ stave.addTimeSignature(o.ts); }catch(e){} }
   stave.setContext(ctx).draw();
   vf=mkNotes(); v=new VF.Voice({num_beats:4,beat_value:4}).setStrict(false); v.addTickables(vf);
-  const beams=[]; ((spec.beams)||[]).forEach(g=>{ const run=g.filter(k=>{ const p=iTok(spec.notes[k]); return !p.rest && p.beats<1; }); if(run.length>1) beams.push(new VF.Beam(run.map(k=>vf[k]))); });
+  const beams=[]; ((spec.beams)||[]).forEach(g=>{ const run=g.filter(k=>{ const p=iTok(spec.notes[k]); return !p.rest && p.beats<1; }); if(run.length>1){ const bm=new VF.Beam(run.map(k=>vf[k])); try{ bm.render_options.flat_beams=true; }catch(e){} beams.push(bm); } });
   const tups=[]; ((spec.tuplets)||[]).forEach(t=>{ try{ tups.push(new VF.Tuplet(t.idx.map(k=>vf[k]),{num_notes:t.num,notes_occupied:t.occ,ratioed:false})); }catch(e){} });
   const startX=stave.getNoteStartX();
   new VF.Formatter().joinVoices([v]).format([v],Math.max(50,(W-12)-(startX-6)-16));
@@ -5606,6 +5704,14 @@ function toneHit(c,t,g,dur,f){ const o=c.createOscillator(); o.type='triangle'; 
   const gn=c.createGain(); gn.gain.setValueAtTime(0.0001,t); gn.gain.linearRampToValueAtTime(g,t+0.015);
   gn.gain.setValueAtTime(g,Math.max(t+0.02,t+dur-0.07)); gn.gain.linearRampToValueAtTime(0.0001,t+dur);
   o.connect(lp); lp.connect(gn); gn.connect(c.destination); o.start(t); o.stop(t+dur+0.06); }
+/* sonido de FUSIÓN: dos alturas que viajan y CONVERGEN en una sola */
+function fusionSound(){ const c=iCtx(); if(!c) return; const t=c.currentTime+0.01;
+  [[523,587],[659,587]].forEach(p=>{ const o=c.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(p[0],t); o.frequency.exponentialRampToValueAtTime(p[1],t+0.45);
+    const g=c.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.15,t+0.12);
+    g.gain.setValueAtTime(0.15,t+0.4); g.gain.linearRampToValueAtTime(0.0001,t+0.66);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.72); });
+  noiseHit(c,t+0.34,6200,1.2,0.07,0.24,'highpass'); }
 /* sonido de VARITA MÁGICA: destello ascendente */
 function magicSound(){ const c=iCtx(); if(!c) return; const t=c.currentTime+0.01;
   [980,1470,1960,2940].forEach((f,i)=>oscHit(c,t+i*0.05,f,f,0.2,0.2,'sine'));
@@ -5883,8 +5989,21 @@ SLIDE_TYPES.genesis=function(host,s){
           ok=true;
         }
       });
-      /* las barras del origen se disuelven suavemente mientras cabezas y plicas viajan */
-      if(ok&&svg){ svg.querySelectorAll('.vf-beam').forEach(b=>{ b.style.transition='opacity .5s ease'; b.style.opacity='0.18'; }); }
+      /* corchetes: el de la pareja SE COMPRIME con ellas; los que solo rozan, se difuminan */
+      if(ok&&svg){
+        const zones=pairs.map(p=>{ const es=p.map(i=>chip.__drawn.els[i]).filter(Boolean); if(es.length!==2) return null;
+          const r0=es[0].getBoundingClientRect(), r1=es[1].getBoundingClientRect();
+          return {l:Math.min(r0.left,r1.left)-6,r:Math.max(r0.right,r1.right)+6,dxpx:Math.abs((r1.left+r1.width/2)-(r0.left+r0.width/2))/2}; }).filter(Boolean);
+        svg.querySelectorAll('.vf-beam').forEach(b=>{ try{
+          const rb=b.getBoundingClientRect();
+          const inside=zones.find(z=> rb.left>=z.l && rb.right<=z.r);
+          if(inside){ const sc=Math.max(0.3,(rb.width-2*inside.dxpx)/rb.width);
+            b.style.transformBox='fill-box'; b.style.transformOrigin='center';
+            b.style.transition='transform .5s cubic-bezier(.5,0,.5,1)';
+            b.style.transform='scaleX('+sc.toFixed(2)+')'; }
+          else if(zones.some(z=> rb.right>z.l && rb.left<z.r)){ b.style.transition='opacity .5s ease'; b.style.opacity='0.15'; }
+        }catch(e){} });
+      }
     }catch(e){}
     setTimeout(done, ok?540:0);
   }
@@ -5902,17 +6021,21 @@ SLIDE_TYPES.genesis=function(host,s){
     const act=()=>{
       if(anim==='tajo'){
         const idxs=(nxt.cut==null)?[null]:(Array.isArray(nxt.cut)?nxt.cut:[nxt.cut]);
-        if(idxs.length>1){ busy=true; btn.disabled=true; slashSeq(idxs,0,doIt); }
-        else { slashAt(idxs[0]); doIt(); }
+        busy=true; btn.disabled=true;
+        if(idxs.length>1){ slashSeq(idxs,0,doIt); }
+        else { slashAt(idxs[0]); setTimeout(doIt,330); }   /* causa… y luego la consecuencia */
       } else if(anim==='magia'){
         const idxs=(nxt.cut==null)?[]:(Array.isArray(nxt.cut)?nxt.cut:[nxt.cut]);
         const after=()=>{ doIt(); setTimeout(sparkleOver,200); };
-        if(idxs.length>1){ busy=true; btn.disabled=true; slashSeq(idxs,0,after); }
-        else if(idxs.length===1){ slashAt(idxs[0]); after(); }
+        busy=true; btn.disabled=true;
+        if(idxs.length>1){ slashSeq(idxs,0,after); }
+        else if(idxs.length===1){ slashAt(idxs[0]); setTimeout(after,330); }
         else after();
       } else if(anim==='fusion' && nxt.join && chip){
         const pairs=Array.isArray(nxt.join[0])?nxt.join:[nxt.join];
-        busy=true; btn.disabled=true; fuseMove(pairs,doIt);
+        busy=true; btn.disabled=true;
+        if(window.__INTRO_LIB.fusionSound) window.__INTRO_LIB.fusionSound();
+        fuseMove(pairs,doIt);
       } else doIt();
     };
     /* antes de una nueva fase, vuelve el ritmo base si así se pide */
@@ -6066,7 +6189,7 @@ SLIDE_TYPES.tree=function(host,s){
   return function(){ Loop.clear(); };
 };
 window.__INTRO_SLIDE_TYPES=SLIDE_TYPES;
-window.__INTRO_LIB={iDraw:iDraw,iOnsets:iOnsets,iSoundIdx:iSoundIdx,Loop:Loop,TIMBRES:TIMBRES,iCtx:iCtx,paperChip:paperChip,el:el,stagger:stagger,iFlash:iFlash,slashSound:slashSound,magicSound:magicSound,toneHit:toneHit};
+window.__INTRO_LIB={iDraw:iDraw,iOnsets:iOnsets,iSoundIdx:iSoundIdx,Loop:Loop,TIMBRES:TIMBRES,iCtx:iCtx,paperChip:paperChip,el:el,stagger:stagger,iFlash:iFlash,slashSound:slashSound,magicSound:magicSound,toneHit:toneHit,fusionSound:fusionSound};
 })();
 
 </script>
@@ -6771,7 +6894,7 @@ D['6.1']={spq:1.15,slides:function(card){ return [
     {label:'los ritmos de la carta',nodes:[
       {id:'f1',notes:['32','32','32','32','32','32','32','32'],beams:[[0,1,2,3,4,5,6,7]],label:'8 fusas',loopBeats:1},
       {id:'f2',notes:['8','32','32','32','32'],beams:[[0,1,2,3,4]],label:'corchea + 4 fusas',loopBeats:1},
-      {id:'f3',notes:['16','32','32','16','32','32'],beams:[[0,1,2],[3,4,5]],label:'semicorchea + 2 fusas ×2',loopBeats:1}]}],
+      {id:'f3',notes:['16','32','32','16','32','32'],beams:[[0,1,2,3,4,5]],label:'semicorchea + 2 fusas',loopBeats:1}]}],
    foot:'Solo el pulso de las fusas, sin reposo: enciende negra + corcheas + semicorcheas + fusas y escucha la pirámide entera.'}];}};
 
 D['6.2']={spq:0.66,slides:function(card){ return [
@@ -6805,9 +6928,10 @@ const EQMET={
   '3/4':{e:6,pulses:[2,2,2],pf:'♩'},
   '6/8':{e:6,pulses:[3,3],pf:'♩.'},
   '9/8':{e:9,pulses:[3,3,3],pf:'♩.'},
+  '2/2':{e:8,pulses:[4,4],pf:'𝅗𝅥'},
   '5/8':{e:5,pulses:[3,2],pf:'?',irr:true},
 };
-const EQPOOL={2:[['q'],['8','8'],['q'],['8','8']],3:[['qd'],['8','8','8'],['q','8'],['8','8','8']]};
+const EQPOOL={2:[['q'],['8','8'],['q'],['8','8'],['8','8r']],3:[['qd'],['8','8','8'],['q','8'],['8','q'],['q','8r']],4:[['h'],['q','q'],['q','8','8'],['8','8','q']]};
 function eqBar(m){
   const M=EQMET[m]; const notes=[],beams=[];
   M.pulses.forEach(p=>{
@@ -6822,11 +6946,22 @@ function eqBar(m){
 function eqN(m){ return EQMET[m].pulses[0]; }
 /* tiempos: seg por corchea en A y B según el modo */
 function eqTiming(mode,mA,mB,e0){
-  const E0=e0||0.38, P0=(e0||0.38)*2.5;
-  if(mode==='figura') return {eA:E0,eB:E0};
+  const P0=0.95;   /* referencia de pulso: ~63 bpm — nada corre demasiado */
+  if(mode==='figura'){ const e=P0/eqN(mA); return {eA:e,eB:e}; }
   return {eA:P0/eqN(mA), eB:P0/eqN(mB)};
 }
 function eqBadge(mode,mA,mB){ return mode==='figura' ? '♪ = ♪' : (EQMET[mA].pf+' = '+EQMET[mB].pf); }
+function pulseFig(m){ const n=eqN(m); return n===2?'q':(n===3?'qd':'h'); }
+/* insignia de equivalencia con FIGURAS DIBUJADAS (VexFlow), no glifos de fuente */
+function badgeNode(mode,mA,mB,small){
+  const b=el('div','ieq-badge fig'+(small?' small':''));
+  const fa=(mode==='figura')?'8':pulseFig(mA), fb=(mode==='figura')?'8':pulseFig(mB);
+  const c1=el('span','bfig'); iDraw(c1,{notes:[fa]},{height:small?42:54,minInner:16,stretch:1});
+  const eq=el('span','beq','=');
+  const c2=el('span','bfig'); iDraw(c2,{notes:[fb]},{height:small?42:54,minInner:16,stretch:1});
+  b.appendChild(c1); b.appendChild(eq); b.appendChild(c2);
+  return b;
+}
 /* resumen: qué hace el pulso y qué hacen las figuras al pasar de A a B */
 function eqSummary(mode,mA,mB){
   const nA=eqN(mA), nB=eqN(mB);
@@ -6835,6 +6970,10 @@ function eqSummary(mode,mA,mB){
 }
 const ARR={rapido:'⬆ más rápido',lento:'⬇ más lento',igual:'= se mantiene'};
 const CLS={rapido:'up',lento:'down',igual:'same'};
+/* la ilusión de la talla: entre pulso de negra y pulso de blanca (pulso=pulso), las figuras
+   van "el doble" sobre el papel… pero suenan relativamente igual. Responder «igual» no es fallo. */
+function relIllusion(mode,mA,mB){ if(mode!=='pulso') return false;
+  const s=new Set([eqN(mA),eqN(mB)]); return s.has(2)&&s.has(4); }
 
 /* ---------- mini-secuenciador en segundos (tempo por tramos) ---------- */
 function EqSeq(){
@@ -6903,61 +7042,73 @@ function eqEvents(segs,opts){
   return {evs:evs,total:t};
 }
 
-/* ============ DIAPOSITIVA 'equiv' — demo con música pasando ============ */
+/* ============ DIAPOSITIVA 'equiv' — demo generativa (2+2 compases) ============ */
 S.equiv=function(host,s){
   const c=el('div','igenesis');
-  c.appendChild(el('p','ikicker',s.kicker||(s.mode==='pulso'?'REPASO — PULSO = PULSO':'LA NOVEDAD — FIGURA = FIGURA')));
+  c.appendChild(el('p','ikicker',s.kicker||(s.mode==='pulso'?'REPASO — PULSO = PULSO':'LO NUEVO — FIGURA = FIGURA')));
   c.appendChild(el('h2','ititle2',s.title));
   const row=el('div','ieq-row');
-  const t=eqTiming(s.mode,s.mA,s.mB,s.e0);
-  const barA=s.fixedA||eqBar(s.mA), barB=s.fixedB||eqBar(s.mB);
-  const boxA=el('div','ieq-box'), boxB=el('div','ieq-box');
-  boxA.appendChild(el('p','ieq-m',s.mA)); boxB.appendChild(el('p','ieq-m',s.mB));
-  const chipA=el('div','ipaper'); const dA=iDraw(chipA,barA,{height:96,stretch:1.5,ts:s.mA});
-  const chipB=el('div','ipaper'); const dB=iDraw(chipB,barB,{height:96,stretch:1.5,ts:s.mB});
-  boxA.appendChild(chipA); boxB.appendChild(chipB);
-  const lampsA=el('div','ilamps'), lampsB=el('div','ilamps');
-  const lampElsA=[],lampElsB=[];
-  EQMET[s.mA].pulses.forEach(p=>{ const l=el('span','ilamp'+(p>=3?' big':'')); l.style.width=l.style.height=(12+p*7*(t.eA/0.38))+'px'; lampsA.appendChild(l); lampElsA.push(l); });
-  EQMET[s.mB].pulses.forEach(p=>{ const l=el('span','ilamp'+(p>=3?' big':'')); l.style.width=l.style.height=(12+p*7*(t.eB/0.38))+'px'; lampsB.appendChild(l); lampElsB.push(l); });
-  boxA.appendChild(lampsA); boxB.appendChild(lampsB);
-  const mid=el('div','ieq-mid');
-  mid.appendChild(el('div','ieq-badge',eqBadge(s.mode,s.mA,s.mB)));
-  row.appendChild(boxA); row.appendChild(mid); row.appendChild(boxB);
   c.appendChild(row);
-  /* resumen de qué cambia */
-  const sum=eqSummary(s.mode,s.mA,s.mB);
-  const sr=el('div','ieq-sum');
-  sr.appendChild(el('span','ieq-tag '+CLS[sum.pulso],'PULSO '+ARR[sum.pulso]));
-  sr.appendChild(el('span','ieq-tag '+CLS[sum.figuras],'FIGURAS '+ARR[sum.figuras]));
-  c.appendChild(sr);
-  c.appendChild(el('p','igen-cap',s.caption||''));
+  const cap=el('p','igen-cap',''); c.appendChild(cap);
   const controls=el('div','igen-controls');
-  const btn=el('button','ibtn action','▶ Escúchalo pasar');
-  controls.appendChild(btn); c.appendChild(controls);
+  const play=el('button','ibtn action','▶ Escuchar');
+  const dice=el('button','ibtn ghost','🎲 Otro ejemplo');
+  controls.appendChild(play); controls.appendChild(dice); c.appendChild(controls);
   host.appendChild(c);
   stagger([].slice.call(c.children),60,130);
 
-  const seq=new EqSeq();
-  const segs=[
-    {bar:barA,e:t.eA,drawn:dA,lampEls:lampElsA},
-    {bar:barA,e:t.eA,drawn:dA,lampEls:lampElsA},
-    {bar:barB,e:t.eB,drawn:dB,lampEls:lampElsB},
-    {bar:barB,e:t.eB,drawn:dB,lampEls:lampElsB},
-  ];
-  const built=eqEvents(segs,{tone:true});
-  seq.evs=built.evs; seq.loopS=built.total;
-  /* iluminar la caja activa */
-  let segTimes=[]; let acc=0;
-  segs.forEach((sg,i)=>{ segTimes.push({t0:acc,box:(i<2?boxA:boxB)}); acc+=EQMET[sg.bar.ts].e*sg.e; });
-  segs.forEach((sg,i)=>{ seq.evs.push({t:segTimes[i].t0,cb:()=>{ boxA.classList.toggle('playing',i<2); boxB.classList.toggle('playing',i>=2); }}); });
-  let on=false;
-  btn.onclick=()=>{ if(on){ seq.stop(); on=false; btn.textContent='▶ Escúchalo pasar'; boxA.classList.remove('playing'); boxB.classList.remove('playing'); return; }
-    on=true; btn.textContent='⏸ Parar'; seq.start(); };
-  return function(){ seq.stop(); };
+  let seq=null, cur=null, pi=-1;
+  function build(){
+    if(seq){seq.stop();seq=null;} play.textContent='▶ Escuchar';
+    pi=(pi+1)%s.pairs.length;
+    const mA=s.pairs[pi][0], mB=s.pairs[pi][1];
+    const t=eqTiming(s.mode,mA,mB);
+    row.innerHTML='';
+    c.querySelectorAll('.ieq-sum.below').forEach(x=>x.remove());
+    const bars={A:[eqBar(mA),eqBar(mA)],B:[eqBar(mB),eqBar(mB)]};
+    const boxA=el('div','ieq-box'), boxB=el('div','ieq-box');
+    boxA.appendChild(el('p','ieq-m',mA)); boxB.appendChild(el('p','ieq-m',mB));
+    const chipsA=el('div','ieq-chips'), chipsB=el('div','ieq-chips');
+    const dA=bars.A.map((b,i)=>{ const ch=el('div','ipaper'); const d=iDraw(ch,b,{height:86,stretch:1.25,ts:i===0?mA:null}); chipsA.appendChild(ch); return d; });
+    const dB=bars.B.map((b,i)=>{ const ch=el('div','ipaper'); const d=iDraw(ch,b,{height:86,stretch:1.25,ts:i===0?mB:null}); chipsB.appendChild(ch); return d; });
+    boxA.appendChild(chipsA); boxB.appendChild(chipsB);
+    const lampsA=el('div','ilamps'), lampsB=el('div','ilamps');
+    EQMET[mA].pulses.forEach(p=>{ const l=el('span','ilamp'); const sz=(10+p*7*(t.eA/0.38)); l.style.width=l.style.height=sz+'px'; lampsA.appendChild(l); });
+    EQMET[mB].pulses.forEach(p=>{ const l=el('span','ilamp'); const sz=(10+p*7*(t.eB/0.38)); l.style.width=l.style.height=sz+'px'; lampsB.appendChild(l); });
+    boxA.appendChild(lampsA); boxB.appendChild(lampsB);
+    const mid=el('div','ieq-mid'); mid.appendChild(badgeNode(s.mode,mA,mB));
+    row.appendChild(boxA); row.appendChild(mid); row.appendChild(boxB);
+    /* las indicaciones, FUERA de las tarjetas (debajo, hacia el lado del 2º compás) */
+    const sum=eqSummary(s.mode,mA,mB);
+    const tags=el('div','ieq-sum below');
+    tags.appendChild(el('span','ieq-tag '+CLS[sum.pulso],'PULSO '+ARR[sum.pulso]));
+    tags.appendChild(el('span','ieq-tag '+CLS[sum.figuras],'FIGURAS '+ARR[sum.figuras]));
+    row.parentNode===null||row.appendChild;   /* noop */
+    cap.parentNode.insertBefore(tags,cap);
+    cap.innerHTML=(s.caption||'')+(((mA==='5/8')||(mB==='5/8'))?' <b>Ojo al 5/8:</b> sus pulsos son desiguales — por eso solo cambia por figura = figura.':'');
+    cur={mA:mA,mB:mB,t:t,bars:bars,dA:dA,dB:dB,boxA:boxA,boxB:boxB,
+         lampsA:[].slice.call(lampsA.children),lampsB:[].slice.call(lampsB.children)};
+  }
+  play.onclick=()=>{
+    if(seq){ seq.stop(); seq=null; play.textContent='▶ Escuchar'; cur.boxA.classList.remove('playing'); cur.boxB.classList.remove('playing'); return; }
+    const segs=[
+      {bar:cur.bars.A[0],e:cur.t.eA,drawn:cur.dA[0],lampEls:cur.lampsA},
+      {bar:cur.bars.A[1],e:cur.t.eA,drawn:cur.dA[1],lampEls:cur.lampsA},
+      {bar:cur.bars.B[0],e:cur.t.eB,drawn:cur.dB[0],lampEls:cur.lampsB},
+      {bar:cur.bars.B[1],e:cur.t.eB,drawn:cur.dB[1],lampEls:cur.lampsB}];
+    seq=new EqSeq();
+    const built=eqEvents(segs,{tone:true});
+    seq.evs=built.evs; seq.loopS=0;   /* suena UNA vez */
+    let acc=0; segs.forEach((sg,i)=>{ seq.evs.push({t:acc,cb:()=>{ cur.boxA.classList.toggle('playing',i<2); cur.boxB.classList.toggle('playing',i>=2); }}); acc+=EQMET[sg.bar.ts].e*sg.e; });
+    seq.onend=()=>{ seq=null; play.textContent='▶ Escuchar'; cur.boxA.classList.remove('playing'); cur.boxB.classList.remove('playing'); };
+    play.textContent='⏸ Parar'; seq.start();
+  };
+  dice.onclick=()=>{ build(); };
+  build();
+  return function(){ if(seq)seq.stop(); };
 };
 
-/* ============ DIAPOSITIVA 'craft' — mesa de crafteo ============ */
+/* ============ DIAPOSITIVA 'craft' — mesa de crafteo (partitura siempre a la vista) ============ */
 S.craft=function(host,s){
   const c=el('div','icraft');
   c.appendChild(el('p','ikicker','LA MESA DE CRAFTEO — monta tu propio cambio de compás'));
@@ -6978,41 +7129,82 @@ S.craft=function(host,s){
   const st={mode:'figura'};
   const bPul=el('button','ibtn seg','pulso = pulso');
   const bFig=el('button','ibtn seg on','figura = figura');
-  bPul.onclick=()=>{ st.mode='pulso'; bPul.classList.add('on'); bFig.classList.remove('on'); refresh(); };
+  bPul.onclick=()=>{ if(bPul.disabled)return; st.mode='pulso'; bPul.classList.add('on'); bFig.classList.remove('on'); refresh(); };
   bFig.onclick=()=>{ st.mode='figura'; bFig.classList.add('on'); bPul.classList.remove('on'); refresh(); };
   modeRow.appendChild(bPul); modeRow.appendChild(bFig); modeBox.appendChild(modeRow); ctr.appendChild(modeBox);
   const rnd=el('button','ibtn action dice','🎲 Sorpréndeme');
   ctr.appendChild(rnd);
   c.appendChild(ctr);
-  /* resumen */
+  /* resumen (recto, bien visible) */
   const sum=el('div','icraft-sum'); c.appendChild(sum);
-  /* cinta de música */
-  const view=el('div','iwalk-view'); const strip=el('div','iwalk-strip'); view.appendChild(strip);
-  const needle=el('div','iwalk-needle'); view.appendChild(needle);
-  c.appendChild(view);
-  const tr=el('div','iwalk-tempo');
-  const playBtn=el('button','ibtn action','▶ Generar y escuchar');
-  tr.appendChild(playBtn); c.appendChild(tr);
-  c.appendChild(el('p','itree-foot','La música se genera sola: dos compases de A, la señal de equivalencia, dos de B… y vuelta. Cambia lo que quieras y dale otra vez.'));
+  /* PARTITURA: dos frases de 4 compases, siempre escritas y a la vista */
+  const score=el('div','eq-lines craft'); c.appendChild(score);
+  const controls=el('div','igen-controls');
+  const play=el('button','ibtn action','▶ Escuchar');
+  const regen=el('button','ibtn ghost','↺ Otros compases (mismos ajustes)');
+  controls.appendChild(play); controls.appendChild(regen); c.appendChild(controls);
+  c.appendChild(el('p','itree-foot','Frase 1 en el compás A · frase 2 en el compás B, con la equivalencia en la frontera. Cambia lo que quieras: la partitura se re-escribe sola.'));
   host.appendChild(c);
   stagger([].slice.call(c.children),60,120);
 
-  const PPS=150; // px por segundo (¡el tiempo se VE!)
-  let running=false, t0=0, raf=null, timer=null, items=[], evQ=[], visQ=[], genT=0, segIdx=0;
+  let seq=null, cur=null;
+  const BARS=4;
   function lock58(){
     const has58=(selA.v==='5/8'||selB.v==='5/8');
     bPul.disabled=has58; bPul.style.opacity=has58?0.35:1;
     if(has58&&st.mode==='pulso'){ st.mode='figura'; bFig.classList.add('on'); bPul.classList.remove('on'); }
   }
   function refresh(){
+    if(seq){seq.stop();seq=null;} play.textContent='▶ Escuchar';
     lock58();
-    const sm=eqSummary(st.mode,selA.v,selB.v);
-    sum.innerHTML='<span class="ieq-badge small">'+eqBadge(st.mode,selA.v,selB.v)+'</span>'+
-      '<span class="ieq-tag '+CLS[sm.pulso]+'">PULSO '+ARR[sm.pulso]+'</span>'+
-      '<span class="ieq-tag '+CLS[sm.figuras]+'">FIGURAS '+ARR[sm.figuras]+'</span>'+
-      ((selA.v==='5/8'||selB.v==='5/8')?'<span class="ieq-note">con 5/8 solo cabe figura = figura (sus pulsos son desiguales)</span>':'');
-    if(running) restart();
+    if(selB.v===selA.v){ /* forzar distinto */
+      const ms=Object.keys(EQMET); selB.v=ms.find(m=>m!==selA.v);
+      Object.keys(selB.btns).forEach(m=>selB.btns[m].classList.toggle('on',m===selB.v));
+    }
+    const mA=selA.v,mB=selB.v,mode=st.mode;
+    const t=eqTiming(mode,mA,mB);
+    const sm=eqSummary(mode,mA,mB);
+    sum.innerHTML='';
+    sum.appendChild(badgeNode(mode,mA,mB,true));
+    sum.appendChild(el('span','ieq-tag '+CLS[sm.pulso],'PULSO '+ARR[sm.pulso]));
+    sum.appendChild(el('span','ieq-tag '+CLS[sm.figuras],'FIGURAS '+ARR[sm.figuras]));
+    if(mA==='5/8'||mB==='5/8') sum.appendChild(el('span','ieq-note','con 5/8 solo cabe figura = figura (pulsos desiguales)'));
+    /* partitura de verdad: dos frases en tiras continuas con barras de compás */
+    score.innerHTML='';
+    const segs=[];
+    const mkLine=(m,e)=>{
+      const line=el('div','eq-line');
+      line.appendChild(el('span','ieq-m',m));
+      const staff=el('div','eq-staffline');
+      for(let b=0;b<BARS;b++){
+        if(b>0) staff.appendChild(el('span','eq-barline'));
+        const bar=eqBar(m); const chip=el('div','ipaper flat');
+        const d=iDraw(chip,bar,{height:84,stretch:1.25,minInner:90,ts:b===0?m:null});
+        staff.appendChild(chip);
+        segs.push({bar:bar,e:e,drawn:d,line:line});
+      }
+      line.appendChild(staff);
+      return line;
+    };
+    const lineA=mkLine(mA,t.eA);
+    /* la señal de equivalencia, recta y por delante, en la frontera */
+    const bridge=el('div','eq-bridge');
+    bridge.appendChild(badgeNode(mode,mA,mB,true));
+    bridge.appendChild(el('span','eq-an-res','pulso '+ARR[sm.pulso].replace('⬆','↑').replace('⬇','↓')+' · figuras '+ARR[sm.figuras].replace('⬆','↑').replace('⬇','↓')));
+    const lineB=mkLine(mB,t.eB);
+    score.appendChild(lineA); score.appendChild(bridge); score.appendChild(lineB);
+    cur={segs:segs,lineA:lineA,lineB:lineB};
   }
+  play.onclick=()=>{
+    if(seq){ seq.stop(); seq=null; play.textContent='▶ Escuchar'; cur.lineA.classList.remove('playing'); cur.lineB.classList.remove('playing'); return; }
+    seq=new EqSeq();
+    const built=eqEvents(cur.segs,{tone:true});
+    seq.evs=built.evs; seq.loopS=0;
+    let acc=0; cur.segs.forEach((sg,i)=>{ seq.evs.push({t:acc,cb:()=>{ cur.lineA.classList.toggle('playing',i<BARS); cur.lineB.classList.toggle('playing',i>=BARS); }}); acc+=EQMET[sg.bar.ts].e*sg.e; });
+    seq.onend=()=>{ seq=null; play.textContent='▶ Escuchar'; cur.lineA.classList.remove('playing'); cur.lineB.classList.remove('playing'); };
+    play.textContent='⏸ Parar'; seq.start();
+  };
+  regen.onclick=()=>refresh();
   rnd.onclick=()=>{
     const ms=Object.keys(EQMET); let a=ms[Math.floor(Math.random()*ms.length)], b=ms[Math.floor(Math.random()*ms.length)];
     while(b===a) b=ms[Math.floor(Math.random()*ms.length)];
@@ -7022,67 +7214,28 @@ S.craft=function(host,s){
     st.mode=(a==='5/8'||b==='5/8')?'figura':(Math.random()<0.5?'pulso':'figura');
     bPul.classList.toggle('on',st.mode==='pulso'); bFig.classList.toggle('on',st.mode==='figura');
     refresh();
-    if(!running) playBtn.click();
-  };
-  function now(){ const c2=iCtx(); return c2?(c2.currentTime-t0):0; }
-  function mkBarChip(m,e,atT){
-    const bar=eqBar(m); const M=EQMET[m];
-    const secs=M.e*e; const w=el('div','iwalk-bar');
-    w.style.left=(atT*PPS)+'px'; w.style.width=(secs*PPS)+'px';
-    const d=iDraw(w,bar,{width:Math.max(120,secs*PPS-10),height:100,ts:m});
-    strip.appendChild(w); items.push({el:w,end:atT+secs});
-    const on=iOnsets(bar); let pE=0;
-    M.pulses.forEach((p,pi)=>{ evQ.push({t:atT+pE*e,kind:'pulse',first:pi===0}); pE+=p; });
-    on.onsets.forEach(o=>{ evQ.push({t:atT+o.t*2*e,kind:'note',el:d.els[o.i]}); });
-    return secs;
-  }
-  function mkChange(atT,badge){
-    const w=el('div','iwalk-bar chg'); w.style.left=(atT*PPS)+'px'; w.style.width='58px';
-    w.innerHTML='<span class="iwalk-eq">'+badge+'</span>';
-    strip.appendChild(w); items.push({el:w,end:atT+0.4});
-    return 0; // la señal no ocupa tiempo musical
-  }
-  function gen(){
-    const t=eqTiming(st.mode,selA.v,selB.v);
-    const horizon=now()+9;
-    let guard=0;
-    while(genT<horizon && guard++<24){
-      const phase=segIdx%4;
-      if(phase<2){ genT+=mkBarChip(selA.v,t.eA,genT); if(phase===1) mkChange(genT,eqBadge(st.mode,selA.v,selB.v)); }
-      else { genT+=mkBarChip(selB.v,t.eB,genT); if(phase===3) mkChange(genT,eqBadge(st.mode,selB.v,selA.v)); }
-      segIdx++;
-    }
-    const nb=now();
-    items=items.filter(it=>{ if(it.end<nb-4){ try{it.el.remove();}catch(e){} return false; } return true; });
-  }
-  function schedule(){ const c2=iCtx(); if(!c2)return; const horizon=c2.currentTime+0.14;
-    evQ.sort((a,b)=>a.t-b.t);
-    while(evQ.length && t0+evQ[0].t<=horizon){
-      const e=evQ.shift(); const tt=t0+e.t; if(tt<c2.currentTime-0.05) continue;
-      if(e.kind==='note') TIMBRES.tick(c2,Math.max(tt,c2.currentTime+0.001),0.55);
-      else TIMBRES.drum(c2,Math.max(tt,c2.currentTime+0.001),e.first?1.1:0.88);
-      visQ.push({t:tt,e:e});
-    }
-  }
-  function frame(){ if(!running) return;
-    const c2=iCtx(); const nb=now();
-    strip.style.transform='translateX('+(view.clientWidth*0.3 - nb*PPS)+'px)';
-    while(visQ.length && c2 && visQ[0].t<=c2.currentTime+0.02){
-      const v=visQ.shift(); if(v.e.kind==='note'&&v.e.el) iFlash(v.e.el,110);
-    }
-    gen(); raf=requestAnimationFrame(frame);
-  }
-  function stop(){ running=false; playBtn.textContent='▶ Generar y escuchar'; if(timer){clearInterval(timer);timer=null;} if(raf)cancelAnimationFrame(raf); }
-  function restart(){ stop(); playBtn.click(); }
-  playBtn.onclick=()=>{
-    if(running){ stop(); return; }
-    const c2=iCtx(); if(!c2) return;
-    running=true; playBtn.textContent='⏸ Parar';
-    strip.innerHTML=''; items=[]; evQ.length=0; visQ.length=0; genT=0; segIdx=0;
-    t0=c2.currentTime+0.15; gen(); timer=setInterval(schedule,25); raf=requestAnimationFrame(frame);
   };
   refresh();
-  return function(){ stop(); };
+  return function(){ if(seq)seq.stop(); };
+};
+
+/* ============ ejemplo animado de la tarjeta 6.3 (tipografía VexFlow) ============ */
+window.__renderEquivEx=function(hostEl){
+  try{
+    hostEl.classList.add('eqx-host'); hostEl.innerHTML='';
+    const mk=(kick,fa,fb,cls)=>{
+      const stt=el('div','eqx-state '+cls);
+      stt.appendChild(el('p','eqx-k',kick));
+      const rowx=el('div','eqx-row');
+      const c1=el('span','eqx-fig'); iDraw(c1,{notes:[fa]},{height:60,minInner:24,stretch:1});
+      const eq=el('span','eqx-eq','=');
+      const c2=el('span','eqx-fig'); iDraw(c2,{notes:[fb]},{height:60,minInner:24,stretch:1});
+      rowx.appendChild(c1); rowx.appendChild(eq); rowx.appendChild(c2);
+      stt.appendChild(rowx); return stt;
+    };
+    hostEl.appendChild(mk('REPASO · pulso = pulso','q','qd','a'));
+    hostEl.appendChild(mk('NUEVO · figura = figura','8','8','b'));
+  }catch(e){}
 };
 
 /* ============ INTRO de la carta 6.3 ============ */
@@ -7094,49 +7247,55 @@ window.CARD_INTROS['6.3']={spq:0.76,slides:function(card){ return [
     {q:'¿Qué es una equivalencia?',a:'La nota que aparece <b>sobre el cambio de compás</b> y que dice qué elemento vale lo mismo a los dos lados de la barra.'},
     {q:'La de siempre: PULSO = PULSO',a:'<b>♩ = ♩.</b> El pulso dura lo mismo; las figuras corren más o menos. Es la más común — la has vivido en todas las lecturas con cambio.'},
     {q:'La nueva: FIGURA = FIGURA',a:'<b>♪ = ♪</b> La corchea vale lo mismo a ambos lados; el que se estira o se encoge es el <b>PULSO</b>.'}]},
-  {type:'equiv',mode:'pulso',mA:'2/4',mB:'6/8',title:'Repaso: pulso = pulso',
-   caption:'El tambor no cambia NUNCA: el pulso se mantiene. Pero fíjate en las corcheas: en 6/8 caben TRES por pulso — van más rápidas. <b>Pulso igual, figuras más rápidas.</b>'},
-  {type:'equiv',mode:'figura',mA:'2/4',mB:'6/8',title:'La novedad: figura = figura',
-   caption:'Ahora las corcheas son clavadas a ambos lados — la lámpara del pulso, en cambio, se agranda: cada pulso de 6/8 espera TRES corcheas. <b>Figuras iguales, pulso más lento.</b>'},
-  {type:'equiv',mode:'figura',mA:'5/8',mB:'2/4',title:'Y con el 5/8 de la carta anterior',
-   caption:'Del compás cojo al 2/4: la corchea no se inmuta (♪ = ♪). Lo que cambia es el suelo que pisas: de pulsos desiguales a pulsos iguales. <b>Por eso el 5/8 solo cambia por figura = figura.</b>'},
+  {type:'equiv',mode:'pulso',title:'Repaso: pulso = pulso',
+   pairs:[['2/4','6/8'],['6/8','2/4'],['2/4','2/2'],['2/2','2/4'],['6/8','2/2'],['9/8','3/4'],['3/4','9/8'],['2/2','6/8']],
+   caption:'El tambor no cambia NUNCA: el pulso se mantiene. Lo que corre más o menos son las figuras — míralo y óyelo en el segundo compás. Dale a 🎲 y prueba otras parejas.'},
+  {type:'equiv',mode:'figura',title:'La novedad: figura = figura',
+   pairs:[['2/4','6/8'],['6/8','3/4'],['5/8','2/4'],['2/4','5/8'],['3/4','6/8'],['9/8','2/4']],
+   caption:'Las corcheas son clavadas a ambos lados — el que se estira o se encoge es el PULSO. Fíjate en las lámparas del lado derecho. Dale a 🎲 para más combinaciones.'},
   {type:'craft'}];}};
 
 /* ============ QUIZ 6.3 — overlay propio con 3 fases ============ */
-let QOV=null,qStage=null,qSteps=null,qPhase=0,qDone=[false,false,false];
+let QOV=null,qStage=null,qSteps=null,qPhase=0,qDone=[false,false,false],qCleanup=null;
 function buildQuiz(){
   if(QOV) return;
-  QOV=el('div','intro-ov eq-ov'); QOV.id='eqQuizOv';
-  QOV.innerHTML='<div class="intro-bar">'+
-    '<span class="intro-brand">QUIZ <span>· 6.3 figura = figura</span></span>'+
-    '<div class="eq-steps" id="eqSteps"></div>'+
-    '<div class="intro-nav"><button class="intro-x" id="eqClose">✕</button></div></div>'+
-    '<div class="intro-stage" id="eqStage"></div>';
+  QOV=el('div','eq-ov2'); QOV.id='eqQuizOv';
+  QOV.innerHTML=
+    '<div class="eq-blob b1"></div><div class="eq-blob b2"></div><div class="eq-blob b3"></div><div class="eq-blob b4"></div><div class="eq-blob b5"></div>'+
+    '<div class="eq-bar">'+
+      '<span class="eq-brand">RITMO <span>at home · quiz 6.3</span></span>'+
+      '<div class="eq-steps" id="eqSteps"></div>'+
+      '<button class="eq-x" id="eqClose" title="Salir del quiz">✕</button>'+
+    '</div>'+
+    '<div class="eq-stage" id="eqStage"></div>';
   document.body.appendChild(QOV);
   qStage=QOV.querySelector('#eqStage'); qSteps=QOV.querySelector('#eqSteps');
   QOV.querySelector('#eqClose').onclick=closeQuiz;
 }
-let qCleanup=null;
 function closeQuiz(){ if(qCleanup){try{qCleanup();}catch(e){}} qCleanup=null; if(QOV)QOV.classList.remove('show'); }
 function paintSteps(){ qSteps.innerHTML='';
-  ['1 · Test','2 · ¿Bien o mal?','3 · ¡A tocar!'].forEach((nm,i)=>{
-    const s=el('span','eqstep'+(i===qPhase?' cur':(qDone[i]?' done':'')),nm+(qDone[i]?' ✓':''));
-    s.onclick=()=>{ if(i<=qPhase||qDone[i]||qDone[Math.max(0,i-1)]) showPhase(i); };
+  [['1','Test'],['2','¿Bien o mal?'],['3','¡A tocar!']].forEach((nm,i)=>{
+    const s=el('span','eq-step'+(i===qPhase?' cur':'')+(qDone[i]?' done':''));
+    s.innerHTML='<span class="eq-stn">'+(qDone[i]?'✓':nm[0])+'</span><span class="eq-stnm">'+nm[1]+'</span>';
+    s.onclick=()=>{ if(i===qPhase) return; if(i===0||qDone[i]||qDone[i-1]) showPhase(i); else { s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); } };
     qSteps.appendChild(s); });
 }
 function showPhase(i){ if(qCleanup){try{qCleanup();}catch(e){}} qCleanup=null;
-  qPhase=i; paintSteps(); qStage.innerHTML='';
-  const host=el('div','islide show'); qStage.appendChild(host);
+  qPhase=i; paintSteps();
+  const old=qStage.querySelector('.eq-slide');
+  if(old){ old.classList.add('leave'); setTimeout(()=>{try{old.remove();}catch(e){}},430); }
+  const host=el('div','eq-slide'); qStage.appendChild(host);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>host.classList.add('show')));
   qCleanup=[phase1,phase2,phase3][i](host)||null;
 }
-window.launchEquivQuiz=function(){ buildQuiz(); qDone=[false,false,false]; QOV.classList.add('show'); showPhase(0); };
+window.launchEquivQuiz=function(){ buildQuiz(); qDone=[false,false,false]; QOV.classList.add('show'); qStage.innerHTML=''; showPhase(0); };
 
-/* --- utilidades comunes de las fases --- */
-function scenario(){
-  const ms=Object.keys(EQMET);
+/* --- utilidades comunes --- */
+function scenario(no58){
+  const ms=Object.keys(EQMET).filter(m=>!no58||m!=='5/8');
   let a=ms[Math.floor(Math.random()*ms.length)], b=ms[Math.floor(Math.random()*ms.length)];
   let tries=0;
-  while((b===a || eqN(a)===eqN(b)) && tries++<20){ b=ms[Math.floor(Math.random()*ms.length)]; }
+  while((b===a || eqN(a)===eqN(b)) && tries++<30){ b=ms[Math.floor(Math.random()*ms.length)]; }
   const mode=(a==='5/8'||b==='5/8')?'figura':(Math.random()<0.5?'pulso':'figura');
   return {mA:a,mB:b,mode:mode};
 }
@@ -7145,40 +7304,43 @@ function triRow(lab,onPick){
   const btns=[];
   [['lento','⬇ más lento'],['igual','= igual'],['rapido','⬆ más rápido']].forEach(([v,txt])=>{
     const b=el('button','ibtn seg',txt); b.dataset.v=v;
-    b.onclick=()=>{ btns.forEach(x=>x.classList.remove('on')); b.classList.add('on'); onPick(v); };
+    b.onclick=()=>{ if(b.disabled)return; btns.forEach(x=>x.classList.remove('on')); b.classList.add('on'); onPick(v); };
     btns.push(b); r.appendChild(b); });
   r.__btns=btns; return r;
 }
-function markTri(row,correct,picked){
+function markTri(row,correct,picked,rel){
   row.__btns.forEach(b=>{ b.disabled=true;
     if(b.dataset.v===correct) b.classList.add('good');
-    else if(b.dataset.v===picked) b.classList.add('bad'); });
+    else if(b.dataset.v===picked) b.classList.add(rel?'rel':'bad'); });
 }
-function scenChips(host,sc,opts){
-  opts=opts||{};
+/* parpadeo de emoción antes de revelar */
+function hype(els,cb){ els.forEach(e=>e&&e.classList.add('hype'));
+  setTimeout(()=>{ els.forEach(e=>e&&e.classList.remove('hype')); cb(); },1150); }
+/* dos compases por lado, con aire entre figuras */
+function scenChips(host,sc){
   const row=el('div','ieq-row');
   const t=eqTiming(sc.mode,sc.mA,sc.mB);
-  const barA=eqBar(sc.mA), barB=eqBar(sc.mB);
+  const barsA=[eqBar(sc.mA),eqBar(sc.mA)], barsB=[eqBar(sc.mB),eqBar(sc.mB)];
   const boxA=el('div','ieq-box'), boxB=el('div','ieq-box');
   boxA.appendChild(el('p','ieq-m',sc.mA)); boxB.appendChild(el('p','ieq-m',sc.mB));
-  const chipA=el('div','ipaper'), chipB=el('div','ipaper');
-  const dA=iDraw(chipA,barA,{height:88,stretch:1.35,ts:sc.mA});
-  const dB=iDraw(chipB,barB,{height:88,stretch:1.35,ts:sc.mB});
-  boxA.appendChild(chipA); boxB.appendChild(chipB);
-  const mid=el('div','ieq-mid'); mid.appendChild(el('div','ieq-badge',eqBadge(sc.mode,sc.mA,sc.mB)));
+  const chipsA=el('div','ieq-chips'), chipsB=el('div','ieq-chips');
+  const dA=barsA.map((b,i)=>{ const ch=el('div','ipaper'); const d=iDraw(ch,b,{height:92,stretch:1.7,minInner:110,ts:i===0?sc.mA:null}); chipsA.appendChild(ch); return d; });
+  const dB=barsB.map((b,i)=>{ const ch=el('div','ipaper'); const d=iDraw(ch,b,{height:92,stretch:1.7,minInner:110,ts:i===0?sc.mB:null}); chipsB.appendChild(ch); return d; });
+  boxA.appendChild(chipsA); boxB.appendChild(chipsB);
+  const mid=el('div','ieq-mid'); mid.appendChild(badgeNode(sc.mode,sc.mA,sc.mB));
   row.appendChild(boxA); row.appendChild(mid); row.appendChild(boxB);
   host.appendChild(row);
-  return {barA:barA,barB:barB,dA:dA,dB:dB,t:t,boxA:boxA,boxB:boxB};
+  return {barsA:barsA,barsB:barsB,dA:dA,dB:dB,t:t,boxA:boxA,boxB:boxB};
 }
 function playScen(sc,parts,wrong,onEnd){
   const t=eqTiming(sc.mode,sc.mA,sc.mB);
   let eB=t.eB;
   if(wrong){ const other=eqTiming(sc.mode==='pulso'?'figura':'pulso',sc.mA,sc.mB); eB=other.eB; }
   const segs=[
-    {bar:parts.barA,e:t.eA,drawn:parts.dA},
-    {bar:parts.barA,e:t.eA,drawn:parts.dA},
-    {bar:parts.barB,e:eB,drawn:parts.dB},
-    {bar:parts.barB,e:eB,drawn:parts.dB}];
+    {bar:parts.barsA[0],e:t.eA,drawn:parts.dA[0]},
+    {bar:parts.barsA[1],e:t.eA,drawn:parts.dA[1]},
+    {bar:parts.barsB[0],e:eB,drawn:parts.dB[0]},
+    {bar:parts.barsB[1],e:eB,drawn:parts.dB[1]}];
   const seq=new EqSeq();
   const built=eqEvents(segs,{tone:true});
   seq.evs=built.evs; seq.loopS=0; seq.onend=onEnd||null;
@@ -7188,215 +7350,263 @@ function playScen(sc,parts,wrong,onEnd){
   return seq;
 }
 
-/* ============ FASE 1 — test (5 preguntas) ============ */
+/* ============ FASE 1 — test (3 preguntas, sin 5/8) ============ */
 function phase1(host){
   let qn=0, score=0, seq=null;
-  const c=el('div','eqp');
-  host.appendChild(c);
+  const c=el('div','eqp'); host.appendChild(c);
   function question(){
     c.innerHTML=''; if(seq)seq.stop();
-    const sc=scenario();
-    c.appendChild(el('p','ikicker','FASE 1 · PREGUNTA '+(qn+1)+' DE 5'));
-    c.appendChild(el('h2','ititle2','En este cambio…'));
-    const parts=scenChips(c,sc);
+    const q=el('div','eq-anim'); c.appendChild(q);
+    const sc=scenario(true);   /* sin 5/8: sus pulsos desiguales confunden la pregunta */
+    q.appendChild(el('p','ikicker','FASE 1 · PREGUNTA '+(qn+1)+' DE 3'));
+    q.appendChild(el('h2','ititle2','En este cambio…'));
+    const parts=scenChips(q,sc);
     const correct=eqSummary(sc.mode,sc.mA,sc.mB);
     let pickP=null,pickF=null;
     const rowP=triRow('El PULSO va…',v=>{pickP=v;check.disabled=!(pickP&&pickF);});
     const rowF=triRow('Las FIGURAS van…',v=>{pickF=v;check.disabled=!(pickP&&pickF);});
-    c.appendChild(rowP); c.appendChild(rowF);
-    const fb=el('p','eq-fb',''); c.appendChild(fb);
+    q.appendChild(rowP); q.appendChild(rowF);
+    const fb=el('p','eq-fb',''); q.appendChild(fb);
     const controls=el('div','igen-controls');
     const check=el('button','ibtn action','Comprobar'); check.disabled=true;
     const next=el('button','ibtn primary','Siguiente →'); next.style.display='none';
-    controls.appendChild(check); controls.appendChild(next); c.appendChild(controls);
+    controls.appendChild(check); controls.appendChild(next); q.appendChild(controls);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>q.classList.add('in')));
     check.onclick=()=>{
-      const okP=(pickP===correct.pulso), okF=(pickF===correct.figuras);
-      markTri(rowP,correct.pulso,pickP); markTri(rowF,correct.figuras,pickF);
-      if(okP&&okF) score++;
-      fb.innerHTML=(okP&&okF)?'✅ ¡Eso es! Escúchalo…':'❌ Casi. Escucha y fíjate en el tambor (pulso) y en las corcheas (figuras)…';
-      fb.className='eq-fb '+((okP&&okF)?'good':'bad');
-      check.style.display='none';
-      seq=playScen(sc,parts,false,()=>{ next.style.display=''; });
+      check.disabled=true;
+      const sel=[rowP.__btns.find(b=>b.classList.contains('on')),rowF.__btns.find(b=>b.classList.contains('on'))];
+      hype(sel,()=>{
+        const okP=(pickP===correct.pulso);
+        const relF=(pickF==='igual' && pickF!==correct.figuras && relIllusion(sc.mode,sc.mA,sc.mB));
+        const okF=(pickF===correct.figuras)||relF;
+        markTri(rowP,correct.pulso,pickP);
+        markTri(rowF,correct.figuras,pickF,relF);
+        if(okP&&okF) score++;
+        if(okP&&relF){ fb.innerHTML='🔵 Relativamente van igual — no da sensación de cambio. Pero si nos fijamos puramente en qué figuras son, ahora van '+(correct.figuras==='rapido'?'el doble de rápido':'a la mitad')+'. Te lo damos por bueno. Escúchalo…'; fb.className='eq-fb rel'; }
+        else { fb.innerHTML=(okP&&okF)?'✅ ¡Eso es! Escúchalo…':'❌ Casi. Escucha: el tambor es el pulso; las corcheas, las figuras…'; fb.className='eq-fb '+((okP&&okF)?'good':'bad'); }
+        check.style.display='none';
+        seq=playScen(sc,parts,false,()=>{ next.style.display=''; });
+      });
     };
-    next.onclick=()=>{ qn++; if(qn<5) question(); else finish(); };
+    next.onclick=()=>{ qn++; if(qn<3) question(); else finish(); };
   }
   function finish(){
     c.innerHTML='';
-    c.appendChild(el('p','ikicker','FASE 1 COMPLETADA'));
-    c.appendChild(el('h2','ititle2',score+' de 5 correctas'));
-    c.appendChild(el('p','igen-cap',score>=4?'Dominas la teoría. A la fase 2.':'Repasa la idea: pulso=pulso → el pulso no cambia; figura=figura → las figuras no cambian.'));
+    const q=el('div','eq-anim in'); c.appendChild(q);
+    q.appendChild(el('p','ikicker','FASE 1 COMPLETADA'));
+    q.appendChild(el('h2','ititle2',score+' de 3 correctas'));
+    q.appendChild(el('p','igen-cap',score>=2?'Dominas la teoría. A la fase 2.':'Recuerda: pulso=pulso → el pulso no cambia; figura=figura → las figuras no cambian.'));
     const b=el('button','ibtn action','Ir a la fase 2 →'); b.onclick=()=>{ qDone[0]=true; showPhase(1); };
-    const controls=el('div','igen-controls'); controls.appendChild(b); c.appendChild(controls);
+    const controls=el('div','igen-controls'); controls.appendChild(b); q.appendChild(controls);
   }
   question();
   return function(){ if(seq)seq.stop(); };
 }
 
-/* ============ FASE 2 — ¿bien o mal ejecutado? (4 ítems) ============ */
+/* ============ FASE 2 — ¿bien o mal ejecutado? (3 escuchas) ============ */
 function phase2(host){
   let qn=0, score=0, seq=null;
   const c=el('div','eqp'); host.appendChild(c);
   function item(){
     c.innerHTML=''; if(seq)seq.stop();
-    const sc=scenario();
+    const q=el('div','eq-anim'); c.appendChild(q);
+    const sc=scenario(true);
     const wrong=Math.random()<0.5;
-    c.appendChild(el('p','ikicker','FASE 2 · ESCUCHA '+(qn+1)+' DE 4'));
-    c.appendChild(el('h2','ititle2','¿Se ha ejecutado BIEN la equivalencia?'));
-    const parts=scenChips(c,sc);
-    c.appendChild(el('p','igen-cap','La partitura promete <b>'+eqBadge(sc.mode,sc.mA,sc.mB)+'</b> ('+(sc.mode==='pulso'?'pulso = pulso':'figura = figura')+'). El motor la va a tocar… a su manera. Tú decides si ha cumplido.'));
-    const fb=el('p','eq-fb',''); c.appendChild(fb);
+    q.appendChild(el('p','ikicker','FASE 2 · ESCUCHA '+(qn+1)+' DE 3'));
+    q.appendChild(el('h2','ititle2','¿Se ha ejecutado BIEN la equivalencia?'));
+    const parts=scenChips(q,sc);
+    q.appendChild(el('p','igen-cap','La partitura promete la equivalencia del recuadro (<b>'+(sc.mode==='pulso'?'pulso = pulso':'figura = figura')+'</b>). El motor la va a tocar… a su manera. Responde cuando quieras — incluso mientras suena.'));
+    const fb=el('p','eq-fb',''); q.appendChild(fb);
     const controls=el('div','igen-controls');
     const play=el('button','ibtn action','▶ Escuchar');
     const bOK=el('button','ibtn seg','✔ Bien ejecutado');
     const bKO=el('button','ibtn seg','✘ Mal ejecutado');
     const next=el('button','ibtn primary','Siguiente →'); next.style.display='none';
-    bOK.disabled=true; bKO.disabled=true;
     controls.appendChild(play); controls.appendChild(bOK); controls.appendChild(bKO); controls.appendChild(next);
-    c.appendChild(controls);
-    play.onclick=()=>{ if(seq)seq.stop(); seq=playScen(sc,parts,wrong,()=>{ bOK.disabled=false; bKO.disabled=false; }); };
-    function answer(saidOK){
-      const okAns=(saidOK!==wrong);
-      if(okAns)score++;
-      fb.innerHTML=okAns?'✅ ¡Correcto! '+(wrong?'Había trampa: mantuvo lo que no era.':'Cumplió la equivalencia al pie de la letra.')
-                        :'❌ '+(wrong?'Había trampa y coló: mantuvo lo que NO era.':'Era correcta: lo prometido se mantuvo.');
-      fb.className='eq-fb '+(okAns?'good':'bad');
-      bOK.disabled=true; bKO.disabled=true; next.style.display='';
+    q.appendChild(controls);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>q.classList.add('in')));
+    play.onclick=()=>{ if(seq)seq.stop(); seq=playScen(sc,parts,wrong,null); };
+    let answered=false;
+    function answer(saidOK,btn){
+      if(answered) return; answered=true;
+      btn.classList.add('on');
+      bOK.disabled=true; bKO.disabled=true;
+      hype([btn],()=>{
+        const okAns=(saidOK!==wrong);
+        if(okAns)score++;
+        btn.classList.add(okAns?'good':'bad');
+        fb.innerHTML=okAns?'✅ ¡Correcto! '+(wrong?'Había trampa: mantuvo lo que NO era.':'Cumplió la equivalencia al pie de la letra.')
+                          :'❌ '+(wrong?'Había trampa y se te coló: mantuvo lo que NO era.':'Era correcta: lo prometido se mantuvo.');
+        fb.className='eq-fb '+(okAns?'good':'bad');
+        next.style.display='';
+      });
     }
-    bOK.onclick=()=>answer(true); bKO.onclick=()=>answer(false);
-    next.onclick=()=>{ qn++; if(qn<4) item(); else fin(); };
+    bOK.onclick=()=>answer(true,bOK); bKO.onclick=()=>answer(false,bKO);
+    next.onclick=()=>{ qn++; if(qn<3) item(); else fin(); };
   }
   function fin(){ c.innerHTML='';
-    c.appendChild(el('p','ikicker','FASE 2 COMPLETADA'));
-    c.appendChild(el('h2','ititle2',score+' de 4 correctas'));
+    const q=el('div','eq-anim in'); c.appendChild(q);
+    q.appendChild(el('p','ikicker','FASE 2 COMPLETADA'));
+    q.appendChild(el('h2','ititle2',score+' de 3 correctas'));
     const b=el('button','ibtn action','Ir a la fase 3 →'); b.onclick=()=>{ qDone[1]=true; showPhase(2); };
-    const controls=el('div','igen-controls'); controls.appendChild(b); c.appendChild(controls); }
+    const controls=el('div','igen-controls'); controls.appendChild(b); q.appendChild(controls); }
   item();
   return function(){ if(seq)seq.stop(); };
 }
 
-/* ============ FASE 3 — teoría + ejecución con barra espaciadora (×3) ============ */
+/* ============ FASE 3 — teoría en el cambio + ejecución (×3) ============ */
 function phase3(host){
   let trial=0, seq=null, tapHandler=null;
   const c=el('div','eqp'); host.appendChild(c);
 
   function mkTrial(){
     c.innerHTML=''; if(seq)seq.stop();
-    /* 3 frases × 2 compases con 2 cambios: uno pulso=pulso y otro figura=figura (orden aleatorio) */
+    const q=el('div','eq-anim'); c.appendChild(q);
     const modes=Math.random()<0.5?['pulso','figura']:['figura','pulso'];
     const pool=['2/4','3/4','6/8','9/8'];
     const M1=pool[Math.floor(Math.random()*pool.length)];
     let M2=pool[Math.floor(Math.random()*pool.length)]; while(eqN(M2)===eqN(M1)) M2=pool[Math.floor(Math.random()*pool.length)];
     let M3=pool[Math.floor(Math.random()*pool.length)]; while(eqN(M3)===eqN(M2)) M3=pool[Math.floor(Math.random()*pool.length)];
-    const e1=0.4;
+    const e1=0.42;
     const e2=(modes[0]==='figura')?e1:(e1*eqN(M1))/eqN(M2);
     const e3=(modes[1]==='figura')?e2:(e2*eqN(M2))/eqN(M3);
-    const BARS=2;
+    /* nº de compases por métrica para que las TRES frases pesen lo mismo (≈16-18 corcheas) */
+    const BARSOF={'2/4':4,'3/4':3,'6/8':3,'9/8':2};
     const phr=[{m:M1,e:e1},{m:M2,e:e2},{m:M3,e:e3}];
-    c.appendChild(el('p','ikicker','FASE 3 · PRUEBA '+(trial+1)+' DE 3 — primero la teoría, luego a tocar'));
-    /* partitura: 3 líneas de 2 compases */
-    const lines=el('div','eq-lines');
+    q.appendChild(el('p','ikicker','FASE 3 · PRUEBA '+(trial+1)+' DE 3 — primero la teoría, luego a tocar'));
+    /* partitura tipo pentagrama: compases unidos por barras, mismo ancho total por frase */
+    const STAFFW=880;
+    const lines=el('div','eq-lines'); q.appendChild(lines);
     const segs=[]; const annots=[];
     phr.forEach((P,pi)=>{
       const line=el('div','eq-line');
       line.appendChild(el('span','ieq-m',P.m));
-      for(let b=0;b<BARS;b++){
-        const bar=eqBar(P.m); const chip=el('div','ipaper');
-        const d=iDraw(chip,bar,{height:84,stretch:1.3,ts:b===0?P.m:null});
-        line.appendChild(chip);
+      const staff=el('div','eq-staffline'); staff.style.width=STAFFW+'px';
+      const nb=BARSOF[P.m]||2;
+      const totalE=nb*EQMET[P.m].e;
+      for(let b=0;b<nb;b++){
+        if(b>0) staff.appendChild(el('span','eq-barline'));
+        const bar=eqBar(P.m); const chip=el('div','ipaper flat');
+        const w=Math.floor((STAFFW-24-(nb-1)*6)*EQMET[P.m].e/totalE)-(b===0?0:2);
+        const d=iDraw(chip,bar,{width:w,height:88,ts:b===0?P.m:null});
+        staff.appendChild(chip);
         segs.push({bar:bar,e:P.e,drawn:d,phrase:pi});
       }
+      line.appendChild(staff);
       if(pi<2){
         const an=el('div','eq-annot');
-        an.innerHTML='<span class="ieq-badge small">'+eqBadge(modes[pi],P.m,phr[pi+1].m)+'</span><span class="eq-an-res"></span>';
+        an.appendChild(badgeNode(modes[pi],P.m,phr[pi+1].m,true));
+        an.appendChild(el('span','eq-an-res',''));
         line.appendChild(an); annots.push(an);
       }
       lines.appendChild(line);
     });
-    c.appendChild(lines);
-    /* teoría por cambio */
-    const theory=el('div','eq-theory'); c.appendChild(theory);
-    const fb=el('p','eq-fb',''); c.appendChild(fb);
-    const controls=el('div','igen-controls'); c.appendChild(controls);
-    const hint=el('p','itree-foot','');
-    c.appendChild(hint);
-    let chg=0;
+    const fb=el('p','eq-fb',''); q.appendChild(fb);
+    const theory=el('div','eq-theory'); q.appendChild(theory);
+    const hint=el('p','itree-foot',''); q.appendChild(hint);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>q.classList.add('in')));
+    let chg=0, pop=null;
     function askChange(){
-      theory.innerHTML='';
-      theory.appendChild(el('h2','ititle2','Cambio '+(chg+1)+': '+phr[chg].m+' → '+phr[chg+1].m+' con '+eqBadge(modes[chg],phr[chg].m,phr[chg+1].m)));
+      if(pop){try{pop.remove();}catch(e){}}
+      /* VENTANA EMERGENTE junto a la equivalencia del cambio en cuestión */
+      pop=el('div','eq-pop');
+      pop.appendChild(el('p','eq-pop-t','Cambio '+(chg+1)+': '+phr[chg].m+' → '+phr[chg+1].m));
       const correct=eqSummary(modes[chg],phr[chg].m,phr[chg+1].m);
       let pickP=null,pickF=null;
-      const rowP=triRow('El PULSO será…',v=>{pickP=v;check.disabled=!(pickP&&pickF);});
-      const rowF=triRow('Las FIGURAS serán…',v=>{pickF=v;check.disabled=!(pickP&&pickF);});
-      theory.appendChild(rowP); theory.appendChild(rowF);
-      const check=el('button','ibtn action','Comprobar'); check.disabled=true;
-      const cc=el('div','igen-controls'); cc.appendChild(check); theory.appendChild(cc);
+      const rowP=triRow('PULSO…',v=>{pickP=v;check.disabled=!(pickP&&pickF);});
+      const rowF=triRow('FIGURAS…',v=>{pickF=v;check.disabled=!(pickP&&pickF);});
+      pop.appendChild(rowP); pop.appendChild(rowF);
+      const check=el('button','ibtn action small','Comprobar'); check.disabled=true;
+      const cc=el('div','igen-controls'); cc.appendChild(check); pop.appendChild(cc);
+      annots[chg].appendChild(pop);
+      annots[chg].classList.add('asking');
       check.onclick=()=>{
-        markTri(rowP,correct.pulso,pickP); markTri(rowF,correct.figuras,pickF);
-        const ok=(pickP===correct.pulso&&pickF===correct.figuras);
-        annots[chg].querySelector('.eq-an-res').innerHTML=(ok?'✅ ':'⚠ ')+'pulso '+ARR[correct.pulso].replace('⬆','↑').replace('⬇','↓')+' · figuras '+ARR[correct.figuras].replace('⬆','↑').replace('⬇','↓');
-        fb.innerHTML=ok?'✅ Anotado en la partitura.':'❌ La respuesta correcta queda anotada en la partitura — úsala al tocar.';
-        fb.className='eq-fb '+(ok?'good':'bad');
-        setTimeout(()=>{ chg++; fb.textContent=''; if(chg<2) askChange(); else readyToPlay(); },1400);
+        check.disabled=true;
+        const sel=[rowP.__btns.find(b=>b.classList.contains('on')),rowF.__btns.find(b=>b.classList.contains('on'))];
+        hype(sel,()=>{
+          const relF=(pickF==='igual' && pickF!==correct.figuras && relIllusion(modes[chg],phr[chg].m,phr[chg+1].m));
+          markTri(rowP,correct.pulso,pickP); markTri(rowF,correct.figuras,pickF,relF);
+          const ok=(pickP===correct.pulso&&(pickF===correct.figuras||relF));
+          annots[chg].querySelector('.eq-an-res').innerHTML=(ok?'✅ ':'⚠ ')+'pulso '+ARR[correct.pulso].replace('⬆','↑').replace('⬇','↓')+' · figuras '+ARR[correct.figuras].replace('⬆','↑').replace('⬇','↓');
+          fb.innerHTML=ok?'✅ Anotado junto al cambio.':'❌ La respuesta correcta queda anotada junto al cambio — úsala al tocar.';
+          fb.className='eq-fb '+(ok?'good':'bad');
+          setTimeout(()=>{ annots[chg].classList.remove('asking'); try{pop.remove();}catch(e){} pop=null;
+            chg++; fb.textContent=''; if(chg<2) askChange(); else readyToPlay(); },1500);
+        });
       };
     }
+    const TOUCH=('ontouchstart' in window)||((navigator.maxTouchPoints||0)>0);
     function readyToPlay(){
       theory.innerHTML='';
-      theory.appendChild(el('h2','ititle2','Teoría lista. Ahora, de arriba abajo: marca cada nota con la BARRA ESPACIADORA.'));
+      theory.appendChild(el('h2','ititle2',TOUCH?'Teoría lista. De arriba abajo: marca cada nota en los PADS.':'Teoría lista. De arriba abajo: marca cada nota con la BARRA ESPACIADORA.'));
+      if(!TOUCH){ const sb=el('div','eq-space'); sb.innerHTML='<span class="eq-space-key">␣ espacio</span>'; theory.appendChild(sb); }
       const play=el('button','ibtn action','▶ Claqueta y ¡dentro!');
       const cc=el('div','igen-controls'); cc.appendChild(play); theory.appendChild(cc);
-      hint.textContent='La claqueta marca el pulso y se adapta sola en cada cambio. Tolerancia humana: no hace falta ser un robot.';
+      hint.textContent='La claqueta cuenta los pulsos del primer compás y se adapta sola en cada cambio.';
       play.onclick=()=>{ play.disabled=true; run(); };
     }
     function run(){
-      /* claqueta: 1 compás de M1 + las 3 frases con pulso continuo */
       const count={bar:{notes:[],beams:[],ts:M1},e:e1,count:true};
       const allSegs=[count].concat(segs);
       const built=eqEvents(allSegs,{tone:false,noteTimbre:'clave'});
-      /* cuenta 3-2-1 visual */
       const cd=el('div','eq-count'); c.appendChild(cd);
       const nPulses=EQMET[M1].pulses.length;
       count.countCb=(pi)=>{ const n=nPulses-pi; cd.textContent=(n<=3)?String(n):''; if(pi===nPulses-1) setTimeout(()=>{cd.textContent='';},e1*EQMET[M1].pulses[0]*1000); };
       seq=new EqSeq(); seq.evs=built.evs; seq.loopS=0;
       const expected=built.evs.filter(ev=>ev.expected).map(ev=>({t:ev.t,el:ev.segRef.drawn.els[ev.noteIdx],hit:false}));
-      const c2=iCtx(); const t0=c2.currentTime+0.12;
-      let taps=0,hits=0;
-      tapHandler=(e)=>{
-        if(e.code!=='Space'&&e.key!==' ') return; e.preventDefault();
-        if(e.repeat) return;
+      const c2=iCtx();
+      let taps=0,hits=0,extras=0;
+      const regTap=()=>{
         taps++;
         const now=c2.currentTime-seq.t0;
         let best=null,bd=1e9;
         expected.forEach(x=>{ if(!x.hit){ const d=Math.abs(x.t-now); if(d<bd){bd=d;best=x;} } });
-        if(best && bd<=0.19){ best.hit=true; hits++; if(best.el){ best.el.classList.add('eq-hit'); } }
+        if(best && bd<=0.14){ best.hit=true; hits++; if(best.el){ best.el.classList.add('eq-hit'); } }
+        else extras++;
+      };
+      tapHandler=(e)=>{
+        if(e.code!=='Space'&&e.key!==' ') return; e.preventDefault();
+        if(e.repeat) return;
+        regTap();
       };
       document.addEventListener('keydown',tapHandler);
+      /* PADS laterales en dispositivos táctiles (como en el resto de quiz) */
+      let pads=[];
+      if(TOUCH){
+        ['l','r'].forEach(side=>{
+          const p=el('div','eq-pad '+side,'<span>TAP</span>');
+          p.addEventListener('pointerdown',(ev)=>{ ev.preventDefault(); p.classList.add('hit'); setTimeout(()=>p.classList.remove('hit'),120); regTap(); });
+          QOV.appendChild(p); pads.push(p);
+        });
+      }
       seq.onend=()=>{
         document.removeEventListener('keydown',tapHandler); tapHandler=null;
+        pads.forEach(p=>{try{p.remove();}catch(e){}}); pads=[];
+        try{cd.remove();}catch(e){}
         expected.forEach(x=>{ if(!x.hit&&x.el) x.el.classList.add('eq-miss'); });
-        const pct=Math.round(100*hits/Math.max(1,expected.length));
-        const passed=(pct>=75 && taps<=expected.length+4);
+        const raw=100*(hits-0.5*extras)/Math.max(1,expected.length);
+        const pct=Math.max(0,Math.round(raw));
+        const passed=(pct>=85 && extras<=2);
         theory.innerHTML='';
-        theory.appendChild(el('h2','ititle2',(passed?'✅ ¡Prueba superada! ':'❌ Aún no… ')+pct+'% de notas en su sitio'));
+        theory.appendChild(el('h2','ititle2',(passed?'✅ ¡Prueba superada! ':'❌ Aún no… ')+pct+'%'+(extras?' · '+extras+' golpes de más':'')));
         const cc=el('div','igen-controls');
         if(passed){ const b=el('button','ibtn action',trial<2?'Siguiente prueba →':'Terminar el quiz 🎉');
           b.onclick=()=>{ trial++; if(trial<3) mkTrial(); else done(); }; cc.appendChild(b); }
-        else { const b=el('button','ibtn action','↺ Repetir esta prueba');
-          b.onclick=()=>{ mkTrial0(phr,modes); }; cc.appendChild(b);
-          const b2=el('button','ibtn ghost','Nueva prueba distinta'); b2.onclick=()=>mkTrial(); cc.appendChild(b2); }
+        else { const b=el('button','ibtn action','↺ Otra prueba');
+          b.onclick=()=>mkTrial(); cc.appendChild(b); }
         theory.appendChild(cc);
       };
-      /* pulsos de claqueta también DURANTE las frases (ya vienen en eqEvents como 'drum') */
       seq.start();
     }
-    function mkTrial0(){ mkTrial(); }
     askChange();
   }
   function done(){ c.innerHTML='';
-    c.appendChild(el('p','ikicker','QUIZ COMPLETADO'));
-    c.appendChild(el('h2','ititle2','🎉 Las tres pruebas superadas'));
-    c.appendChild(el('p','igen-cap','Pulso = pulso y figura = figura, en la teoría y en las manos. Cambios de compás: dominados.'));
+    const q=el('div','eq-anim in'); c.appendChild(q);
+    q.appendChild(el('p','ikicker','QUIZ COMPLETADO'));
+    q.appendChild(el('h2','ititle2','🎉 Las tres pruebas superadas'));
+    q.appendChild(el('p','igen-cap','Pulso = pulso y figura = figura, en la teoría y en las manos. Cambios de compás: dominados.'));
     const b=el('button','ibtn action','Cerrar'); b.onclick=closeQuiz;
-    const cc=el('div','igen-controls'); cc.appendChild(b); c.appendChild(cc);
+    const cc=el('div','igen-controls'); cc.appendChild(b); q.appendChild(cc);
     qDone[2]=true; paintSteps();
   }
   mkTrial();
