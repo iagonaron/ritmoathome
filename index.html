@@ -5504,7 +5504,11 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     const mundos=(typeof GE_WORLDS!=='undefined' && GE_WORLDS) || [];
     for(const w of mundos){
       for(const c of (w.cards||[])){
-        if(c.atlasId===atlasId && c.cells && c.cells.length && !c.equivCard && !c.base && !c.pending) return {c,w};
+        if(c.atlasId!==atlasId) continue;
+        // 15-jul-2026: las cartas con quiz PROPIO (6.3 · customQuiz) también se
+        // lanzan desde la notificación del portal (launchEquivQuiz).
+        if(c.customQuiz) return {c,w,custom:true};
+        if(c.cells && c.cells.length && !c.equivCard && !c.base && !c.pending) return {c,w};
       }
     }
     return null;
@@ -5574,7 +5578,10 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       }catch(e){ console.warn('[suite-quiz] lecciones', e); }
     }
     // lanza el quiz directamente sobre lo que haya (overlay a pantalla completa)
-    setTimeout(()=>{ try{ if(window.launchCardQuiz) window.launchCardQuiz(hit.c, hit.w.id); }catch(e){ console.error('[suite-quiz] lanzar', e); } }, 120);
+    setTimeout(()=>{ try{
+      if(hit.custom && window.launchEquivQuiz) window.launchEquivQuiz(hit.c);
+      else if(window.launchCardQuiz) window.launchCardQuiz(hit.c, hit.w.id);
+    }catch(e){ console.error('[suite-quiz] lanzar', e); } }, 120);
   }
 
   window.SuiteQuizRitmo={ completar: completar };
@@ -7608,6 +7615,9 @@ function phase3(host){
     const b=el('button','ibtn action','Cerrar'); b.onclick=closeQuiz;
     const cc=el('div','igen-controls'); cc.appendChild(b); q.appendChild(cc);
     qDone[2]=true; paintSteps();
+    // 15-jul-2026: si el quiz llegó desde la campana del portal (?envio&cuenta),
+    // avisar a Iago igual que hacen los quiz estándar de la suite.
+    try{ if(window.SuiteQuizRitmo && window.SuiteQuizRitmo.completar) window.SuiteQuizRitmo.completar(); }catch(e){}
   }
   mkTrial();
   return function(){ if(seq)seq.stop(); if(tapHandler)document.removeEventListener('keydown',tapHandler); };
