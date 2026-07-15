@@ -40,12 +40,12 @@ body{
 .lmeav-link .ho{font-style:italic;font-family:Georgia,'Times New Roman',serif;font-size:.6em;color:var(--muted2);}
 .brand-center{display:flex;align-items:baseline;justify-content:center;gap:0;flex-wrap:wrap;}
 .app-topbar{justify-content:flex-start;}
-.ritmo-home{display:inline-flex;align-items:baseline;gap:5px;text-decoration:none;cursor:pointer;font-size:21px;font-weight:800;letter-spacing:-.4px;line-height:1;transition:opacity .15s;}
+.ritmo-home{display:inline-flex;align-items:baseline;gap:0;text-decoration:none;cursor:pointer;font-size:21px;font-weight:800;letter-spacing:-.4px;line-height:1;transition:opacity .15s;}
 .ritmo-home:hover{opacity:.82;}
 .ritmo-home .rb{color:var(--ink);font-weight:900;}
 .ritmo-home .rt{color:var(--ink);font-weight:300;}
-.ritmo-home .ho{font-style:italic;font-family:Georgia,'Times New Roman',serif;font-size:.58em;color:var(--muted2);}
-.ritmo-home .back{font-size:.66em;color:var(--green);margin-right:1px;align-self:center;}
+.ritmo-home .ho{font-style:italic;font-family:Georgia,'Times New Roman',serif;font-size:.58em;color:var(--muted2);margin-left:6px;}
+.ritmo-home .back{font-size:.66em;color:var(--green);margin-right:5px;align-self:center;}
 .sub{color:var(--muted);font-size:12.5px;letter-spacing:.06em;text-align:center;margin:10px 0 0;}
 header{text-align:center;margin-bottom:18px;}
 .hairline{height:1px;background:linear-gradient(90deg,transparent,var(--gold1),transparent);margin:18px auto;max-width:360px;opacity:.55;}
@@ -553,6 +553,262 @@ footer .lock{color:var(--gold1);}
 .cardquiz-stage iframe{width:100%;height:100%;border:0;display:block;background:transparent;}
 .cardquiz-ov.loading .cardquiz-stage::after{content:"Cargando fase\2026";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#cfc7f2;font-size:14px;}
 @media(max-width:560px){ .cardquiz-brand{font-size:15px;} .cq-nm{font-size:12px;} .cq-step.cur .cq-nm{max-width:120px;} .cardquiz-steps{gap:5px;} }
+</style>
+<style id="introCss">
+/* ===== INTRO POR CARTA — overlay, diapositivas, tajos, fusiones, árbol ===== */
+.card-istar{display:inline-flex;align-items:center;gap:4px;border:none;cursor:pointer;flex:0 0 auto;
+  font-family:inherit;font-size:10px;font-weight:900;letter-spacing:.12em;color:#06281b;
+  background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-radius:7px;padding:3px 8px;
+  box-shadow:0 0 0 0 rgba(34,201,138,.45);animation:istarGlow 2.6s ease-in-out infinite;transition:transform .14s;}
+.card-istar:hover{transform:scale(1.1);}
+@keyframes istarGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,201,138,.0);}50%{box-shadow:0 0 14px 2px rgba(34,201,138,.4);}}
+/* el título de la carta SIEMPRE en su propia línea (misma maqueta en todas las cartas) */
+.setup-card .c-n{flex:1 0 100%;margin-top:2px;}
+/* fila de hojas del árbol: una sola línea, todos al mismo nivel (con scroll si no caben) */
+.itree-row.leaf .itree-rowin{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:6px;}
+.itree-row.leaf .itree-rowin>*:first-child{margin-left:auto;}
+.itree-row.leaf .itree-rowin>*:last-child{margin-right:auto;}
+.itree-row.leaf .itnode{flex:0 0 auto;}
+/* excepción (5.1): compresión en dos filas */
+.itree-row.wrap2 .itree-rowin{flex-wrap:wrap;overflow:visible;justify-content:center;gap:8px;}
+.itree-row.wrap2 .itnode{padding:6px 7px 4px;}
+.itree-row.wrap2 .itnode .ipaper{padding:3px 6px;}
+.itree-row.wrap2 .itnode-lab{font-size:9.5px;margin-top:3px;}
+.itree-row.wrap2 .itree-rowin>*:first-child{margin-left:0;}
+.itree-row.wrap2 .itree-rowin>*:last-child{margin-right:0;}
+/* varita mágica: destello que pone el numerito del grupo */
+.imagic{position:absolute;transform:translate(-50%,-50%) scale(.3);font-size:34px;color:#6fe3b4;pointer-events:none;z-index:8;
+  text-shadow:0 0 14px rgba(111,227,180,.95),0 0 30px rgba(255,255,255,.6);animation:imagicgo .9s ease-out forwards;}
+.imagic::before{content:"✧";position:absolute;left:-22px;top:-12px;font-size:18px;animation:imagicgo .9s .08s ease-out forwards;}
+.imagic::after{content:"✧";position:absolute;right:-20px;top:10px;font-size:14px;animation:imagicgo .9s .16s ease-out forwards;}
+@keyframes imagicgo{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-40deg);}30%{opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(10deg);}100%{opacity:0;transform:translate(-50%,-60%) scale(.9) rotate(30deg);}}
+/* árbol en dos columnas independientes (p. ej. 1.4: rama simple | rama breve) */
+.itree-cols{display:flex;gap:26px;align-items:flex-start;justify-content:center;flex:1 1 auto;min-width:0;}
+.itree-main.sep{border-left:1px dashed var(--line);padding-left:26px;}
+/* nº de carta: letra verde en recuadro, SIN relleno (el relleno verde es del botón INTRO) */
+.setup-card .c-num{background:transparent;border:1.5px solid var(--gold1);color:var(--gold-soft);padding:0 6px;}
+/* tarjeta de génesis pulsable: activar/desactivar el bucle */
+.ipaper.clickable{cursor:pointer;transition:box-shadow .18s;}
+.ipaper.clickable:hover{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 2px rgba(34,201,138,.35);}
+.ipaper.on{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 2.5px var(--gold1),0 0 28px rgba(34,201,138,.55);}
+.igen-hint{font-size:12px;color:var(--muted2);margin:0;text-align:center;}
+.icells.small{margin-top:8px;gap:10px;}
+
+.intro-ov{position:fixed;inset:0;z-index:9998;display:none;flex-direction:column;
+  background:radial-gradient(1100px 520px at 50% -5%, #16327a 0%, transparent 60%),
+             linear-gradient(180deg,#0b1f4d 0%,#0a1430 32%,#060a18 70%,#02030a 100%);color:var(--ink);}
+.intro-ov.show{display:flex;}
+.intro-bar{flex:0 0 56px;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid rgba(255,255,255,.07);}
+.intro-brand{font-size:15px;font-weight:900;letter-spacing:.06em;color:var(--gold-soft);white-space:nowrap;}
+.intro-brand span{color:var(--muted);font-weight:600;letter-spacing:0;}
+.intro-dots{display:flex;gap:7px;margin:0 auto;}
+.idot{width:9px;height:9px;border-radius:50%;background:#26325e;cursor:pointer;transition:all .2s;}
+.idot.done{background:var(--gold2);}
+.idot.cur{background:var(--gold-soft);transform:scale(1.35);box-shadow:0 0 8px rgba(111,227,180,.6);}
+.intro-nav{display:flex;align-items:center;gap:9px;}
+.intro-x{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px;cursor:pointer;}
+.intro-x:hover{background:rgba(255,255,255,.13);}
+.intro-stage{flex:1 1 auto;position:relative;overflow:hidden;}
+.intro-hint{flex:0 0 auto;text-align:center;font-size:11px;color:var(--muted2);padding:6px 0 10px;letter-spacing:.08em;}
+
+.ibtn{font-family:inherit;font-weight:800;border-radius:10px;cursor:pointer;transition:all .15s;border:1px solid var(--line);}
+.ibtn.primary{background:linear-gradient(135deg,var(--gold-soft),var(--gold2));color:#06281b;border:none;font-size:13px;padding:9px 16px;}
+.ibtn.primary:hover{filter:brightness(1.08);}
+.ibtn.ghost{background:rgba(255,255,255,.05);color:var(--muted);font-size:12.5px;padding:8px 13px;}
+.ibtn.ghost:hover{color:var(--gold-soft);border-color:var(--gold1);}
+.ibtn.action{background:linear-gradient(135deg,var(--gold-soft),var(--gold2));color:#06281b;border:none;font-size:15px;padding:12px 22px;border-radius:12px;box-shadow:0 6px 24px rgba(34,201,138,.25);}
+.ibtn.action:hover{transform:translateY(-1px);filter:brightness(1.06);}
+.ibtn.seg{background:#0c1330;color:var(--muted);font-size:12px;padding:7px 13px;}
+.ibtn.seg.on{background:linear-gradient(135deg,var(--gold-soft),var(--gold2));color:#06281b;border-color:transparent;}
+
+.islide{position:absolute;inset:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;
+  opacity:0;transform:translateX(46px);transition:opacity .42s ease,transform .42s ease;padding:26px 20px 40px;}
+.islide.show{opacity:1;transform:translateX(0);}
+.islide.leave{opacity:0;transform:translateX(-46px);pointer-events:none;}
+.islide>div{width:100%;max-width:980px;}
+.islide>.itree{max-width:1260px;}
+
+.ikicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-soft);font-weight:800;margin:0 0 10px;text-align:center;}
+.ititle{font-size:clamp(26px,4.6vw,42px);font-weight:900;letter-spacing:-.8px;margin:0 0 8px;text-align:center;line-height:1.1;}
+.ititle2{font-size:clamp(19px,3vw,27px);font-weight:800;letter-spacing:-.4px;margin:0 0 6px;text-align:center;}
+.isub{color:var(--muted);font-size:14.5px;line-height:1.6;text-align:center;max-width:640px;margin:0 auto 8px;}
+.iref{color:var(--muted2);font-size:12px;text-align:center;margin-top:16px;}
+.icells{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:22px;}
+
+.ipaper{background:var(--paper);border-radius:14px;padding:10px 14px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(0,0,0,.35);}
+.ipaper svg{display:block;}
+.ipaper.float{animation:ifloat 4.2s ease-in-out infinite;}
+.ipaper.float:nth-child(2n){animation-delay:-1.6s;}
+.ipaper.float:nth-child(3n){animation-delay:-2.8s;}
+@keyframes ifloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+
+.ipop{opacity:0;animation:ipopin .55s ease forwards;}
+@keyframes ipopin{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+/* ficha */
+.ifacts{display:flex;flex-direction:column;gap:18px;align-items:center;padding-top:8px;}
+.ifact{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;
+  padding:16px 24px;max-width:640px;width:100%;text-align:center;box-shadow:var(--shadow);}
+.ifact-q{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);font-weight:800;margin:0 0 8px;}
+.ifact-a{font-size:15.5px;color:var(--ink);line-height:1.55;margin:8px 0 0;}
+.ifact-a b{color:var(--gold-soft);}
+.ifact-fig{display:flex;justify-content:center;margin:6px 0 2px;}
+.imeters{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+.imeter{font-size:16px;font-weight:900;color:#06281b;background:linear-gradient(135deg,var(--gold-soft),var(--gold2));
+  border-radius:9px;padding:6px 13px;letter-spacing:.02em;}
+
+/* génesis */
+.igenesis,.italla{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:6px;}
+.igen-stage{position:relative;min-height:170px;display:flex;align-items:center;justify-content:center;width:100%;}
+.igen-holder{position:relative;display:flex;align-items:center;justify-content:center;min-height:160px;}
+.igen-holder .ipaper.big{padding:14px 22px;}
+.igen-holder .ipaper{position:relative;transition:opacity .72s ease,transform .72s ease;}
+.igen-holder .ipaper.bye{position:absolute;opacity:0;transform:scale(.82);pointer-events:none;}
+.igen-holder .ipaper.sprout{animation:isprout .55s cubic-bezier(.2,1.4,.4,1);}
+@keyframes isprout{0%{opacity:0;transform:scale(.6);}60%{opacity:1;transform:scale(1.07);}100%{transform:scale(1);}}
+.igen-holder .ipaper.melt{animation:imelt .8s ease;}
+@keyframes imelt{0%{opacity:0;transform:scale(1.1);filter:blur(4px);}45%{opacity:.55;}100%{opacity:1;transform:scale(1);filter:blur(0);}}
+.igen-holder .ipaper.dimin{animation:idim .55s ease;}
+@keyframes idim{0%{opacity:.25;}100%{opacity:1;}}
+.igen-holder .ipaper.grow{animation:igrow .7s cubic-bezier(.2,1.2,.4,1);}
+@keyframes igrow{0%{opacity:0;transform:scale(.72);}100%{opacity:1;transform:scale(1);}}
+.islash{position:absolute;left:50%;top:50%;width:230px;height:3px;margin-left:-115px;border-radius:3px;
+  background:linear-gradient(90deg,transparent,#c9f7e3 30%,#ffffff 50%,#c9f7e3 70%,transparent);
+  transform:rotate(-56deg) scaleX(0);opacity:0;pointer-events:none;filter:drop-shadow(0 0 8px rgba(111,227,180,.9));}
+.islash.go{animation:islashgo .5s ease-out;}
+@keyframes islashgo{0%{transform:rotate(-56deg) scaleX(0);opacity:0;}25%{opacity:1;}55%{transform:rotate(-56deg) scaleX(1.25);opacity:1;}100%{transform:rotate(-56deg) scaleX(1.3);opacity:0;}}
+.iflash{position:absolute;inset:-8px;border-radius:20px;background:radial-gradient(circle,rgba(255,255,255,.55),transparent 65%);opacity:0;pointer-events:none;}
+.iflash.go{animation:iflashgo .5s ease-out;}
+.iflash.go.green{background:radial-gradient(circle,rgba(111,227,180,.5),transparent 65%);}
+@keyframes iflashgo{0%{opacity:0;}30%{opacity:1;}100%{opacity:0;}}
+.igen-cap{font-size:15px;color:var(--muted);text-align:center;max-width:620px;line-height:1.6;min-height:48px;margin:0;}
+.igen-cap b{color:var(--gold-soft);}
+.igen-controls{display:flex;gap:12px;align-items:center;}
+
+/* iluminación de cabezas */
+.ihit,.ihit *{fill:#0ea36f !important;stroke:#0ea36f !important;}
+.imark,.imark *{fill:#1a9e6c !important;stroke:#1a9e6c !important;}
+
+/* árbol */
+.itree{display:flex;flex-direction:column;gap:10px;}
+.itree-top{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.itempo{display:flex;gap:8px;align-items:center;}
+.itree-wrap{display:flex;gap:18px;align-items:flex-start;justify-content:center;}
+.itree-main{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;}
+.itree-link{width:2px;height:20px;background:linear-gradient(180deg,var(--gold1),transparent);opacity:.6;}
+.itree-row{width:100%;}
+.itree-rowlab{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2);font-weight:800;text-align:center;margin:0 0 7px;}
+.itree-rowin{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.itnode{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1.5px solid var(--line);border-radius:14px;
+  padding:9px 11px 7px;cursor:pointer;text-align:center;transition:all .18s;position:relative;}
+.itnode:hover{border-color:var(--gold1);transform:translateY(-2px);}
+.itnode .ipaper{padding:5px 9px;box-shadow:none;}
+.itnode-lab{font-size:11px;color:var(--muted);font-weight:700;margin:6px 0 0;letter-spacing:.02em;}
+.itnode.on{border-color:var(--gold1);box-shadow:0 0 0 1px var(--gold1),0 0 22px rgba(34,201,138,.35);}
+.itnode.on .itnode-lab{color:var(--gold-soft);}
+.itnode.on::after{content:"◉";position:absolute;top:4px;right:7px;font-size:10px;color:var(--gold1);animation:ipulse 1.2s ease-in-out infinite;}
+@keyframes ipulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+.itnode.ghost{cursor:default;border-style:dashed;opacity:.72;}
+.itnode.ghost:hover{transform:none;border-color:var(--line);}
+.itnode.on-ghost{opacity:1;border-color:var(--gold-soft);border-style:dashed;box-shadow:0 0 18px rgba(111,227,180,.3);}
+.itree-side{flex:0 0 215px;background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:16px;padding:13px;display:flex;flex-direction:column;gap:10px;}
+.iside-t{font-size:12px;font-weight:900;color:var(--gold-soft);letter-spacing:.1em;text-transform:uppercase;margin:0;}
+.iside-s{font-size:11.5px;color:var(--muted2);line-height:1.5;margin:0;}
+.iside-s b{color:var(--muted);}
+.itree-foot{font-size:12.5px;color:var(--muted2);text-align:center;margin:8px auto 0;max-width:640px;line-height:1.5;}
+
+/* lámparas de pulso */
+.ilamps{display:flex;gap:16px;justify-content:center;align-items:center;min-height:34px;}
+.ilamp{width:22px;height:22px;border-radius:50%;background:#1a2450;border:1px solid var(--line);transition:none;}
+.ilamp.big{width:32px;height:32px;}
+.ilamp.small{width:15px;height:15px;}
+.ilamp.ihit{background:#22c98a !important;border-color:#6fe3b4 !important;box-shadow:0 0 22px rgba(34,201,138,.85);}
+.ilamps.walk .ilamp{width:30px;height:30px;}
+.ilamps.walk .ilamp.big{width:44px;height:44px;}
+.ilamps.walk .ilamp.small{width:20px;height:20px;}
+
+/* audición 5/8 */
+.ilisten{display:flex;flex-direction:column;gap:14px;align-items:center;}
+.ilisten-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;width:100%;}
+.iplayer{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1.5px solid var(--line);border-radius:16px;
+  padding:14px;display:flex;flex-direction:column;gap:9px;align-items:center;flex:0 1 285px;transition:all .2s;}
+.iplayer-t{font-size:19px;font-weight:900;color:var(--ink);margin:0;letter-spacing:.02em;}
+.iplayer-s{font-size:12px;color:var(--muted2);margin:0;}
+.iplayer-z{font-size:11.5px;color:var(--gold-soft);margin:0;font-weight:700;}
+.iplayer.zort{border-style:dashed;}
+.iplayer.playing{border-color:var(--gold1);box-shadow:0 0 26px rgba(34,201,138,.3);}
+
+/* modo paseo */
+.iwalk{display:flex;flex-direction:column;gap:13px;align-items:center;}
+.iwalk-view{position:relative;width:100%;height:150px;background:var(--paper);border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4);}
+.iwalk-strip{position:absolute;top:14px;left:0;height:120px;will-change:transform;}
+.iwalk-bar{position:absolute;top:0;height:112px;}
+.iwalk-bar::before{content:"";position:absolute;left:-2px;top:26px;bottom:26px;width:2px;background:#c9cede;}
+.iwalk-bar.count{display:flex;align-items:center;}
+.iwalk-bar.count::after{content:"";position:absolute;inset:6px 2px;border-radius:10px;background:rgba(34,201,138,.09);border:1.5px dashed rgba(26,158,108,.5);}
+.iwalk-num{position:absolute;top:50%;transform:translateY(-50%);font-size:44px;font-weight:900;color:#b9c1d6;z-index:2;padding-left:14px;transition:color .1s,text-shadow .1s;}
+.iwalk-num.lit{color:#1a9e6c;text-shadow:0 0 18px rgba(34,201,138,.8);}
+.iwalk-needle{position:absolute;left:30%;top:0;bottom:0;width:2.5px;background:linear-gradient(180deg,transparent,#dc2626 18%,#dc2626 82%,transparent);opacity:.75;pointer-events:none;}
+.iwalk-groups{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.ibtn.wgroup{background:#0c1330;color:var(--muted);font-size:16px;font-weight:900;padding:12px 22px;border-radius:12px;}
+.ibtn.wgroup.on{background:linear-gradient(135deg,var(--gold-soft),var(--gold2));color:#06281b;border-color:transparent;}
+.ibtn.wgroup.pend{border-color:var(--gold1);color:var(--gold-soft);animation:ipulse 1s ease-in-out infinite;}
+.iwalk-tempo{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.iwalk-tlab{font-size:12px;color:var(--muted2);font-weight:700;}
+
+@media(max-width:720px){
+  .itree-wrap{flex-direction:column;align-items:stretch;}
+  .itree-side{flex:1 1 auto;}
+  .islide{padding:16px 10px 30px;}
+}
+
+
+/* ===== 6.3 · equivalencias: demos, crafteo y quiz ===== */
+.ieq-row{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;width:100%;}
+.ieq-box{display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;transition:all .2s;}
+.ieq-box.playing{border-color:var(--gold1);box-shadow:0 0 24px rgba(34,201,138,.3);}
+.ieq-m{font-size:14px;font-weight:900;color:var(--gold-soft);margin:0;letter-spacing:.04em;}
+.ieq-mid{display:flex;align-items:center;}
+.ieq-badge{font-size:24px;font-weight:900;color:#06281b;background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-radius:12px;padding:8px 14px;white-space:nowrap;box-shadow:0 6px 20px rgba(34,201,138,.3);}
+.ieq-badge.small{font-size:16px;padding:5px 10px;}
+.ieq-sum{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.ieq-tag{font-size:13px;font-weight:800;border-radius:9px;padding:6px 12px;border:1.5px solid var(--line);color:var(--muted);}
+.ieq-tag.up{color:#ffd9a8;border-color:#8a6a2f;}
+.ieq-tag.down{color:#a8d4ff;border-color:#2f5a8a;}
+.ieq-tag.same{color:var(--gold-soft);border-color:var(--gold1);}
+.ieq-note{font-size:11.5px;color:var(--muted2);align-self:center;}
+.icraft{display:flex;flex-direction:column;gap:13px;align-items:center;}
+.icraft-ctr{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-end;}
+.icraft-sel{display:flex;flex-direction:column;gap:6px;align-items:center;}
+.icraft-lab{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);font-weight:800;}
+.icraft-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.icraft-sum{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;min-height:40px;}
+.ibtn.action.dice{font-size:13px;padding:10px 16px;}
+.iwalk-bar.chg{display:flex;align-items:center;justify-content:center;}
+.iwalk-bar.chg::before{display:none;}
+.iwalk-eq{font-size:15px;font-weight:900;color:#0a6b46;background:rgba(34,201,138,.15);border:1.5px dashed rgba(26,158,108,.6);border-radius:8px;padding:4px 6px;white-space:nowrap;transform:rotate(-8deg);}
+/* quiz 6.3 */
+.eq-ov .intro-stage{overflow:auto;}
+.eq-steps{display:flex;gap:8px;margin:0 auto;}
+.eqstep{font-size:12px;font-weight:800;color:var(--muted2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;}
+.eqstep.cur{color:#06281b;background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-color:transparent;}
+.eqstep.done{color:var(--gold-soft);border-color:var(--gold1);}
+.eqp{display:flex;flex-direction:column;gap:14px;align-items:center;width:100%;}
+.eq-tri{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.eq-tri-l{font-size:14px;font-weight:800;color:var(--ink);min-width:130px;text-align:right;}
+.eq-tri .ibtn.seg.good{background:linear-gradient(135deg,#6fe3b4,#1a9e6c);color:#06281b;border-color:transparent;}
+.eq-tri .ibtn.seg.bad{background:#7a1620;color:#ffd9de;border-color:transparent;}
+.eq-fb{font-size:15px;font-weight:700;text-align:center;margin:0;min-height:22px;}
+.eq-fb.good{color:var(--gold-soft);}
+.eq-fb.bad{color:var(--red);}
+.eq-lines{display:flex;flex-direction:column;gap:10px;align-items:center;}
+.eq-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.eq-annot{display:flex;flex-direction:column;gap:3px;align-items:center;}
+.eq-an-res{font-size:10.5px;color:var(--gold-soft);font-weight:700;max-width:150px;text-align:center;}
+.eq-theory{display:flex;flex-direction:column;gap:10px;align-items:center;width:100%;}
+.eq-count{position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);font-size:110px;font-weight:900;color:var(--gold-soft);text-shadow:0 0 40px rgba(34,201,138,.6);pointer-events:none;z-index:20;}
+.eq-hit,.eq-hit *{fill:#0ea36f !important;stroke:#0ea36f !important;}
+.eq-miss,.eq-miss *{fill:#c2374b !important;stroke:#c2374b !important;}
 </style></head>
 
 <body>
@@ -834,7 +1090,8 @@ const GE_WORLDS=[
         {"ts":"2/4","notes":["8","q","8"],"label":"simple"},
         {"ts":"2/4","notes":["16","8","16","16","8","16"],"beams":[[0,1,2],[3,4,5]],"label":"breve"},
         {"ts":"2/4","notes":["8","q","16","16"],"beams":[[2,3]]},
-        {"ts":"2/4","notes":["16","16","q","8"],"beams":[[0,1]]}
+        {"ts":"2/4","notes":["16","16","q","8"],"beams":[[0,1]]},
+        {"ts":"2/4","notes":["16","16","q","16","16"],"beams":[[0,1],[3,4]]}
       ] },
       { id:"c1_5", atlasId:"1.5", name:"Silencio de semicorchea (s.binaria)", ref:"pág. 20", note:"El silencio de semicorchea en sus cuatro posiciones dentro del pulso de cuatro semicorcheas.",
         cells:[
@@ -985,7 +1242,11 @@ const GE_WORLDS=[
         {"ts":"5/8","notes":["8","8","8","8","8"],"beams":[[0,1,2],[3,4]],"label":"3+2"},
         {"ts":"5/8","notes":["8","8","8","8","8"],"beams":[[0,1],[2,3,4]],"label":"2+3"}
       ] },
-      { id:"c6_3", atlasId:"6.3", name:"Clave de Do", ref:"págs. 83 y 86", note:"Lectura en clave de Do en 3ª (contralto) y 4ª línea (tenor). Sólo negras, corcheas, blancas y silencios: lecturas muy sencillas.", clave:true,
+      { id:"c6_e", atlasId:"6.3", name:"Cambios de compás · figura = figura", ref:"págs. 62–74",
+        note:"La figura se mantiene constante al cambiar de compás (la corchea vale lo mismo); el que cambia es el PULSO. Presentación y quiz propios; la generación de lecturas llegará con el mundo de cambios de compás.",
+        introOnly:true, customQuiz:true, exText:"♪ = ♪", exSub:"figura = figura",
+        cells:[] },
+      { id:"c6_3", atlasId:"6.4", name:"Clave de Do", ref:"págs. 83 y 86", note:"Lectura en clave de Do en 3ª (contralto) y 4ª línea (tenor). Sólo negras, corcheas, blancas y silencios: lecturas muy sencillas.", clave:true,
         cells:[
         {"clef":"alto","ts":"4/4","notes":[{"d":"h","keys":["c/4"]},{"d":"q","keys":["d/4"]},{"d":"q","keys":["e/4"]}],"label":"Do en 3ª"},
         {"clef":"tenor","ts":"4/4","notes":[{"d":"q","keys":["c/4"]},{"d":"8","keys":["d/4"]},{"d":"8","keys":["e/4"]},{"d":"q","keys":["f/4"]},{"d":"q","rest":true}],"beams":[[1,2]],"label":"Do en 4ª"}
@@ -3791,8 +4052,20 @@ function renderSetupCards(){
       el.className='setup-card'+(on?' on':'');
       el.innerHTML=`<div class="sc-head"><span class="c-num">${c.atlasId||''}</span><span class="c-n">${c.name}</span></div>`+
                    `<div class="sc-ex" aria-hidden="true"></div>`;
+      // botón INTRO (presentación en clase) — solo si la carta tiene intro definida
+      if(window.CARD_INTROS && window.CARD_INTROS[c.atlasId]){
+        el.classList.add('has-intro');
+        const ib=document.createElement('button'); ib.type='button'; ib.className='card-istar';
+        ib.innerHTML='▸ INTRO'; ib.title='Presentación del ritmo (para clase)';
+        ib.onclick=(e)=>{ e.stopPropagation(); if(window.launchCardIntro) window.launchCardIntro(c); };
+        const head=el.querySelector('.sc-head'); const cn=head.querySelector('.c-num');
+        if(cn) head.insertBefore(ib, cn.nextSibling); else head.insertBefore(ib, head.firstChild);
+      }
       const exHost=el.querySelector('.sc-ex');
-      if(isCombMeter){
+      if(c.exText){
+        exHost.classList.add('ex-text-host');
+        exHost.innerHTML=`<div class="ex-text">${c.exText}</div><div class="ex-sub">${c.exSub||''}</div>`;
+      } else if(isCombMeter){
         // "Cambios de compás": ejemplo de TEXTO, sin pentagrama y sin variar
         const txt = c.atlasId==='E.a' ? '♩ = ♩.' : '♪ = ♪';
         const sub = c.atlasId==='E.a' ? 'pulso = pulso' : 'figura = figura';
@@ -3805,7 +4078,15 @@ function renderSetupCards(){
           timer=setInterval(()=>{ frame=(frame+1)%album.length; exHost.innerHTML=album[frame]; },600); });
         el.addEventListener('mouseleave',()=>{ if(timer){clearInterval(timer);timer=null;} el.classList.remove('playing'); frame=0; exHost.innerHTML=album[0]; });
       }
-      if(c.cells && c.cells.length && !c.equivCard && !c.base && !c.pending){
+      if(c.customQuiz){
+        el.classList.add('has-quiz');
+        const star=document.createElement('button'); star.type='button'; star.className='card-qstar';
+        star.setAttribute('aria-label','Hacer el quiz de esta carta');
+        star.innerHTML='<svg viewBox="0 0 24 24"><defs><linearGradient id="cqStarG2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#e9b949"/></linearGradient></defs><path d="M12 2.5l2.7 5.9 6.4.7-4.8 4.3 1.3 6.3L12 17.9 6.2 21l1.3-6.3L2.7 9.1l6.4-.7z" fill="url(#cqStarG2)" stroke="#caa233" stroke-width=".6"/></svg><span class="cqtip">Quiz de la carta</span>';
+        star.onclick=(e)=>{ e.stopPropagation(); if(window.launchEquivQuiz) window.launchEquivQuiz(c); };
+        el.appendChild(star);
+      }
+      else if(c.cells && c.cells.length && !c.equivCard && !c.base && !c.pending){
         el.classList.add('has-quiz');
         const star=document.createElement('button'); star.type='button'; star.className='card-qstar';
         star.setAttribute('aria-label','Hacer el quiz de esta carta');
@@ -3813,7 +4094,7 @@ function renderSetupCards(){
         star.onclick=(e)=>{ e.stopPropagation(); if(window.launchCardQuiz) window.launchCardQuiz(c,w); };
         el.appendChild(star);
       }
-      el.onclick=()=>toggleSetupCard(slot,c.id);
+      el.onclick=()=>{ if(c.introOnly){ if(window.launchCardIntro && window.CARD_INTROS && window.CARD_INTROS[c.atlasId]) window.launchCardIntro(c); return; } toggleSetupCard(slot,c.id); };
       grid.appendChild(el);
     });
     host.appendChild(grid);
@@ -3888,9 +4169,9 @@ function synth(midi,t0,dur,gain){ const c=ac(); if(!c)return; const m=master(); 
 // claqueta a UNA SOLA altura: el acento del pulso real es solo de volumen, nunca de tono.
 // Timbre NEUTRO: onda triangular (pocos armónicos, ni metálica ni demasiado pura) con un pasa-bajos suave.
 function click(t0,accent,vol){ const c=ac(); if(!c)return; const m=master(); const o=c.createOscillator(),g=c.createGain(); const V=(vol==null?1:vol);
-  const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2200; lp.Q.value=0.4; lp.connect(m);
+  const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2600; lp.Q.value=0.4; lp.connect(m);
   o.type='triangle'; o.frequency.value=accent?1050:900; o.connect(g); g.connect(lp);
-  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002,(accent?0.46:0.30)*V),t0+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.05); o.start(t0); o.stop(t0+0.06); reg(o); }
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002,(accent?0.62:0.44)*V),t0+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.05); o.start(t0); o.stop(t0+0.06); reg(o); }
 // ===== TIMBRES DE ACOMPAÑAMIENTO (3 opciones) =====
 // Clave para que suene a PIANO y no a órgano/organillo: ataque percusivo + DECAIMIENTO EXPONENCIAL continuo
 // (la nota se apaga sola, nunca hay meseta de sostenido plano), brillo inicial que se va apagando, y un
@@ -4225,7 +4506,7 @@ function play(opts){ // opts: {schedule, bpm, melody, rhythm, metronome, gold, r
   { const m0=(currentLesson&&currentLesson.phrases&&currentLesson.phrases[0]&&currentLesson.phrases[0].measures[0])||null;
     if(m0){ const ons=pulseOnsetsQ(m0); if(ons.length>=2){ pulseDurQ=ons[1]-ons[0]; barPulses=ons.length; } else { pulseDurQ=meterCapQ(m0.time); barPulses=1; } } }
   const noLead = !!opts.noLead || startQ>1e-6;
-  const lead = noLead ? 0 : (opts.countIn ? barPulses : (opts.metronome?2:0));
+  const lead = noLead ? 0 : (opts.countIn ? (barPulses<3?barPulses*2:barPulses) : (opts.metronome?2:0));
   const stepDur = Math.max(0.05, hasMap ? qToSec(pulseDurQ) : pulseDurQ*(60/opts.bpm));
   const leadDur=lead*stepDur;
   const bodyStart=t0+leadDur;
@@ -4242,7 +4523,7 @@ function play(opts){ // opts: {schedule, bpm, melody, rhythm, metronome, gold, r
     else { for(let i=0;i<lead;i++) pianoHit(tMidi, t0+i*stepDur, stepDur*0.85, 0.12); }
   }
   // numeritos de claqueta (descendentes), discretos
-  if(lead>0 && opts.countIn){ const cd=ensureCountdown(); for(let i=0;i<lead;i++){ const n=lead-i, ti=t0+i*stepDur; setTimeout(()=>showCountdown(cd,n),Math.max(0,(ti-c.currentTime)*1000)); } setTimeout(()=>hideCountdown(),Math.max(0,(t0+leadDur-c.currentTime)*1000)); }
+  if(lead>0 && opts.countIn){ const cd=ensureCountdown(); for(let i=0;i<lead;i++){ const n=lead-i, ti=t0+i*stepDur; if(n<=3) setTimeout(()=>showCountdown(cd,n),Math.max(0,(ti-c.currentTime)*1000)); } setTimeout(()=>hideCountdown(),Math.max(0,(t0+leadDur-c.currentTime)*1000)); }
   // metrónomo del CUERPO: pulsos + SUBDIVISIÓN (si el alumno la marcó) DESDE startQ; subdivide ya con la lección
   if(opts.metronome){ subClicks(sched).forEach(s=>{ if(s.q<startQ-1e-6) return; click(at(s.q), s.accent, s.sub?0.42:1); }); }
   const els=opts.elements||[];
@@ -4280,7 +4561,7 @@ function play(opts){ // opts: {schedule, bpm, melody, rhythm, metronome, gold, r
     const a0=at(nt.onsetQ), dur=Math.max(0.08,(at(nt.onsetQ+nt.durQ)-a0)*0.92); const oc=(opts.tesitura?phraseOct(nt.pi):0);
     if(opts.melody) pianoHit(nt.midi+oc,a0,dur,0.13);
     if(opts.rhythm) knock(a0);
-    if(opts.refSet && opts.refSet.has(nt.onsetQ)) pianoHit(nt.midi+oc,a0,Math.min(0.7,dur),0.14);
+    if(opts.refSet && opts.refSet.has(nt.onsetQ)) pianoHit(nt.midi+oc,a0,Math.min(0.7,dur),opts.melody?0.14:0.27);
   });
   const totalSecRel = (hasMap ? sched.totalSec : sched.totalQ*spq) - baseSec;
   const endAt=bodyStart+totalSecRel+0.1;
@@ -5225,5 +5506,1903 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     setInterval(ping,60000);
   }catch(e){}
 })();
+</script>
+<script id="introCore">
+/* ============================================================
+   INTRO POR CARTA — motor genérico de presentaciones en clase
+   Diapositivas + TAJO/FUSIÓN + árbol genealógico sonoro por capas.
+   Se apoya en VexFlow (VF) y el AudioContext compartido ac().
+   ============================================================ */
+(function(){
+'use strict';
+const IDB={'w':4,'h':2,'q':1,'8':0.5,'16':0.25,'32':0.125};
+
+/* ---------- duraciones y onsets ---------- */
+function iTok(tok){ tok=(''+tok); let rest=false,dot=false;
+  if(tok.endsWith('r')){rest=true;tok=tok.slice(0,-1);}
+  if(tok.endsWith('d')){dot=true;tok=tok.slice(0,-1);}
+  return {base:tok,rest,dot,beats:IDB[tok]*(dot?1.5:1),vfDur:tok+(rest?'r':''),hasDot:dot};
+}
+/* onsets sonantes de un spec {notes,ties,tuplets:[{idx,num,occ}]} — las ligaduras
+   suprimen el ataque de la nota de destino (suena, no se articula). */
+function iOnsets(spec){
+  const notes=spec.notes||[]; const scale=notes.map(()=>1);
+  (spec.tuplets||[]).forEach(t=>{ const f=(t.occ)/(t.num); t.idx.forEach(i=>scale[i]=f); });
+  const tied=new Set(); (spec.ties||[]).forEach(p=>{ for(let k=1;k<p.length;k++) tied.add(p[k]); });
+  let t=0; const ons=[]; const beats=notes.map((n,i)=>iTok(n).beats*scale[i]);
+  notes.forEach((n,i)=>{ const p=iTok(n);
+    if(!p.rest && !tied.has(i)){ let d=beats[i]; for(let k=i+1;k<notes.length && tied.has(k);k++) d+=beats[k]; ons.push({t:t,i:i,d:d}); }
+    t+=beats[i]; });
+  return {onsets:ons,total:t};
+}
+
+/* ---------- render de un esquema rítmico (línea única, sin clave) ---------- */
+/* devuelve {host,svg,els(por índice de nota),total} */
+function iDraw(host,spec,o){
+  o=o||{}; host.innerHTML='';
+  const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); const ctx=r.getContext();
+  const mkNotes=()=> (spec.notes||[]).map(tok=>{
+    const p=iTok(tok);
+    const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:p.vfDur});
+    if(p.hasDot) VF.Dot.buildAndAttach([sn]);
+    return sn;
+  });
+  // medir
+  let vf=mkNotes(); let v=new VF.Voice({num_beats:4,beat_value:4}).setStrict(false); v.addTickables(vf);
+  let minW; try{ const f=new VF.Formatter(); f.joinVoices([v]); minW=f.preCalculateMinTotalWidth([v]); }catch(e){ minW=40*spec.notes.length; }
+  const inner=Math.max(o.minInner||70, minW*(o.stretch||1.45)+18);
+  const W=(o.width!=null)?o.width:(inner+28);
+  const H=o.height||96;
+  r.resize(W,H);
+  const stave=new VF.Stave(6,H/2-42,W-12);
+  try{ stave.setConfigForLines([0,1,3,4].reduce((cfg,i)=>{cfg[i]={visible:false};return cfg;},[{visible:false},{visible:false},{visible:true},{visible:false},{visible:false}])); }catch(e){}
+  stave.setBegBarType(VF.Barline.type.NONE); stave.setEndBarType(VF.Barline.type.NONE);
+  if(o.ts){ try{ stave.addTimeSignature(o.ts); }catch(e){} }
+  stave.setContext(ctx).draw();
+  vf=mkNotes(); v=new VF.Voice({num_beats:4,beat_value:4}).setStrict(false); v.addTickables(vf);
+  const beams=[]; ((spec.beams)||[]).forEach(g=>{ const run=g.filter(k=>{ const p=iTok(spec.notes[k]); return !p.rest && p.beats<1; }); if(run.length>1) beams.push(new VF.Beam(run.map(k=>vf[k]))); });
+  const tups=[]; ((spec.tuplets)||[]).forEach(t=>{ try{ tups.push(new VF.Tuplet(t.idx.map(k=>vf[k]),{num_notes:t.num,notes_occupied:t.occ,ratioed:false})); }catch(e){} });
+  const startX=stave.getNoteStartX();
+  new VF.Formatter().joinVoices([v]).format([v],Math.max(50,(W-12)-(startX-6)-16));
+  v.draw(ctx,stave);
+  beams.forEach(b=>b.setContext(ctx).draw());
+  tups.forEach(t=>t.setContext(ctx).draw());
+  ((spec.ties)||[]).forEach(p=>{ if(vf[p[0]]&&vf[p[1]]){ try{ new VF.StaveTie({first_note:vf[p[0]],last_note:vf[p[1]],first_indices:[0],last_indices:[0]}).setContext(ctx).draw(); }catch(e){} } });
+  const svg=host.querySelector('svg'); if(svg){ svg.style.maxWidth='100%'; svg.style.height='auto'; }
+  /* localizar el grupo SVG de cada nota (funciona aunque el host aún no esté en el DOM) */
+  const els=vf.map(sn=>{ try{
+    const id='vf-'+sn.attrs.id; const e=svg&&svg.querySelector('[id="'+id+'"]'); if(e) return e;
+    return (sn.getSVGElement&&sn.getSVGElement())||null; }catch(e){ return null; } });
+  return {els:els,svg:svg,total:iOnsets(spec).total};
+}
+/* orden de ataque -> índice de nota (para iluminar por evento sonoro) */
+function iSoundIdx(spec){ return iOnsets(spec).onsets.map(o=>o.i); }
+
+/* ---------- sintetizador de percusión ---------- */
+let NOISE=null;
+function iCtx(){ try{ if(window.ac) return window.ac(); }catch(e){}
+  if(!window.__iAC){ try{ window.__iAC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if(window.__iAC&&window.__iAC.state==='suspended')window.__iAC.resume(); return window.__iAC; }
+function iNoise(c){ if(NOISE) return NOISE; const b=c.createBuffer(1,c.sampleRate*0.3,c.sampleRate); const d=b.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1; NOISE=b; return b; }
+function envGain(c,t,g,dec){ const gn=c.createGain(); gn.gain.setValueAtTime(g,t); gn.gain.exponentialRampToValueAtTime(0.001,t+dec); gn.connect(c.destination); return gn; }
+function oscHit(c,t,f0,f1,g,dec,type){ const o=c.createOscillator(); o.type=type||'sine'; o.frequency.setValueAtTime(f0,t); if(f1&&f1!==f0)o.frequency.exponentialRampToValueAtTime(f1,t+dec*0.7); o.connect(envGain(c,t,g,dec)); o.start(t); o.stop(t+dec+0.05); }
+function noiseHit(c,t,fc,q,g,dec,type){ const s=c.createBufferSource(); s.buffer=iNoise(c); const f=c.createBiquadFilter(); f.type=type||'bandpass'; f.frequency.value=fc; f.Q.value=q||1; s.connect(f); f.connect(envGain(c,t,g,dec)); s.start(t); s.stop(t+dec+0.05); }
+const TIMBRES={
+  drum:  (c,t,g)=>{ oscHit(c,t,150,52,(g||1)*0.95,0.24,'sine'); noiseHit(c,t,220,0.8,(g||1)*0.16,0.05,'lowpass'); },
+  drumHi:(c,t,g)=>{ oscHit(c,t,225,88,(g||1)*0.8,0.2,'sine'); },
+  wood:  (c,t,g)=>{ oscHit(c,t,820,660,(g||1)*0.6,0.075,'sine'); oscHit(c,t,1640,1400,(g||1)*0.22,0.05,'sine'); },
+  shaker:(c,t,g)=>{ noiseHit(c,t,4200,1.4,(g||1)*0.4,0.055,'bandpass'); },
+  clave: (c,t,g)=>{ oscHit(c,t,2480,2380,(g||1)*0.5,0.05,'sine'); },
+  marimba:(c,t,g)=>{ oscHit(c,t,438,438,(g||1)*0.55,0.2,'sine'); oscHit(c,t,1755,1755,(g||1)*0.12,0.07,'sine'); },
+  bell:  (c,t,g)=>{ oscHit(c,t,1318,1318,(g||1)*0.34,0.3,'sine'); oscHit(c,t,1975,1975,(g||1)*0.15,0.2,'sine'); },
+  blip:  (c,t,g)=>{ oscHit(c,t,660,640,(g||1)*0.4,0.09,'triangle'); },
+  tick:  (c,t,g)=>{ noiseHit(c,t,7000,1.2,(g||1)*0.3,0.03,'highpass'); },
+  conga: (c,t,g)=>{ oscHit(c,t,310,175,(g||1)*0.6,0.14,'sine'); },
+};
+const LEAF_TIMBRES=['clave','bell','marimba','blip','conga','tick','wood','shaker'];
+/* tono sostenido: deja OÍR la duración real (largo vs corto), no solo el ataque */
+function toneHit(c,t,g,dur,f){ const o=c.createOscillator(); o.type='triangle'; o.frequency.value=f||523;
+  const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1900;
+  const gn=c.createGain(); gn.gain.setValueAtTime(0.0001,t); gn.gain.linearRampToValueAtTime(g,t+0.015);
+  gn.gain.setValueAtTime(g,Math.max(t+0.02,t+dur-0.07)); gn.gain.linearRampToValueAtTime(0.0001,t+dur);
+  o.connect(lp); lp.connect(gn); gn.connect(c.destination); o.start(t); o.stop(t+dur+0.06); }
+/* sonido de VARITA MÁGICA: destello ascendente */
+function magicSound(){ const c=iCtx(); if(!c) return; const t=c.currentTime+0.01;
+  [980,1470,1960,2940].forEach((f,i)=>oscHit(c,t+i*0.05,f,f,0.2,0.2,'sine'));
+  noiseHit(c,t,8500,1.5,0.1,0.28,'highpass'); }
+/* sonido de TAJO: barrido de ruido descendente, corto y afilado */
+function slashSound(){ const c=iCtx(); if(!c) return; const t=c.currentTime+0.01;
+  const s=c.createBufferSource(); s.buffer=iNoise(c);
+  const f=c.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.1;
+  f.frequency.setValueAtTime(5200,t); f.frequency.exponentialRampToValueAtTime(650,t+0.17);
+  const g=c.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.55,t+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+  s.connect(f); f.connect(g); g.connect(c.destination); s.start(t); s.stop(t+0.25); }
+
+/* ---------- reloj maestro por capas (bucles cuantizados) ---------- */
+const Loop={
+  layers:new Map(), t0:0, spq:0.8, timer:null, raf:null, visQ:[],
+  running(){ return !!this.timer; },
+  ensure(){ const c=iCtx(); if(!c) return null;
+    if(!this.timer){ this.t0=c.currentTime+0.08; this.timer=setInterval(()=>this.tick(),25); this.rafLoop(); }
+    return c; },
+  clear(){ this.layers.clear(); this.visQ.length=0; if(this.timer){clearInterval(this.timer);this.timer=null;} if(this.raf){cancelAnimationFrame(this.raf);this.raf=null;} },
+  setTempo(spq){ const c=iCtx(); this.spq=spq; if(c&&this.timer){ // re-anclar: todas las capas re-entran ya
+      this.t0=c.currentTime+0.06; this.layers.forEach(L=>{ L.from=this.t0; L.k=0; L.n=0; }); } },
+  /* def: {id, loopBeats, onsets:[{t,i}], timbre, gain, accent(idx)->g, vis:[{els,map}] , lamp(fn)} */
+  add(def){ const c=this.ensure(); if(!c) return;
+    const now=c.currentTime; const loopS=def.loopBeats*this.spq;
+    let from=this.t0; if(now>from){ const k=Math.ceil((now-from)/loopS); from=from+k*loopS; }
+    def.from=from; def.k=0; def.n=0; this.layers.set(def.id,def); },
+  remove(id){ this.layers.delete(id); if(!this.layers.size){ /* deja el reloj vivo un rato */ } },
+  has(id){ return this.layers.has(id); },
+  tick(){ const c=iCtx(); if(!c) return; const horizon=c.currentTime+0.14;
+    this.layers.forEach(def=>{
+      const loopS=def.loopBeats*this.spq;
+      for(let guard=0; guard<64; guard++){
+        if(def.n>=def.onsets.length){ def.n=0; def.k++; }
+        const ev=def.onsets[def.n]; const t=def.from+def.k*loopS+ev.t*this.spq;
+        if(t>horizon) break;
+        if(t>c.currentTime-0.05){
+          const g=(def.accent?def.accent(def.n,ev):1)*(def.gain||1);
+          const tt=Math.max(t,c.currentTime+0.001);
+          try{ (TIMBRES[def.timbre]||TIMBRES.clave)(c,tt,g); }catch(e){}
+          if(def.sustain){ const d=Math.max(0.09,(ev.d||0.5)*this.spq-0.05); try{ toneHit(c,tt,0.15*(def.gain||1),d,def.freq); }catch(e){} }
+          this.visQ.push({t:t,def:def,n:def.n,i:ev.i});
+        }
+        def.n++;
+      }
+    });
+  },
+  rafLoop(){ const step=()=>{ const c=iCtx();
+      if(c){ const now=c.currentTime;
+        while(this.visQ.length && this.visQ[0].t<=now+0.02){
+          const e=this.visQ.shift(); if(e.t<now-0.25) continue;
+          const def=e.def; if(!this.layers.has(def.id)) continue;
+          (def.vis||[]).forEach(vt=>{ const idx=vt.map?vt.map[e.n]:e.i; const el=vt.els&&vt.els[idx]; if(el) iFlash(el); });
+          if(def.lamp) def.lamp(e.n,e.i);
+          if(def.onHit) def.onHit(e.n,e.i);
+        }
+        this.visQ.sort((a,b)=>a.t-b.t);
+      }
+      this.raf=requestAnimationFrame(step); };
+    this.raf=requestAnimationFrame(step); },
+};
+function iFlash(el,ms){ if(!el)return; el.classList.remove('ihit'); void el.getBBox&&0; void el.clientWidth; el.classList.add('ihit'); setTimeout(()=>{ try{el.classList.remove('ihit');}catch(e){} },ms||150); }
+
+/* capa estándar a partir de un spec dibujado */
+function specLayer(id,spec,drawn,timbre,opts){
+  opts=opts||{}; const on=iOnsets(spec);
+  return Object.assign({ id:id, loopBeats:opts.loopBeats||on.total, onsets:on.onsets,
+    timbre:timbre, gain:opts.gain||1, accent:opts.accent||null,
+    vis:[{els:drawn.els}].concat(opts.extraVis||[]), lamp:opts.lamp||null },opts.raw||{});
+}
+
+/* ---------- overlay y sistema de diapositivas ---------- */
+let OV=null, stageEl=null, dotsEl=null, slides=[], sIdx=0, cleanup=null, headTitle=null;
+function buildOv(){
+  if(OV) return;
+  OV=document.createElement('div'); OV.className='intro-ov'; OV.id='introOv';
+  OV.innerHTML=
+    '<div class="intro-bar">'+
+      '<span class="intro-brand">INTRO <span id="introBarName"></span></span>'+
+      '<div class="intro-dots" id="introDots"></div>'+
+      '<div class="intro-nav"><button class="ibtn ghost" id="introPrev">←</button>'+
+      '<button class="ibtn primary" id="introNext">Siguiente →</button>'+
+      '<button class="intro-x" id="introClose" title="Salir de la intro">✕</button></div>'+
+    '</div>'+
+    '<div class="intro-stage" id="introStage"></div>'+
+    '<div class="intro-hint">barra espaciadora o → para avanzar · ← para volver</div>';
+  document.body.appendChild(OV);
+  stageEl=OV.querySelector('#introStage'); dotsEl=OV.querySelector('#introDots'); headTitle=OV.querySelector('#introBarName');
+  OV.querySelector('#introClose').onclick=closeIntro;
+  OV.querySelector('#introNext').onclick=()=>go(sIdx+1);
+  OV.querySelector('#introPrev').onclick=()=>go(sIdx-1);
+  document.addEventListener('keydown',e=>{
+    if(!OV.classList.contains('show')) return;
+    if(e.key==='Escape'){ closeIntro(); }
+    else if(e.key===' '||e.key==='ArrowRight'){ e.preventDefault(); go(sIdx+1); }
+    else if(e.key==='ArrowLeft'){ e.preventDefault(); go(sIdx-1); }
+  });
+}
+function closeIntro(){ if(cleanup){try{cleanup();}catch(e){}} cleanup=null; Loop.clear(); if(OV)OV.classList.remove('show'); }
+function paintDots(){ dotsEl.innerHTML=''; slides.forEach((s,i)=>{ const d=document.createElement('span'); d.className='idot'+(i===sIdx?' cur':(i<sIdx?' done':'')); d.onclick=()=>go(i); dotsEl.appendChild(d); });
+  OV.querySelector('#introPrev').style.visibility=sIdx>0?'visible':'hidden';
+  OV.querySelector('#introNext').textContent=(sIdx>=slides.length-1)?'Terminar ✓':'Siguiente →';
+}
+function go(i){
+  if(i>=slides.length){ closeIntro(); return; }
+  if(i<0) i=0;
+  if(cleanup){try{cleanup();}catch(e){}} cleanup=null; Loop.clear();
+  const old=stageEl.querySelector('.islide');
+  if(old){ old.classList.add('leave'); setTimeout(()=>{try{old.remove();}catch(e){}},430); }
+  sIdx=i; paintDots();
+  const el=document.createElement('div'); el.className='islide';
+  stageEl.appendChild(el);
+  const s=slides[sIdx];
+  const fn=SLIDE_TYPES[s.type];
+  if(fn){ cleanup=fn(el,s)||null; }
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+}
+window.launchCardIntro=function(card){
+  const def=window.CARD_INTROS&&window.CARD_INTROS[card.atlasId];
+  if(!def) return;
+  buildOv(); slides=def.slides(card); sIdx=0;
+  Loop.spq=def.spq||0.8; Loop.baseSpq=def.spq||0.8;
+  headTitle.textContent='· '+(card.atlasId||'')+' '+(card.name||'');
+  OV.classList.add('show');
+  const old=stageEl.querySelector('.islide'); if(old) old.remove();
+  paintDots(); go(0);
+};
+
+/* ---------- piezas de UI reutilizables ---------- */
+function paperChip(spec,o){ const w=document.createElement('div'); w.className='ipaper'+(o&&o.cls?' '+o.cls:'');
+  const d=iDraw(w,spec,o||{}); w.__drawn=d; w.__spec=spec; return w; }
+function el(tag,cls,html){ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; }
+function stagger(nodes,base,step){ nodes.forEach((n,i)=>{ n.style.animationDelay=((base||0)+i*(step||130))+'ms'; n.classList.add('ipop'); }); }
+
+/* ============ TIPOS DE DIAPOSITIVA ============ */
+const SLIDE_TYPES={};
+
+/* --- portada --- */
+SLIDE_TYPES.cover=function(host,s){
+  const c=el('div','icover');
+  c.appendChild(el('p','ikicker',s.kicker||'PRESENTACIÓN DEL RITMO'));
+  c.appendChild(el('h1','ititle',s.title));
+  if(s.sub) c.appendChild(el('p','isub',s.sub));
+  const row=el('div','icells');
+  (s.cells||[]).forEach(sp=>{ row.appendChild(paperChip(sp,{height:104,stretch:1.5,cls:'float'})); });
+  c.appendChild(row);
+  if(s.ref) c.appendChild(el('p','iref','📖 '+s.ref));
+  host.appendChild(c);
+  stagger([].slice.call(c.children),80,150);
+};
+
+/* --- ficha: cuánto ocupa / dónde vive --- */
+SLIDE_TYPES.facts=function(host,s){
+  const c=el('div','ifacts');
+  c.appendChild(el('p','ikicker','LA FICHA DEL RITMO'));
+  (s.blocks||[]).forEach(b=>{
+    const bx=el('div','ifact');
+    bx.appendChild(el('p','ifact-q',b.q));
+    if(b.fig){ const fw=el('div','ifact-fig'); fw.appendChild(paperChip(b.fig,{height:96,minInner:60,stretch:2})); bx.appendChild(fw); }
+    if(b.a) bx.appendChild(el('p','ifact-a',b.a));
+    if(b.figs){ const fr=el('div','icells small'); b.figs.forEach(sp=>fr.appendChild(paperChip(sp,{height:84,stretch:1.4,minInner:56}))); bx.appendChild(fr); stagger([].slice.call(fr.children),320,140); }
+    if(b.meters){ const mr=el('div','imeters');
+      b.meters.forEach(m=>mr.appendChild(el('span','imeter',m)));
+      bx.appendChild(mr); stagger([].slice.call(mr.children),350,120); }
+    c.appendChild(bx);
+  });
+  host.appendChild(c);
+  stagger([].slice.call(c.querySelectorAll('.ifact')),100,300);
+};
+
+/* --- génesis: TAJO / FUSIÓN / APAGAR / CASCADA --- */
+SLIDE_TYPES.genesis=function(host,s){
+  /* la génesis va unos 5 bpm más lenta que el resto de la intro */
+  Loop.setTempo((Loop.baseSpq||Loop.spq)*1.12);
+  const c=el('div','igenesis');
+  c.appendChild(el('p','ikicker',s.kicker||({tajo:'EL TAJO — dividir',fusion:'LA FUSIÓN — unir',apagar:'APAGAR — el silencio',cascade:'EL TAJO EN CASCADA'})[s.mode]||'¿DE DÓNDE VIENE?'));
+  if(s.title) c.appendChild(el('h2','ititle2',s.title));
+  const stageW=el('div','igen-stage');
+  const holder=el('div','igen-holder');
+  stageW.appendChild(holder);
+  const slash=el('div','islash'); stageW.appendChild(slash);
+  const flash=el('div','iflash'); stageW.appendChild(flash);
+  c.appendChild(stageW);
+  const cap=el('p','igen-cap',''); c.appendChild(cap);
+  const controls=el('div','igen-controls');
+  const btn=el('button','ibtn action','');
+  const replay=el('button','ibtn ghost','↺ desde el principio'); replay.style.display='none';
+  controls.appendChild(btn); controls.appendChild(replay);
+  c.appendChild(controls);
+  c.appendChild(el('p','igen-hint','🔊 Pulsa la tarjeta para escucharla en bucle · vuelve a pulsarla para silenciarla'));
+  host.appendChild(c);
+  stagger([].slice.call(c.children),60,120);
+
+  let step=-1, chip=null, curSpec=null, sndOn=false, busy=false;
+  const defAnim=()=>({tajo:'tajo',fusion:'fusion',apagar:'apagar',cascade:'tajo'})[s.mode]||null;
+
+  function layerNow(){
+    Loop.remove('gfig'); Loop.remove('gpulse');
+    if(!sndOn||!chip||!curSpec) return;
+    Loop.add(specLayer('gfig',curSpec,chip.__drawn,s.timbre||'clave',{loopBeats:s.loopBeats,gain:1,raw:{sustain:true,freq:s.toneFreq||523}}));
+    if(s.pulse) Loop.add(specLayer('gpulse',s.pulse,{els:[]},'drum',{loopBeats:s.loopBeats,gain:0.85}));
+  }
+  function render(st,animated){
+    const nu=paperChip(st,{height:130,stretch:1.8,cls:'big'});
+    if(animated==='tajo'||animated==='magia'){ nu.classList.add('sprout'); }
+    else if(animated==='fusion'){ flash.classList.remove('go','green'); void flash.offsetWidth; flash.classList.add('go','green'); nu.classList.add('melt'); }
+    else if(animated==='apagar'){ nu.classList.add('dimin'); }
+    else if(animated==='melt'){ nu.classList.add('melt'); }
+    if(chip){ const oldc=chip; oldc.classList.add('bye'); setTimeout(()=>{try{oldc.remove();}catch(e){}},520); }
+    holder.appendChild(nu); chip=nu; curSpec=st;
+    nu.classList.add('clickable');
+    nu.classList.toggle('on',sndOn);
+    nu.onclick=()=>{ sndOn=!sndOn; nu.classList.toggle('on',sndOn); layerNow(); };
+    if(st.caption!=null) cap.innerHTML=st.caption;
+    if(st.mark&&chip.__drawn){ st.mark.forEach(i=>{ const e=chip.__drawn.els[i]; if(e)e.classList.add('imark'); }); }
+    layerNow();
+  }
+  /* la cuchillada atraviesa la(s) nota(s) objetivo del chip ACTUAL */
+  function slashAt(cut){
+    let placed=false;
+    try{
+      const sr=stageW.getBoundingClientRect();
+      const idxs=(cut==null||cut==='all')?[]:(Array.isArray(cut)?cut:[cut]);
+      const rs=[];
+      idxs.forEach(i=>{ const e=chip&&chip.__drawn.els[i]; if(e) rs.push(e.getBoundingClientRect()); });
+      if(rs.length){
+        const cx=rs.reduce((a,r)=>a+r.left+r.width/2,0)/rs.length;
+        const cy=rs.reduce((a,r)=>a+r.top+r.height/2,0)/rs.length;
+        slash.style.left=(cx-sr.left)+'px'; slash.style.top=(cy-sr.top)+'px';
+        slash.style.width='170px'; slash.style.marginLeft='-85px';
+        placed=true;
+      }
+    }catch(e){}
+    if(!placed){ slash.style.left='50%'; slash.style.top='50%'; slash.style.width='230px'; slash.style.marginLeft='-115px'; }
+    slash.classList.remove('go'); void slash.offsetWidth; slash.classList.add('go');
+    flash.classList.remove('go','green'); void flash.offsetWidth; flash.classList.add('go');
+    if(window.__INTRO_LIB&&window.__INTRO_LIB.slashSound) window.__INTRO_LIB.slashSound();
+  }
+  /* destello de varita mágica sobre la tarjeta (el número del grupo aparece «por arte de magia») */
+  function sparkleOver(){
+    try{ const sr=stageW.getBoundingClientRect(), r=chip.getBoundingClientRect();
+      const sp=el('div','imagic','✦');
+      sp.style.left=((r.left-sr.left)+r.width/2)+'px'; sp.style.top=((r.top-sr.top)+4)+'px';
+      stageW.appendChild(sp); setTimeout(()=>{try{sp.remove();}catch(e){}},950);
+    }catch(e){}
+    if(window.__INTRO_LIB&&window.__INTRO_LIB.magicSound) window.__INTRO_LIB.magicSound();
+  }
+  function labelFor(){
+    if(step>=s.steps.length-1) return null;
+    const nx=s.steps[step+1];
+    if(nx.btn) return nx.btn;
+    return ({tajo:'⚡ ¡TAJO!',fusion:'✨ Fusionar',apagar:'🕳 Apagar una',cascade:'⚡ ¡Otro tajo!'})[s.mode]||'Siguiente paso';
+  }
+  function paintBtns(){
+    const lb=labelFor();
+    if(lb){ btn.textContent=lb; btn.style.display=''; }
+    else { btn.style.display='none'; replay.style.display=''; }
+  }
+  /* fusión estilo Dragon Ball: las cabezas viajan la una hacia la otra */
+  function fuseMove(pairs,done){
+    let ok=false;
+    try{
+      const svg=chip&&chip.querySelector('svg');
+      const scale=svg?(svg.getBoundingClientRect().width/(svg.width.baseVal.value||svg.getBoundingClientRect().width)):1;
+      pairs.forEach(p=>{
+        const els=p.map(i=>chip.__drawn.els[i]).filter(Boolean);
+        if(els.length===2){
+          const r0=els[0].getBoundingClientRect(), r1=els[1].getBoundingClientRect();
+          const dx=((r1.left+r1.width/2)-(r0.left+r0.width/2))/2/(scale||1);
+          els[0].style.transition='transform .5s cubic-bezier(.5,0,.5,1)';
+          els[1].style.transition='transform .5s cubic-bezier(.5,0,.5,1)';
+          els[0].style.transform='translate('+dx.toFixed(1)+'px,0)';
+          els[1].style.transform='translate('+(-dx).toFixed(1)+'px,0)';
+          els.forEach(e=>e.classList.add('imark'));
+          ok=true;
+        }
+      });
+      /* las barras del origen se disuelven suavemente mientras cabezas y plicas viajan */
+      if(ok&&svg){ svg.querySelectorAll('.vf-beam').forEach(b=>{ b.style.transition='opacity .5s ease'; b.style.opacity='0.18'; }); }
+    }catch(e){}
+    setTimeout(done, ok?540:0);
+  }
+  /* tajos encadenados: uno tras otro, cada uno con su cuchillada y su sonido */
+  function slashSeq(idxs,k,done){
+    if(k>=idxs.length){ done(); return; }
+    slashAt(idxs[k]);
+    setTimeout(()=>slashSeq(idxs,k+1,done), 340);
+  }
+  function advance(){
+    if(busy||step>=s.steps.length-1) return;
+    const nxt=s.steps[step+1];
+    const anim = (step<0)?null : (nxt.anim!==undefined?nxt.anim:defAnim());
+    const doIt=()=>{ step++; render(nxt,anim); paintBtns(); busy=false; btn.disabled=false; };
+    const act=()=>{
+      if(anim==='tajo'){
+        const idxs=(nxt.cut==null)?[null]:(Array.isArray(nxt.cut)?nxt.cut:[nxt.cut]);
+        if(idxs.length>1){ busy=true; btn.disabled=true; slashSeq(idxs,0,doIt); }
+        else { slashAt(idxs[0]); doIt(); }
+      } else if(anim==='magia'){
+        const idxs=(nxt.cut==null)?[]:(Array.isArray(nxt.cut)?nxt.cut:[nxt.cut]);
+        const after=()=>{ doIt(); setTimeout(sparkleOver,200); };
+        if(idxs.length>1){ busy=true; btn.disabled=true; slashSeq(idxs,0,after); }
+        else if(idxs.length===1){ slashAt(idxs[0]); after(); }
+        else after();
+      } else if(anim==='fusion' && nxt.join && chip){
+        const pairs=Array.isArray(nxt.join[0])?nxt.join:[nxt.join];
+        busy=true; btn.disabled=true; fuseMove(pairs,doIt);
+      } else doIt();
+    };
+    /* antes de una nueva fase, vuelve el ritmo base si así se pide */
+    if(nxt.viaBase && s.base){
+      busy=true; btn.disabled=true;
+      render(s.base,'melt');
+      cap.innerHTML='<i>volvemos al ritmo base…</i>';
+      setTimeout(()=>{ act(); },900);
+    } else act();
+  }
+  btn.onclick=advance;
+  replay.onclick=()=>{ step=-1; sndOn=false; Loop.remove('gfig'); Loop.remove('gpulse'); replay.style.display='none'; advance(); };
+  advance();
+  return function(){ Loop.clear(); };
+};
+
+/* --- cambio de talla (m2) --- */
+SLIDE_TYPES.talla=function(host,s){
+  /* el pulso (negra antes, blanca después) dura LO MISMO en toda la intro del mundo 2 */
+  Loop.setTempo((Loop.baseSpq||0.45)*2*1.12);
+  const c=el('div','italla');
+  c.appendChild(el('p','ikicker','CAMBIO DE TALLA'));
+  c.appendChild(el('h2','ititle2',s.title||'El pulso ya no es la negra'));
+  const stageW=el('div','igen-stage');
+  const holder=el('div','igen-holder'); stageW.appendChild(holder);
+  const flash=el('div','iflash'); stageW.appendChild(flash);
+  c.appendChild(stageW);
+  const cap=el('p','igen-cap',s.capA||'Un ritmo que conoces de sobra. Escúchalo.');
+  c.appendChild(cap);
+  const controls=el('div','igen-controls');
+  const btn=el('button','ibtn action','📏 Cambiar de talla');
+  controls.appendChild(btn); c.appendChild(controls);
+  host.appendChild(c);
+  stagger([].slice.call(c.children),60,120);
+  let big=false, sndOn=false, cur=null;
+  const on=iOnsets(s.small);
+  function layers(){
+    Loop.remove('talla'); Loop.remove('tpul');
+    if(!sndOn||!cur) return;
+    const spec=big?s.big:s.small;
+    Loop.add({id:'talla',loopBeats:on.total,onsets:on.onsets,timbre:'marimba',gain:1,vis:[{els:cur.__drawn.els,map:big?iSoundIdx(spec):null}]});
+    Loop.add({id:'tpul',loopBeats:on.total,onsets:(s.pulseOn||[]).map(t=>({t:t,i:-1})),timbre:'drum',gain:0.8,vis:[]});
+  }
+  function bindToggle(ch){ ch.classList.add('clickable'); ch.classList.toggle('on',sndOn);
+    ch.onclick=()=>{ sndOn=!sndOn; ch.classList.toggle('on',sndOn); layers(); }; }
+  const chipA=paperChip(s.small,{height:120,stretch:1.7,ts:s.tsSmall,cls:'big'});
+  holder.appendChild(chipA); cur=chipA; bindToggle(chipA);
+  c.appendChild(el('p','igen-hint','🔊 Pulsa la tarjeta para escucharla en bucle · vuelve a pulsarla para silenciarla'));
+  btn.onclick=()=>{
+    if(big) return; big=true;
+    flash.classList.add('go','green');
+    const chipB=paperChip(s.big,{height:132,stretch:1.7,ts:s.tsBig,cls:'big grow'});
+    chipA.classList.add('bye'); setTimeout(()=>{try{chipA.remove();}catch(e){}},520);
+    holder.appendChild(chipB); cur=chipB; bindToggle(chipB);
+    /* el sonido NO cambia: solo re-vinculamos la iluminación */
+    const L=Loop.layers.get('talla'); if(L){ const map=iSoundIdx(s.big); L.vis=[{els:chipB.__drawn.els,map:map}]; }
+    cap.innerHTML=s.capB||'<b>El sonido no ha cambiado.</b> Solo la ropa: ahora la unidad de pulso es la <b>blanca</b>.';
+    btn.style.display='none';
+  };
+  return function(){ Loop.clear(); };
+};
+
+/* --- árbol genealógico sonoro --- */
+SLIDE_TYPES.tree=function(host,s){
+  const c=el('div','itree');
+  const top=el('div','itree-top');
+  top.appendChild(el('p','ikicker',s.kicker||'EL ÁRBOL GENEALÓGICO — púlsalos y superponlos'));
+  /* el tempo "Medio" del árbol = el mismo tempo rebajado de las diapositivas */
+  const tbase=(s.spq||Loop.baseSpq||Loop.spq)*1.12;
+  const tempo=el('div','itempo');
+  [['Lento',1.3],['Medio',1],['Rápido',0.8]].forEach((tp,i)=>{
+    const b=el('button','ibtn seg'+(i===1?' on':''),tp[0]);
+    b.onclick=()=>{ tempo.querySelectorAll('.seg').forEach(x=>x.classList.remove('on')); b.classList.add('on'); Loop.setTempo(tbase*tp[1]); };
+    tempo.appendChild(b);
+  });
+  const stopAll=el('button','ibtn ghost','■ silencio');
+  tempo.appendChild(stopAll);
+  top.appendChild(tempo);
+  c.appendChild(top);
+  Loop.setTempo(tbase);
+
+  const wrap=el('div','itree-wrap');
+  let leafT=0;
+  function renderRows(container,rows){
+    rows.forEach((row,ri)=>{
+      if(ri>0) container.appendChild(el('div','itree-link'));
+      const rr=el('div','itree-row'+(row.cls?' '+row.cls:'')+((ri===rows.length-1)?' leaf':''));
+      if(row.label) rr.appendChild(el('p','itree-rowlab',row.label));
+      const rowIn=el('div','itree-rowin');
+      const lvl=(row.lvl!=null)?row.lvl:ri;
+      const TONES=[392,440,494,523,587,659,698,784];
+      row.nodes.forEach(nd=>{
+        const node=el('div','itnode lvl'+lvl);
+        const chip=paperChip(nd,{height:nd.h||88,stretch:nd.stretch||1.35,minInner:nd.minInner||46});
+        node.appendChild(chip);
+        node.appendChild(el('p','itnode-lab',nd.label||''));
+        const isLeaf=(lvl>=2);
+        const timbre=nd.timbre||(lvl===0?'drum':(lvl===1?['wood','shaker','marimba'][row.nodes.indexOf(nd)%3]:LEAF_TIMBRES[(leafT)%LEAF_TIMBRES.length]));
+        const toneF=isLeaf?TONES[leafT%TONES.length]:null;
+        if(isLeaf) leafT++;
+        node.onclick=()=>{
+          const id='n_'+lvl+'_'+(nd.id||nd.label);
+          if(Loop.has(id)){ Loop.remove(id); node.classList.remove('on'); if(nd.__ghostNode)nd.__ghostNode.classList.remove('on-ghost'); return; }
+          const extraVis=[];
+          if(nd.__ghostChip){ extraVis.push({els:nd.__ghostChip.__drawn.els,map:iSoundIdx(nd.twin)}); nd.__ghostNode.classList.add('on-ghost'); }
+          Loop.add(specLayer(id,nd,chip.__drawn,timbre,{loopBeats:nd.loopBeats||s.loopBeats,gain:nd.gain||(lvl===0?1:0.9),extraVis:extraVis,accent:nd.accent||null,
+            raw:isLeaf?{sustain:true,freq:toneF}:{}}));
+          node.classList.add('on');
+        };
+        rowIn.appendChild(node);
+      });
+      rr.appendChild(rowIn); container.appendChild(rr);
+    });
+  }
+  let allRows=[];
+  if(s.cols){
+    const colsEl=el('div','itree-cols');
+    s.cols.forEach((col,ci)=>{
+      const cm=el('div','itree-main'+(ci>0?' sep':''));
+      renderRows(cm,col.rows);
+      colsEl.appendChild(cm);
+      allRows=allRows.concat(col.rows);
+    });
+    wrap.appendChild(colsEl);
+  } else {
+    const main=el('div','itree-main');
+    renderRows(main,s.rows);
+    wrap.appendChild(main);
+    allRows=s.rows;
+  }
+  /* panel de gemelas */
+  const twins=[]; allRows.forEach(r=>r.nodes.forEach(nd=>{ if(nd.twin) twins.push(nd); }));
+  if(twins.length){
+    const side=el('div','itree-side');
+    side.appendChild(el('p','iside-t','✳ grafías gemelas'));
+    side.appendChild(el('p','iside-s','Otra forma de escribir <b>exactamente el mismo sonido</b>. Al activar la oficial, su gemela suena con ella — como una sola.'));
+    twins.forEach(nd=>{
+      const g=el('div','itnode ghost');
+      const gchip=paperChip(nd.twin,{height:80,stretch:1.3,minInner:44});
+      g.appendChild(gchip); g.appendChild(el('p','itnode-lab',(nd.twin.label||'')+' ✳'));
+      nd.__ghostChip=gchip; nd.__ghostNode=g;
+      side.appendChild(g);
+    });
+    wrap.appendChild(side);
+  }
+  c.appendChild(wrap);
+  if(s.foot) c.appendChild(el('p','itree-foot',s.foot));
+  host.appendChild(c);
+  stagger([].slice.call(wrap.querySelectorAll('.itnode')),100,90);
+  stopAll.onclick=()=>{ Loop.layers.forEach((_,id)=>{ if(id.startsWith('n_'))Loop.remove(id); }); c.querySelectorAll('.itnode.on').forEach(n=>n.classList.remove('on')); c.querySelectorAll('.on-ghost').forEach(n=>n.classList.remove('on-ghost')); };
+  return function(){ Loop.clear(); };
+};
+window.__INTRO_SLIDE_TYPES=SLIDE_TYPES;
+window.__INTRO_LIB={iDraw:iDraw,iOnsets:iOnsets,iSoundIdx:iSoundIdx,Loop:Loop,TIMBRES:TIMBRES,iCtx:iCtx,paperChip:paperChip,el:el,stagger:stagger,iFlash:iFlash,slashSound:slashSound,magicSound:magicSound,toneHit:toneHit};
+})();
+
+</script>
+<script id="introWalk">
+/* ============================================================
+   INTRO 6.2 — compás dispar 5/8: audición de variantes + PASEO
+   ============================================================ */
+(function(){
+'use strict';
+const L=window.__INTRO_LIB, S=window.__INTRO_SLIDE_TYPES;
+const el=L.el, iDraw=L.iDraw, Loop=L.Loop, TIMBRES=L.TIMBRES, iCtx=L.iCtx, iFlash=L.iFlash, stagger=L.stagger;
+
+/* agrupaciones: pulsos en corcheas */
+const GROUPINGS={
+  '32':{label:'3+2',pulses:[3,2],name:'tres más dos'},
+  '23':{label:'2+3',pulses:[2,3],name:'dos más tres'},
+  '122':{label:'1+2+2',pulses:[1,2,2],name:'zortziko',zort:true},
+};
+/* patrón de un compás para una agrupación (tokens VexFlow), con beams por pulso */
+function barSpec(g,pick){
+  const P={
+    3:[['qd'],['q','8'],['8','q'],['8','8','8']],
+    2:[['q'],['8','8'],['q'],['8','8']],
+    1:[['8']],
+  };
+  const notes=[],beams=[],pulseStart=[];
+  GROUPINGS[g].pulses.forEach(p=>{
+    pulseStart.push(notes.length);
+    const cell=pick?pick(P[p]):P[p][Math.floor(Math.random()*P[p].length)];
+    const s=notes.length;
+    cell.forEach(t=>notes.push(t));
+    const run=[]; for(let i=s;i<notes.length;i++){ const tk=notes[i]; if(tk==='8'||tk==='16')run.push(i); }
+    if(run.length>1) beams.push(run);
+  });
+  return {notes:notes,beams:beams,pulseStart:pulseStart};
+}
+/* onsets de pulso (en corcheas) de una agrupación */
+function pulseOnsets(g){ const out=[]; let t=0; GROUPINGS[g].pulses.forEach(p=>{ out.push({t:t,len:p}); t+=p; }); return out; }
+
+/* --- diapositiva: qué es un compás dispar (5 corcheas planas -> tajo) --- */
+S.dispar=function(host,s){
+  const c=el('div','igenesis');
+  c.appendChild(el('p','ikicker','EL COMPÁS DISPAR'));
+  c.appendChild(el('h2','ititle2',s.title||'Cinco corcheas… ¿y ahora qué?'));
+  const stage=el('div','igen-stage');
+  const holder=el('div','igen-holder'); stage.appendChild(holder);
+  const slash=el('div','islash'); stage.appendChild(slash);
+  const flash=el('div','iflash'); stage.appendChild(flash);
+  c.appendChild(stage);
+  const lamps=el('div','ilamps'); c.appendChild(lamps);
+  const cap=el('p','igen-cap','Un compás de <b>5/8</b>: cinco corcheas. No se pueden repartir en pulsos iguales — 5 no es divisible ni entre 2 ni entre 3.');
+  c.appendChild(cap);
+  const controls=el('div','igen-controls');
+  const btn=el('button','ibtn action','⚡ ¡TAJO! — pártelo en 3+2');
+  controls.appendChild(btn); c.appendChild(controls);
+  host.appendChild(c);
+  stagger([].slice.call(c.children),60,120);
+
+  const SEQ=['32','23','122'];
+  const BTNS={'32':'⚡ ¡TAJO! — pártelo en 3+2','23':'⚡ Cambia el tajo: 2+3','122':'✳ Y la curiosidad: 1+2+2 (zortziko)'};
+  const CAPS={
+    '32':'Dos pulsos <b>desiguales</b>: uno LARGO (3 corcheas) y uno corto (2). El compás <b>cojea</b> — esa cojera es su carácter.',
+    '23':'El tajo se muda: ahora el pulso corto va PRIMERO y el largo después. La cojera cambia de pie.',
+    '122':'La variante regional: <b>1+2+2</b>, el <b>zortziko</b> vasco ✳. Tres pulsos: corto, largo, largo.'};
+  let idx=-1, chip=null;
+
+  function beamsFor(g){ const out=[]; let i=0;
+    GROUPINGS[g].pulses.forEach(p=>{ if(p>1){ const run=[]; for(let k=0;k<p;k++)run.push(i+k); out.push(run); } i+=p; });
+    return out; }
+  function show(g,animated){
+    const spec={notes:['8','8','8','8','8'],beams:beamsFor(g)};
+    const nu=el('div','ipaper big'+(animated?' sprout':'')); const dd=iDraw(nu,spec,{height:120,stretch:1.9,ts:'5/8'}); nu.__drawn=dd;
+    if(chip){ const o=chip; o.classList.add('bye'); setTimeout(()=>{try{o.remove();}catch(e){}},520); }
+    holder.appendChild(nu); chip=nu;
+    lamps.innerHTML=''; const lampEls=[];
+    pulseOnsets(g).forEach(p=>{ const l=el('span','ilamp'+(p.len>=3?' big':(p.len===1?' small':''))); lamps.appendChild(l); lampEls.push(l); });
+    Loop.remove('flat'); Loop.remove('puls');
+    Loop.add({id:'flat',loopBeats:2.5,onsets:[0,.5,1,1.5,2].map((t,i)=>({t:t,i:i,d:0.5})),timbre:'tick',gain:0.7,vis:[{els:dd.els}]});
+    const po=pulseOnsets(g);
+    Loop.add({id:'puls',loopBeats:2.5,onsets:po.map((o,i)=>({t:o.t*0.5,i:i})),timbre:'drum',gain:1,
+      accent:(n)=>n===0?1.15:0.9,
+      vis:[],lamp:(n)=>{ iFlash(lampEls[n], po[n].len>=3?260:(po[n].len===1?110:180)); }});
+    cap.innerHTML=CAPS[g];
+  }
+  /* estado inicial: las cinco corcheas planas, sin jerarquía */
+  const flat={notes:['8','8','8','8','8'],beams:[[0,1,2,3,4]]};
+  chip=el('div','ipaper big'); const d0=iDraw(chip,flat,{height:120,stretch:1.9,ts:'5/8'});
+  chip.__drawn=d0; holder.appendChild(chip);
+  Loop.add({id:'flat',loopBeats:2.5,onsets:[0,.5,1,1.5,2].map((t,i)=>({t:t,i:i,d:0.5})),timbre:'wood',gain:0.9,vis:[{els:d0.els}]});
+  btn.onclick=()=>{
+    idx=(idx+1)%SEQ.length;
+    slash.classList.remove('go'); void slash.offsetWidth; slash.classList.add('go');
+    flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+    if(window.__INTRO_LIB.slashSound) window.__INTRO_LIB.slashSound();
+    show(SEQ[idx],true);
+    btn.textContent=BTNS[SEQ[(idx+1)%SEQ.length]].replace('⚡ ¡TAJO! — pártelo en','↺ Vuelve al');
+    if(idx<SEQ.length-1) btn.textContent=BTNS[SEQ[idx+1]];
+    else btn.textContent='↺ Vuelve al 3+2';
+  };
+  return function(){ Loop.clear(); };
+};
+
+/* --- diapositiva: audición de las tres variantes --- */
+S.disparListen=function(host,s){
+  const c=el('div','ilisten');
+  c.appendChild(el('p','ikicker','LAS TRES CARAS DEL 5/8 — escúchalas'));
+  c.appendChild(el('h2','ititle2','Dos variantes principales… y una curiosidad'));
+  const row=el('div','ilisten-row');
+  const players=[];
+  [['32','3 + 2','pulso largo + corto',''],['23','2 + 3','pulso corto + largo',''],['122','1 + 2 + 2','tres pulsos: corto, largo, largo','✳ curiosidad regional: el ZORTZIKO vasco']].forEach(cfg=>{
+    const g=cfg[0];
+    const box=el('div','iplayer'+(GROUPINGS[g].zort?' zort':''));
+    box.appendChild(el('p','iplayer-t',cfg[1]));
+    const chip=el('div','ipaper');
+    const spec=barSpec(g,arr=>arr[arr.length-1]);
+    const d=iDraw(chip,{notes:spec.notes,beams:spec.beams},{height:88,stretch:1.5,ts:'5/8'});
+    box.appendChild(chip);
+    const lamps=el('div','ilamps');
+    const lampEls=[];
+    pulseOnsets(g).forEach(p=>{ const l=el('span','ilamp'+(p.len>=3?' big':(p.len===1?' small':''))); lamps.appendChild(l); lampEls.push(l); });
+    box.appendChild(lamps);
+    box.appendChild(el('p','iplayer-s',cfg[2]));
+    if(cfg[3]) box.appendChild(el('p','iplayer-z',cfg[3]));
+    row.appendChild(box);
+    const P={g:g,box:box,d:d,spec:spec,lampEls:lampEls,on:false};
+    box.style.cursor='pointer';
+    box.onclick=()=>{ toggle(P); };
+    players.push(P);
+  });
+  c.appendChild(row);
+  c.appendChild(el('p','igen-cap','La luz grande late con el pulso largo; la pequeña, con el corto. <b>Pulsa cada tarjeta</b> para escucharla en bucle — vuelve a pulsarla para pararla.'));
+  host.appendChild(c);
+  stagger([].slice.call(c.children),60,130);
+  stagger([].slice.call(row.children),200,200);
+  function stopP(p){ Loop.remove('lvN'+p.g); Loop.remove('lvP'+p.g); p.on=false; p.box.classList.remove('playing'); }
+  function toggle(p){
+    if(p.on){ stopP(p); return; }
+    players.forEach(x=>{ if(x!==p) stopP(x); });
+    p.on=true; p.box.classList.add('playing');
+    const onsN=[]; let t=0;
+    p.spec.notes.forEach((tk,i)=>{ const b=tk==='qd'?1.5:(tk==='q'?1:0.5); onsN.push({t:t,i:i,d:b}); t+=b; });
+    Loop.add({id:'lvN'+p.g,loopBeats:2.5,onsets:onsN,timbre:'tick',gain:0.6,vis:[{els:p.d.els}]});
+    const po=pulseOnsets(p.g);
+    Loop.add({id:'lvP'+p.g,loopBeats:2.5,onsets:po.map((o,i)=>({t:o.t*0.5,i:i})),timbre:'drum',gain:1,
+      accent:(n)=>n===0?1.15:0.9,
+      vis:[],lamp:(n)=>{ iFlash(p.lampEls[n], po[n].len>=3?280:(po[n].len===1?110:170)); }});
+  }
+  return function(){ Loop.clear(); };
+};
+
+/* --- diapositiva final: PARTITURA INFINITA (modo paseo) --- */
+S.walk=function(host,s){
+  const c=el('div','iwalk');
+  c.appendChild(el('p','ikicker','PARTITURA INFINITA — el 5/8 en bucle, hasta que tú digas basta'));
+  const view=el('div','iwalk-view');
+  const strip=el('div','iwalk-strip'); view.appendChild(strip);
+  const needle=el('div','iwalk-needle'); view.appendChild(needle);
+  c.appendChild(view);
+  const lamps=el('div','ilamps walk'); c.appendChild(lamps);
+  const gRow=el('div','iwalk-groups');
+  const gBtns={};
+  [['32','3 + 2'],['23','2 + 3'],['122','1+2+2 · zortziko ✳']].forEach(cfg=>{
+    const b=el('button','ibtn wgroup'+(cfg[0]==='32'?' on':''),cfg[1]);
+    b.onclick=()=>requestSwitch(cfg[0]);
+    gBtns[cfg[0]]=b; gRow.appendChild(b);
+  });
+  c.appendChild(gRow);
+  const tRow=el('div','iwalk-tempo');
+  tRow.appendChild(el('span','iwalk-tlab','Velocidad:'));
+  const speeds=[['🚶 Lenta',0.40],['🚶 Media',0.33],['🏃 Rápida',0.27]]; // seg por corchea: Media = misma corchea que las diapositivas previas
+  const tBtns=[];
+  speeds.forEach((sp,i)=>{ const b=el('button','ibtn seg'+(i===1?' on':''),sp[0]);
+    b.onclick=()=>{ tBtns.forEach(x=>x.classList.remove('on')); b.classList.add('on'); setSpeed(sp[1]); };
+    tBtns.push(b); tRow.appendChild(b); });
+  const playBtn=el('button','ibtn action','▶ Empezar');
+  tRow.appendChild(playBtn);
+  c.appendChild(tRow);
+  c.appendChild(el('p','itree-foot','Bucle infinito: cambia de agrupación cuando quieras — el cambio entra con cuenta atrás al terminar el compás en curso.'));
+  host.appendChild(c);
+  stagger([].slice.call(c.children),60,120);
+
+  /* ---- estado ---- */
+  const PPE=64;               // px por corchea
+  const NOWX=0.30;            // aguja al 30% del ancho
+  let spe=0.33;               // seg por corchea
+  let g='32', pendingG=null;
+  let running=false, t0=0, items=[], genBeat=0, evQ=[], raf=null, timer=null;
+  let lampEls=[];
+  function paintLamps(){ lamps.innerHTML=''; lampEls=[];
+    pulseOnsets(g).forEach(p=>{ const l=el('span','ilamp'+(p.len>=3?' big':(p.len===1?' small':''))); lamps.appendChild(l); lampEls.push(l); }); }
+  paintLamps();
+  function nowBeat(){ const c2=iCtx(); return c2?(c2.currentTime-t0)/spe:0; }
+  function setSpeed(v){ const c2=iCtx(); if(c2&&running){ const nb=(c2.currentTime-t0)/spe; spe=v; t0=c2.currentTime-nb*spe; } else spe=v; }
+  function requestSwitch(ng){ if(ng===g&&!pendingG) return;
+    pendingG=ng; Object.keys(gBtns).forEach(k=>gBtns[k].classList.toggle('pend',k===ng&&ng!==g)); }
+
+  function mkBar(atBeat){
+    const spec=barSpec(g);
+    const w=el('div','iwalk-bar'); w.style.left=(atBeat*PPE)+'px'; w.style.width=(5*PPE)+'px';
+    const d=iDraw(w,{notes:spec.notes,beams:spec.beams},{width:5*PPE-8,height:104,ts:null});
+    strip.appendChild(w);
+    /* eventos */
+    let t=atBeat;
+    const sIdx=[];
+    spec.notes.forEach((tk,i)=>{ evQ.push({b:t,kind:'note',el:d.els[i],dur:120}); t+= tk==='qd'?3 : tk==='q'?2 : 1; });
+    pulseOnsets(g).forEach((p,pi)=>{ evQ.push({b:atBeat+p.t,kind:'pulse',pi:pi,len:p.len,first:pi===0}); });
+    items.push({el:w,end:atBeat+5});
+    return 5;
+  }
+  function mkCount(atBeat,ng){
+    const po=pulseOnsets(ng); const N=po.length;
+    const beats=GROUPINGS[ng].pulses.reduce((a,b)=>a+b,0);
+    const w=el('div','iwalk-bar count'); w.style.left=(atBeat*PPE)+'px'; w.style.width=(beats*PPE)+'px';
+    po.forEach((p,pi)=>{ const n=el('span','iwalk-num',String(N-pi)); n.style.left=((p.t/beats)*100)+'%'; w.appendChild(n);
+      evQ.push({b:atBeat+p.t,kind:'count',el:n,len:p.len}); });
+    strip.appendChild(w);
+    items.push({el:w,end:atBeat+beats});
+    return beats;
+  }
+  function gen(){
+    const horizon=nowBeat()+14;
+    let guard=0;
+    while(genBeat<horizon && guard++<20){
+      if(pendingG && pendingG!==g){ const ng=pendingG;
+        genBeat+=mkCount(genBeat,ng);
+        g=ng; pendingG=null;
+        Object.keys(gBtns).forEach(k=>{ gBtns[k].classList.toggle('on',k===g); gBtns[k].classList.remove('pend'); });
+        setTimeout(paintLamps, Math.max(0,(genBeat-5-nowBeat())*spe*1000));
+      } else { if(pendingG===g)pendingG=null; genBeat+=mkBar(genBeat); }
+    }
+    /* limpiar pasado */
+    const nb=nowBeat();
+    items=items.filter(it=>{ if(it.end< nb-8){ try{it.el.remove();}catch(e){} return false; } return true; });
+  }
+  function schedule(){ const c2=iCtx(); if(!c2)return; const horizon=c2.currentTime+0.14;
+    evQ.sort((a,b)=>a.b-b.b);
+    while(evQ.length && t0+evQ[0].b*spe<=horizon){
+      const e=evQ.shift(); const t=t0+e.b*spe; if(t<c2.currentTime-0.05) continue;
+      if(e.kind==='note'){ TIMBRES.tick(c2,Math.max(t,c2.currentTime+0.001),0.55); }
+      else if(e.kind==='pulse'){ TIMBRES.drum(c2,Math.max(t,c2.currentTime+0.001),e.first?1.15:0.9); }
+      else if(e.kind==='count'){ TIMBRES.conga(c2,Math.max(t,c2.currentTime+0.001),1.05); }
+      visQ.push({t:t,e:e});
+    }
+  }
+  const visQ=[];
+  function frame(){
+    if(!running){ return; }
+    const c2=iCtx(); const nb=nowBeat();
+    strip.style.transform='translateX('+(view.clientWidth*NOWX - nb*PPE)+'px)';
+    while(visQ.length && c2 && visQ[0].t<=c2.currentTime+0.02){
+      const v=visQ.shift(); const e=v.e;
+      if(e.kind==='note'&&e.el) iFlash(e.el,110);
+      else if(e.kind==='pulse'){ const l=lampEls[e.pi]; if(l) iFlash(l,e.len>=3?260:(e.len===1?110:160)); }
+      else if(e.kind==='count'&&e.el){ e.el.classList.add('lit'); setTimeout(()=>{try{e.el.classList.remove('lit');}catch(x){}},260); }
+    }
+    gen();
+    raf=requestAnimationFrame(frame);
+  }
+  playBtn.onclick=()=>{
+    if(running){ running=false; playBtn.textContent='▶ Seguir'; if(timer){clearInterval(timer);timer=null;} if(raf)cancelAnimationFrame(raf); return; }
+    const c2=iCtx(); if(!c2) return;
+    running=true; playBtn.textContent='⏸ Pausa';
+    strip.innerHTML=''; items=[]; evQ.length=0; visQ.length=0; genBeat=0;
+    t0=c2.currentTime+0.15; paintLamps();
+    gen(); timer=setInterval(schedule,25); raf=requestAnimationFrame(frame);
+  };
+  return function(){ running=false; if(timer)clearInterval(timer); if(raf)cancelAnimationFrame(raf); Loop.clear(); };
+};
+})();
+
+</script>
+<script id="introData">
+/* ============================================================
+   INTRO POR CARTA — definiciones (genealogías, tajos y fusiones)
+   ============================================================ */
+(function(){
+'use strict';
+const TERN=['3/8','6/8','9/8','12/8'], BIN=['2/4','3/4','4/4'];
+const A3C={notes:['8','8','8'],beams:[[0,1,2]],label:'3 corcheas'};
+const A6S={notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],label:'6 semicorcheas'};
+const B2C={notes:['8','8'],beams:[[0,1]],label:'2 corcheas'};
+const B4S={notes:['16','16','16','16'],beams:[[0,1,2,3]],label:'4 semicorcheas'};
+function cellSpec(cell,label){ return {notes:cell.notes.slice(),beams:cell.beams,ties:cell.ties,tuplets:cell.tuplets,label:label!=null?label:(cell.label||'')}; }
+function cover(card,sub){ return {type:'cover',kicker:'INTRO · CARTA '+(card.atlasId||''),title:card.name,
+  sub:sub!=null?sub:(card.note||''),cells:(card.cells||[]).filter(c=>!c.equiv&&c.notes).slice(0,4).map(c=>cellSpec(c)),ref:card.ref||''}; }
+function leaves(card,lb){ return (card.cells||[]).filter(c=>!c.equiv&&c.notes).map((c,i)=>Object.assign(cellSpec(c),{id:'leaf'+i,loopBeats:lb})); }
+
+const D={};
+
+/* ================= MUNDO 1 — repaso de 3º ================= */
+D['1.1']={spq:0.8,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso completo de subdivisión ternaria.'},
+    {q:'¿Dónde vive?',a:'En cualquier compás de subdivisión ternaria:',meters:TERN},
+    {q:'¿De qué lo conoces?',a:'Es la <b>fusión de dos ritmos básicos</b> que conoces:',figs:[A3C,A6S]}]},
+  {type:'genesis',mode:'tajo',title:'Un tajo en las tres corcheas',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['8','8','8'],beams:[[0,1,2]]},steps:[
+    {notes:['8','8','8'],beams:[[0,1,2]],caption:'Tres corcheas: el pulso ternario que dominas desde hace tiempo.'},
+    {notes:['16','16','8','8'],beams:[[0,1,2,3]],mark:[0,1],cut:0,btn:'⚡ ¡TAJO en la primera corchea!',caption:'La primera corchea recibe el tajo: brotan dos semicorcheas.'},
+    {notes:['8','16','16','8'],beams:[[0,1,2,3]],mark:[1,2],cut:1,viaBase:true,btn:'⚡ El tajo se muda a la segunda',caption:'Mismo tajo, otra corchea: la del medio.'},
+    {notes:['8','8','16','16'],beams:[[0,1,2,3]],mark:[2,3],cut:2,viaBase:true,btn:'⚡ …y a la tercera',caption:'Tres colocaciones posibles. Un solo gesto: dividir UNA corchea del pulso.'}]},
+  {type:'tree',spq:0.8,loopBeats:1.5,rows:[
+    {label:'el pulso',nodes:[{id:'root',notes:['qd'],label:'negra con puntillo',timbre:'drum',loopBeats:1.5,stretch:2.4}]},
+    {label:'de dónde vienes',nodes:[Object.assign({},A3C,{id:'a1',timbre:'wood',loopBeats:1.5}),Object.assign({},A6S,{id:'a2',timbre:'shaker',loopBeats:1.5})]},
+    {label:'los ritmos de la carta',nodes:leaves(card,1.5)}],
+   foot:'Cada tarjeta entra al inicio del siguiente ciclo: superponlas y escucha cómo conviven.'}];}};
+
+D['1.2']={spq:0.8,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso completo.'},
+    {q:'¿Dónde vive?',meters:TERN},
+    {q:'¿La diferencia con la carta 1.1?',a:'Aquí el tajo cae en <b>DOS</b> corcheas a la vez: cuatro semicorcheas por pulso.'},
+    {q:'¿De qué lo conoces?',a:'Es la <b>fusión de dos ritmos básicos</b> que conoces:',figs:[A3C,A6S]}]},
+  {type:'genesis',mode:'tajo',title:'Tajo doble',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['8','8','8'],beams:[[0,1,2]]},steps:[
+    {notes:['8','8','8'],beams:[[0,1,2]],caption:'Las tres corcheas, otra vez. Ahora el tajo va a caer dos veces.'},
+    {notes:['16','16','16','16','8'],beams:[[0,1,2,3,4]],mark:[0,1,2,3],cut:[0,1],btn:'⚡ ¡TAJO DOBLE! — en las dos primeras',caption:'Cuatro semicorcheas seguidas; la última corchea sobrevive.'},
+    {notes:['16','16','8','16','16'],beams:[[0,1,2,3,4]],mark:[2],cut:[0,2],viaBase:true,btn:'⚡ La superviviente, al centro',caption:'La corchea que queda entera se coloca en medio…'},
+    {notes:['8','16','16','16','16'],beams:[[0,1,2,3,4]],mark:[0],cut:[1,2],viaBase:true,btn:'⚡ …o al principio',caption:'Tres colocaciones de la corchea superviviente. Igual que en 1.1, pero al revés: ahora mandan las semicorcheas.'}]},
+  {type:'tree',spq:0.8,loopBeats:1.5,rows:[
+    {label:'el pulso',nodes:[{id:'root',notes:['qd'],label:'negra con puntillo',timbre:'drum',loopBeats:1.5,stretch:2.4}]},
+    {label:'de dónde vienes',nodes:[Object.assign({},A3C,{id:'a1',timbre:'wood',loopBeats:1.5}),Object.assign({},A6S,{id:'a2',timbre:'shaker',loopBeats:1.5})]},
+    {label:'los ritmos de la carta',nodes:leaves(card,1.5)}]}];}};
+
+D['1.3']={spq:0.8,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso completo.'},
+    {q:'¿Dónde vive?',meters:TERN},
+    {q:'El ingrediente nuevo',a:'Una <b>fusión</b>: dos corcheas se funden en una negra… dentro del pulso ternario.'},
+    {q:'¿De qué lo conoces?',a:'De los dos ritmos básicos de siempre:',figs:[A3C,A6S]}]},
+  {type:'genesis',mode:'fusion',kicker:'EL CRAFTEO — del ritmo base al ritmo nuevo',title:'Dos corcheas se funden en negra',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['8','8','8'],beams:[[0,1,2]]},steps:[
+    {notes:['8','8','8'],beams:[[0,1,2]],caption:'Partimos de las tres corcheas: el ritmo base de siempre.'},
+    {notes:['16','16','8','8'],beams:[[0,1,2,3]],mark:[0,1],cut:0,anim:'tajo',btn:'⚡ TAJO en la primera corchea',caption:'La célula de la carta 1.1: dos semicorcheas + dos corcheas.'},
+    {notes:['16','16','8','8'],beams:[[0,1,2,3]],ties:[[2,3]],mark:[2,3],btn:'✨ Liga las dos corcheas',caption:'Ligadas: dos escritas, UNA sonando. Escucha — ya suena el ritmo nuevo.'},
+    {notes:['16','16','q'],beams:[[0,1]],mark:[2],join:[2,3],btn:'✨ Consuma la fusión',caption:'Las dos corcheas viajan la una hacia la otra y se funden en una <b>NEGRA</b>.'},
+    {notes:['8','8','16','16'],beams:[[0,1,2,3]],mark:[2,3],cut:2,viaBase:true,anim:'tajo',btn:'↔ La inversa: volvemos al base',caption:'Tajo en la TERCERA corchea esta vez.'},
+    {notes:['8','8','16','16'],beams:[[0,1,2,3]],ties:[[0,1]],mark:[0,1],btn:'✨ Liga las dos primeras',caption:'La ligadura, ahora al principio…'},
+    {notes:['q','16','16'],beams:[[1,2]],mark:[0],join:[0,1],btn:'✨ Fusión',caption:'Negra + dos semicorcheas: el «idem II» de la página 16.'}]},
+  {type:'tree',spq:0.8,loopBeats:1.5,rows:[
+    {label:'el pulso',nodes:[{id:'root',notes:['qd'],label:'negra con puntillo',timbre:'drum',loopBeats:1.5,stretch:2.4}]},
+    {label:'de dónde vienes',nodes:[Object.assign({},A3C,{id:'a1',timbre:'wood',loopBeats:1.5}),Object.assign({},A6S,{id:'a2',timbre:'shaker',loopBeats:1.5})]},
+    {label:'los ritmos de la carta',nodes:leaves(card,1.5)}]}];}};
+
+D['1.4']={spq:0.75,slides:function(card){ return [
+  {type:'cover',kicker:'INTRO · CARTA 1.4',title:card.name,sub:'La nota importante cae donde NO la esperas: a contratiempo. Dos ramas: la síncopa simple (de pulso) y la breve (de fracción).',
+   cells:[{notes:['8','q','8']},{notes:['16','8','16'],beams:[[0,1,2]]},{notes:['8','q','16','16'],beams:[[2,3]]},{notes:['16','16','q','16','16'],beams:[[0,1],[3,4]]}],ref:card.ref||''},
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa la síncopa SIMPLE?',fig:{notes:['h']},a:'Una <b>blanca</b> — dos pulsos completos.'},
+    {q:'¿Y la síncopa BREVE?',fig:{notes:['q']},a:'Una <b>negra</b> — un solo pulso. Es una ramificación aparte.'},
+    {q:'¿Dónde viven?',meters:BIN},
+    {q:'¿De qué las conoces?',a:'De las subdivisiones directas: <b>4 corcheas</b> (rama simple) y <b>4 semicorcheas</b> (rama breve).',
+     figs:[{notes:['8','8','8','8'],beams:[[0,1],[2,3]]},{notes:['16','16','16','16'],beams:[[0,1,2,3]]}]}]},
+  {type:'genesis',mode:'fusion',title:'La síncopa simple: nace de cuatro corcheas',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',steps:[
+    {notes:['8','8','8','8'],beams:[[0,1],[2,3]],caption:'De la blanca pasamos DIRECTAMENTE a cuatro corcheas: la síncopa vive en la subdivisión.'},
+    {notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Liga las dos del medio',caption:'Ya SUENA la síncopa — la escritura todavía no se ha enterado.'},
+    {notes:['8','q','8'],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Corchea – <b>NEGRA</b> – corchea. La negra cae a contratiempo: eso es la síncopa simple.'}]},
+  {type:'genesis',mode:'tajo',title:'Las variantes: el tajo vuelve',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',base:{notes:['8','q','8']},steps:[
+    {notes:['8','q','8'],caption:'La síncopa base. Ahora, el tajo sobre sus corcheas.'},
+    {notes:['8','q','16','16'],beams:[[2,3]],mark:[2,3],cut:2,btn:'⚡ TAJO en la última corchea',caption:'La corchea final se divide en dos semicorcheas.'},
+    {notes:['16','16','q','8'],beams:[[0,1]],mark:[0,1],cut:0,viaBase:true,btn:'⚡ TAJO en la primera',caption:'Ahora la del principio.'},
+    {notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],mark:[0,1,3,4],cut:[0,2],viaBase:true,btn:'⚡ ¡TAJO DOBLE!',caption:'Las dos divididas a la vez: la variante completa.'}]},
+  {type:'genesis',mode:'fusion',title:'La síncopa BREVE: la misma película, un piso más abajo',loopBeats:1,pulse:{notes:['q']},timbre:'bell',steps:[
+    {notes:['16','16','16','16'],beams:[[0,1,2,3]],caption:'Rama aparte: de la NEGRA pasamos directamente a cuatro semicorcheas.'},
+    {notes:['16','16','16','16'],beams:[[0,1,2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Liga las dos del medio',caption:'El mismo gesto de antes… a mitad de tamaño.'},
+    {notes:['16','8','16'],beams:[[0,1,2]],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Semicorchea – <b>CORCHEA</b> – semicorchea: la síncopa breve. Cabe entera en un pulso.'}]},
+  {type:'tree',spq:0.75,loopBeats:2,kicker:'EL ÁRBOL — dos ramas separadas que encajan (la breve gira el doble de rápido)',cols:[
+    {rows:[
+      {label:'rama SIMPLE · la blanca',lvl:0,nodes:[{id:'rH',notes:['h'],label:'blanca',timbre:'drum',loopBeats:2,stretch:2.4}]},
+      {lvl:1,nodes:[{id:'s4c',notes:['8','8','8','8'],beams:[[0,1],[2,3]],label:'4 corcheas',timbre:'wood',loopBeats:2}]},
+      {label:'los ritmos de la carta',lvl:2,nodes:[
+        {id:'l1',notes:['8','q','8'],label:'síncopa simple',timbre:'clave',loopBeats:2,h:60,stretch:0.95,minInner:30},
+        {id:'l2',notes:['8','q','16','16'],beams:[[2,3]],label:'variante final',timbre:'marimba',loopBeats:2,h:60,stretch:0.95,minInner:30},
+        {id:'l3',notes:['16','16','q','8'],beams:[[0,1]],label:'variante inicial',timbre:'blip',loopBeats:2,h:60,stretch:0.95,minInner:30},
+        {id:'l4',notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],label:'variante doble',timbre:'conga',loopBeats:2,h:60,stretch:0.95,minInner:30}]}]},
+    {rows:[
+      {label:'rama BREVE · la negra',lvl:0,nodes:[{id:'rQ',notes:['q'],label:'negra',timbre:'drumHi',loopBeats:1,stretch:2.4}]},
+      {lvl:1,nodes:[{id:'s4s',notes:['16','16','16','16'],beams:[[0,1,2,3]],label:'4 semicorcheas',timbre:'shaker',loopBeats:1}]},
+      {lvl:2,nodes:[{id:'l5',notes:['16','8','16'],beams:[[0,1,2]],label:'síncopa breve',timbre:'bell',loopBeats:1}]}]}],
+   foot:'Enciende la blanca y la negra a la vez y escucha cómo la rama breve gira el doble de rápido — y aún así, todo encaja.'}];}};
+
+D['1.5']={spq:0.8,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['q']},a:'Una <b>negra</b> — un pulso de subdivisión binaria.'},
+    {q:'¿Dónde vive?',meters:BIN},
+    {q:'El ingrediente nuevo',a:'Aquí no se divide ni se funde: se <b>APAGA</b>. El silencio ocupa el sitio exacto de una semicorchea.'},
+    {q:'¿De qué lo conoces?',a:'Del pulso lleno: las <b>cuatro semicorcheas</b>.',figs:[B4S]}]},
+  {type:'genesis',mode:'apagar',title:'Cuatro semicorcheas… y un hueco',loopBeats:1,pulse:{notes:['q']},timbre:'clave',steps:[
+    {notes:['16','16','16','16'],beams:[[0,1,2,3]],caption:'El pulso lleno: cuatro semicorcheas.'},
+    {notes:['16r','16','16','16'],beams:[[0,1,2,3]],btn:'🕳 Apaga la PRIMERA',caption:'El silencio no borra el tiempo: lo ocupa. La primera semicorchea calla, las demás siguen en su sitio.'},
+    {notes:['16','16r','16','16'],beams:[[0,1,2,3]],btn:'🕳 Ahora la segunda',caption:'El hueco se muda.'},
+    {notes:['16','16','16r','16'],beams:[[0,1,2,3]],btn:'🕳 La tercera',caption:'Y sigue mudándose…'},
+    {notes:['16','16','16','16r'],beams:[[0,1,2,3]],btn:'🕳 Y la cuarta',caption:'Las CUATRO posiciones del silencio de semicorchea. Ese es todo el mapa de la carta.'}]},
+  {type:'tree',spq:0.8,loopBeats:1,rows:[
+    {label:'el pulso',nodes:[{id:'root',notes:['q'],label:'negra',timbre:'drum',loopBeats:1,stretch:2.4}]},
+    {label:'de dónde vienes',nodes:[Object.assign({},B2C,{id:'a1',timbre:'wood',loopBeats:1}),Object.assign({},B4S,{id:'a2',timbre:'shaker',loopBeats:1})]},
+    {label:'las cuatro posiciones',nodes:leaves(card,1).map((n,i)=>Object.assign(n,{label:'silencio en la '+['1ª','2ª','3ª','4ª'][i]}))}]}];}};
+
+D['1.6']={spq:0.75,slides:function(card){ return [
+  cover(card,'La ligadura prolonga el sonido por encima del pulso o de la fracción: fusión escrita… sin consumar.'),
+  {type:'facts',blocks:[
+    {q:'¿Qué hace la ligadura?',a:'Une dos notas escritas en <b>UN solo sonido</b>: la segunda no se articula, se sigue oyendo la primera.'},
+    {q:'¿Cuánto ocupa el patrón base?',fig:{notes:['h']},a:'Una <b>blanca</b> — un compás de 2/4 completo.'},
+    {q:'¿Dónde vive?',meters:BIN}]},
+  {type:'genesis',mode:'fusion',title:'La fusión que se queda a medias',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',steps:[
+    {notes:['8','8','8','8'],beams:[[0,1],[2,3]],caption:'Cuatro corcheas.'},
+    {notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Aparece la LIGADURA',caption:'Dos notas escritas, un sonido. La fusión queda A LA VISTA — no se consuma. Eso es la ligadura.'},
+    {notes:['q','8','8'],beams:[[1,2]],ties:[[0,1]],mark:[0,1],btn:'Otra: sobre el pulso',anim:'fusion',caption:'Negra ligada a corchea: el sonido cruza la frontera del pulso.'},
+    {notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],ties:[[3,4]],mark:[3,4],btn:'Y entre semicorcheas',anim:'fusion',caption:'La ligadura cruza el centro del compás entre semicorcheas: síncopa en miniatura.'}]},
+  {type:'tree',spq:0.75,loopBeats:2,kicker:'EL ÁRBOL — y al lado, las grafías gemelas ✳',rows:[
+    {label:'el punto de partida',nodes:[{id:'root',notes:['h'],label:'blanca · el compás',timbre:'drum',loopBeats:2,stretch:2.4}]},
+    {label:'las subdivisiones',nodes:[
+      {id:'a1',notes:['8','8','8','8'],beams:[[0,1],[2,3]],label:'4 corcheas',timbre:'wood',loopBeats:2},
+      {id:'a2',notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],label:'8 semicorcheas',timbre:'shaker',loopBeats:2}]},
+    {label:'los ritmos de la carta',nodes:[
+      {id:'l1',notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]],label:'ligadura de fracción',timbre:'clave',loopBeats:2,
+       twin:{notes:['8','q','8'],label:'= síncopa simple'}},
+      {id:'l2',notes:['q','8','8'],beams:[[1,2]],ties:[[0,1]],label:'sobre el pulso',timbre:'marimba',loopBeats:2,
+       twin:{notes:['qd','8'],label:'= negra con puntillo'}},
+      {id:'l3',notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],ties:[[3,4]],label:'entre semicorcheas',timbre:'bell',loopBeats:2}]}],
+   foot:'✳ Al encender una tarjeta con gemela, la gemela se ilumina y suena CON ella — porque son el mismo sonido con distinta ropa.'}];}};
+
+/* ================= MUNDO 2 — compases de blanca ================= */
+function m2Slides(card,cfg){ return [
+  cover(card),
+  {type:'talla',title:cfg.tallaTitle,small:cfg.small,big:cfg.big,tsSmall:cfg.tsS,tsBig:cfg.tsB,pulseOn:cfg.pulseOn,
+   capA:'Un ritmo que conoces de sobra, en '+cfg.tsS+'. Escúchalo bien…',
+   capB:'<b>El sonido NO ha cambiado.</b> Solo la ropa: cada figura ha crecido una talla. La unidad de pulso ahora es la <b>BLANCA</b>. Esto es el '+cfg.tsB+'.'},
+  {type:'facts',blocks:[
+    {q:'¿Cuál es el pulso?',fig:{notes:['h']},a:'La <b>BLANCA</b>. Mismo lenguaje rítmico de siempre — otra escala de valores.'},
+    {q:'¿En qué compás estamos?',meters:cfg.meters},
+    {q:'La regla de oro',a:'Todo lo que sabías con la negra vale aquí… <b>con el doble de tamaño</b>: la corchea hace de semicorchea, la negra de corchea, la blanca de negra y la redonda de blanca.'},
+    {q:'¿De qué lo conoces?',a:'De las subdivisiones del pulso de blanca:',figs:cfg.anc.map(a=>({notes:a.notes,beams:a.beams}))}]},
+  cfg.genesis,
+  {type:'tree',spq:0.45,loopBeats:cfg.loop,rows:[
+    {label:'el pulso (blanca)',nodes:[{id:'root',notes:cfg.rootNotes,label:'pulso de blanca',timbre:'drum',loopBeats:cfg.loop,stretch:1.8}]},
+    {label:'las subdivisiones',nodes:cfg.anc.map((a,i)=>Object.assign({},a,{id:'a'+i,timbre:['wood','shaker'][i%2],loopBeats:cfg.loop}))},
+    {label:'los ritmos de la carta',nodes:leaves(card,cfg.loop)}],
+   foot:'Enciende el pulso de blanca y superpón: es el mismo juego de siempre, una talla más arriba.'}];}
+
+D['2.1']={spq:0.45,slides:function(card){ return m2Slides(card,{
+  tallaTitle:'El pulso ya no es la negra: es la BLANCA',
+  small:{notes:['q','8','8'],beams:[[1,2]]},big:{notes:['h','q','q']},tsS:'2/4',tsB:'2/2',pulseOn:[0,1],
+  meters:['2/2 (¢)'],loop:4,rootNotes:['h','h'],
+  anc:[{notes:['q','q','q','q'],label:'4 negras'},{notes:['8','8','8','8','8','8','8','8'],beams:[[0,1,2,3],[4,5,6,7]],label:'8 corcheas'}],
+  genesis:{type:'genesis',mode:'fusion',title:'¿Te suena esta fusión?',loopBeats:4,pulse:{notes:['h','h']},timbre:'marimba',steps:[
+    {notes:['q','q','q','q'],caption:'Cuatro negras… que ahora son SUBDIVISIÓN: la mitad de cada blanca.'},
+    {notes:['q','q','q','q'],ties:[[1,2]],mark:[1,2],btn:'✨ Liga las dos del medio',caption:'El mismo gesto de la síncopa de siempre…'},
+    {notes:['q','h','q'],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Negra – <b>BLANCA</b> – negra: la síncopa… con pulso de blanca. Nada nuevo bajo el sol: solo más grande.'}]}
+})}};
+
+D['2.2']={spq:0.45,slides:function(card){ return m2Slides(card,{
+  tallaTitle:'Tres pulsos de blanca: el 3/2',
+  small:{notes:['q','8','8','q'],beams:[[1,2]]},big:{notes:['h','q','q','h']},tsS:'3/4',tsB:'3/2',pulseOn:[0,1,2],
+  meters:['3/2'],loop:6,rootNotes:['h','h','h'],
+  anc:[{notes:['q','q','q','q','q','q'],label:'6 negras'}],
+  genesis:{type:'genesis',mode:'fusion',title:'Nace la pareja redonda + blanca',loopBeats:6,pulse:{notes:['h','h','h']},timbre:'marimba',steps:[
+    {notes:['h','h','h'],caption:'Tres blancas: los tres pulsos del compás.'},
+    {notes:['h','h','h'],ties:[[0,1]],mark:[0,1],btn:'✨ Liga las dos primeras',caption:'Dos blancas, un solo sonido…'},
+    {notes:['w','h'],mark:[0],join:[0,1],btn:'✨ Consuma la fusión',caption:'La <b>REDONDA</b> ocupa dos pulsos enteros. Redonda + blanca: la pareja reina del 3/2.'}]}
+})}};
+
+D['2.3']={spq:0.45,slides:function(card){ return m2Slides(card,{
+  tallaTitle:'Cuatro pulsos de blanca: el 4/2',
+  small:{notes:['q','8','8','q','q'],beams:[[1,2]]},big:{notes:['h','q','q','h','h']},tsS:'4/4',tsB:'4/2',pulseOn:[0,1,2,3],
+  meters:['4/2'],loop:8,rootNotes:['h','h','h','h'],
+  anc:[{notes:['q','q','q','q','q','q','q','q'],label:'8 negras'}],
+  genesis:{type:'genesis',mode:'fusion',title:'La redonda, en cuaternario',loopBeats:8,pulse:{notes:['h','h','h','h']},timbre:'marimba',steps:[
+    {notes:['h','h','h','h'],caption:'Cuatro blancas: los cuatro pulsos del compás.'},
+    {notes:['h','h','h','h'],ties:[[0,1]],mark:[0,1],btn:'✨ Liga las dos primeras',caption:'Mismo gesto…'},
+    {notes:['w','h','h'],mark:[0],join:[0,1],btn:'✨ Consuma la fusión',caption:'Redonda + dos blancas. Y si la fusión cae en medio del compás… síncopa de blancas (la tienes en la carta).'}]}
+})}};
+
+/* ================= MUNDO 3 — corcheas punteadas ================= */
+function m3Slides(card,cfg){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso completo.'},
+    {q:'¿Dónde vive?',meters:TERN},
+    {q:'El secreto del puntillo',a:'El puntillo es una <b>ligadura disimulada</b>: una fusión que se esconde dentro de la figura.'},
+    {q:'¿De qué lo conoces?',a:'De los ritmos básicos del pulso ternario:',figs:[A3C,A6S]}]},
+  cfg.genesis,
+  {type:'tree',spq:0.8,loopBeats:1.5,rows:[
+    {label:'el pulso',nodes:[{id:'root',notes:['qd'],label:'negra con puntillo',timbre:'drum',loopBeats:1.5,stretch:2.4}]},
+    {label:'de dónde vienes',nodes:[Object.assign({},A3C,{id:'a1',timbre:'wood',loopBeats:1.5}),Object.assign({},A6S,{id:'a2',timbre:'shaker',loopBeats:1.5})]},
+    {label:'los ritmos de la carta',nodes:leaves(card,1.5)}],
+   foot:'El galope ternario: superpón el pulso, las corcheas y el ritmo punteado, y escucha el trote.'}];}
+
+D['3.1']={spq:0.8,slides:function(card){ return m3Slides(card,{
+  genesis:{type:'genesis',mode:'fusion',kicker:'EL CRAFTEO — del ritmo base al ritmo nuevo',title:'La ligadura que se esconde en el puntillo',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['8','8','8'],beams:[[0,1,2]]},steps:[
+    {notes:['8','8','8'],beams:[[0,1,2]],caption:'Partimos de las tres corcheas: el ritmo base.'},
+    {notes:['8','16','16','8'],beams:[[0,1,2,3]],mark:[1,2],cut:1,anim:'tajo',btn:'⚡ TAJO en la corchea del medio',caption:'Corchea + dos semicorcheas + corchea: la célula de la carta 1.1.'},
+    {notes:['8','16','16','8'],beams:[[0,1,2,3]],ties:[[0,1]],mark:[0,1],btn:'✨ Liga corchea y semicorchea',caption:'La corchea se alarga media fracción. Escucha ese pequeño «galope»…'},
+    {notes:['8d','16','8'],beams:[[0,1,2]],mark:[0],join:[0,1],btn:'✨ La ligadura se esconde: PUNTILLO',caption:'<b>Corchea con puntillo</b> + semicorchea + corchea. El puntillo ES esa ligadura, disimulada en un puntito.'},
+    {notes:['8','16r','16','8'],beams:[[0,1,2,3]],anim:'apagar',btn:'🕳 ¿Y si en vez de alargar… callas?',caption:'La versión con silencio: mismo esqueleto, hueco en lugar de puntillo. Las dos células de la carta.'}]}
+})}};
+
+D['3.2']={spq:0.8,slides:function(card){ return m3Slides(card,{
+  genesis:{type:'genesis',mode:'fusion',kicker:'EL CRAFTEO — del ritmo base al ritmo nuevo',title:'El puntillo, en la segunda corchea',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['8','8','8'],beams:[[0,1,2]]},steps:[
+    {notes:['8','8','8'],beams:[[0,1,2]],caption:'Las tres corcheas: el ritmo base.'},
+    {notes:['8','8','16','16'],beams:[[0,1,2,3]],mark:[2,3],cut:2,anim:'tajo',btn:'⚡ TAJO en la tercera corchea',caption:'Dos corcheas + dos semicorcheas: célula de la carta 1.1.'},
+    {notes:['8','8','16','16'],beams:[[0,1,2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Liga la segunda corchea',caption:'Ahora es la corchea del medio la que se alarga…'},
+    {notes:['8','8d','16'],beams:[[0,1,2]],mark:[1],join:[1,2],btn:'✨ PUNTILLO',caption:'Corchea + <b>corchea con puntillo</b> + semicorchea: el galope cambia de sitio.'},
+    {notes:['8','8','16r','16'],beams:[[0,1,2,3]],anim:'apagar',btn:'🕳 La versión con silencio',caption:'Y su gemela con silencio de semicorchea.'}]}
+})}};
+
+D['3.3']={spq:0.8,slides:function(card){ return m3Slides(card,{
+  genesis:{type:'genesis',mode:'fusion',kicker:'EL CRAFTEO — del ritmo base al ritmo nuevo',title:'Puntillo + semicorcheas',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['8','8','8'],beams:[[0,1,2]]},steps:[
+    {notes:['8','8','8'],beams:[[0,1,2]],caption:'Las tres corcheas: el ritmo base.'},
+    {notes:['8','16','16','16','16'],beams:[[0,1,2,3,4]],mark:[1,2,3,4],cut:[1,2],anim:'tajo',btn:'⚡ ¡TAJO DOBLE! — segunda y tercera',caption:'Corchea + cuatro semicorcheas: célula de la carta 1.2.'},
+    {notes:['8','16','16','16','16'],beams:[[0,1,2,3,4]],ties:[[0,1]],mark:[0,1],btn:'✨ Liga corchea y semicorchea',caption:'La corchea se alarga…'},
+    {notes:['8d','16','16','16'],beams:[[0,1,2,3]],mark:[0],join:[0,1],btn:'✨ PUNTILLO',caption:'<b>Corchea con puntillo</b> + semicorchea + dos semicorcheas: galope con cola.'},
+    {notes:['8','16r','16','16','16'],beams:[[0,1,2,3,4]],anim:'apagar',btn:'🕳 La versión con silencio',caption:'Y la variante con silencio en lugar de puntillo.'}]}
+})}};
+
+/* ================= MUNDO 4 — grupos de valoración especial ================= */
+function m4Tree(card,cfg){ return {type:'tree',spq:cfg.spq||0.9,loopBeats:cfg.loop,kicker:'EL ÁRBOL — divisiones legales contra divisiones ARTIFICIALES',rows:[
+    {label:'el pulso',nodes:[{id:'root',notes:[cfg.root],label:cfg.rootLab,timbre:'drum',loopBeats:cfg.loop,stretch:2.4}]},
+    {label:'divisiones legales',nodes:cfg.legal.map((a,i)=>Object.assign({},a,{id:'a'+i,timbre:['wood','shaker'][i%2],loopBeats:cfg.loop}))},
+    {label:'divisiones artificiales — la carta',nodes:cfg.art.map((a,i)=>Object.assign({},a,{id:'l'+i,loopBeats:cfg.loop}))}],
+   foot:cfg.foot||'Superpón una división legal con el grupo artificial: ese choque contra el pulso es el corazón del trimestre.'};}
+
+D['4.1']={spq:0.9,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['q']},a:'Una <b>negra</b> — un pulso.'},
+    {q:'¿Dónde vive?',meters:BIN},
+    {q:'¿Qué es un grupo ARTIFICIAL?',a:'Una división <b>prohibida</b> por el compás: meter TRES donde la ley dice que caben dos.'},
+    {q:'¿De qué lo conoces?',a:'De las divisiones legales del pulso:',figs:[B2C,B4S]}]},
+  {type:'genesis',mode:'tajo',title:'Tres donde caben dos',loopBeats:1,pulse:{notes:['q']},timbre:'clave',base:{notes:['q']},steps:[
+    {notes:['q'],caption:'Un pulso. Una negra.'},
+    {notes:['8','8'],beams:[[0,1]],cut:0,btn:'⚡ División LEGAL: en dos',caption:'La subdivisión binaria de toda la vida.'},
+    {notes:['8','8','8'],beams:[[0,1,2]],tuplets:[{idx:[0,1,2],num:3,occ:2}],cut:0,viaBase:true,anim:'magia',btn:'🪄 División ARTIFICIAL: ¡en TRES!',caption:'El <b>TRESILLO</b>: tres corcheas en el tiempo de dos. Va contra el pulso — por eso lleva el 3 encima.'},
+    {notes:['8','8r','8'],beams:[[0,1,2]],tuplets:[{idx:[0,1,2],num:3,occ:2}],btn:'🕳 Con silencio interior',anim:'apagar',caption:'El tresillo con su corazón callado.'},
+    {notes:['q','8'],tuplets:[{idx:[0,1],num:3,occ:2}],mark:[0],anim:'fusion',btn:'✨ La versión IRREGULAR',caption:'Negra + corchea DENTRO del tresillo: dos figuras desiguales repartiéndose el grupo.'}]},
+  m4Tree(card,{loop:1,root:'q',rootLab:'negra',spq:0.9,
+    legal:[B2C,B4S],
+    art:[{notes:['8','8','8'],beams:[[0,1,2]],tuplets:[{idx:[0,1,2],num:3,occ:2}],label:'tresillo',timbre:'clave'},
+         {notes:['8','8r','8'],beams:[[0,1,2]],tuplets:[{idx:[0,1,2],num:3,occ:2}],label:'con silencio',timbre:'marimba'},
+         {notes:['q','8'],tuplets:[{idx:[0,1],num:3,occ:2}],label:'irregular',timbre:'bell'}],
+    foot:'Enciende «2 corcheas» y «tresillo» A LA VEZ: ese 3 contra 2 es imposible de explicar con palabras… y facilísimo de oír.'})];}};
+
+D['4.2']={spq:0.9,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['q']},a:'Una <b>negra</b> — un pulso.'},
+    {q:'¿Dónde vive?',meters:BIN},
+    {q:'La proporción',a:'<b>SEIS</b> semicorcheas donde caben cuatro. Se rotula solo con el 6.'},
+    {q:'¿De qué lo conoces?',a:'De las 2 corcheas… y sobre todo del <b>tresillo</b> (carta 4.1):',
+     figs:[B2C,{notes:['8','8','8'],beams:[[0,1,2]],tuplets:[{idx:[0,1,2],num:3,occ:2}]}]}]},
+  {type:'genesis',mode:'tajo',title:'De la negra al seisillo, pasando por el tresillo',loopBeats:1,pulse:{notes:['q']},timbre:'clave',base:{notes:['q']},steps:[
+    {notes:['q'],caption:'Un pulso. Una negra.'},
+    {notes:['8','8','8'],beams:[[0,1,2]],tuplets:[{idx:[0,1,2],num:3,occ:2}],cut:0,anim:'magia',btn:'🪄 Primero, el TRESILLO (carta 4.1)',caption:'Tres donde caben dos: el tresillo que ya conoces.'},
+    {notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],tuplets:[{idx:[0,1,2,3,4,5],num:6,occ:4}],cut:[0,1,2],anim:'magia',btn:'⚡⚡⚡ Tajo a CADA corchea del tresillo',caption:'Cada corchea del tresillo se parte en dos: ¡el <b>SEISILLO</b>! El camino mental es negra → tresillo → seisillo.'}]},
+  m4Tree(card,{loop:1,root:'q',rootLab:'negra',spq:0.9,
+    legal:[B2C,{notes:['8','8','8'],beams:[[0,1,2]],tuplets:[{idx:[0,1,2],num:3,occ:2}],label:'tresillo (4.1)'}],
+    art:[{notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],tuplets:[{idx:[0,1,2,3,4,5],num:6,occ:4}],label:'seisillo',timbre:'clave'}],
+    foot:'Enciende tresillo y seisillo a la vez: el seisillo es el tresillo con cada corchea partida.'})];}};
+
+D['4.3']={spq:0.8,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso ternario.'},
+    {q:'¿Dónde vive?',meters:TERN},
+    {q:'La novedad',a:'Aquí los grupos artificiales van <b>al revés</b>: meter DOS o CUATRO donde la ley ternaria dice TRES.'},
+    {q:'¿De qué lo conoces?',a:'De la división legal del pulso ternario:',figs:[A3C]}]},
+  {type:'genesis',mode:'tajo',title:'Contra el pulso ternario',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['qd']},steps:[
+    {notes:['qd'],caption:'El pulso ternario.'},
+    {notes:['8','8','8'],beams:[[0,1,2]],cut:0,btn:'⚡ División LEGAL: en tres',caption:'Las tres corcheas de siempre.'},
+    {notes:['8','8'],beams:[[0,1]],tuplets:[{idx:[0,1],num:2,occ:3}],cut:0,viaBase:true,anim:'magia',btn:'🪄 DOSILLO: dos donde caben tres',caption:'Dos corcheas estiradas para llenar el pulso ternario.'},
+    {notes:['8','8','8','8'],beams:[[0,1,2,3]],tuplets:[{idx:[0,1,2,3],num:4,occ:3}],cut:0,viaBase:true,anim:'magia',btn:'🪄 CUATRILLO: cuatro donde caben tres',caption:'Y cuatro apretadas en el mismo espacio. Dosillo y cuatrillo: los rebeldes del compás compuesto.'}]},
+  {type:'tree',spq:0.8,loopBeats:1.5,kicker:'EL ÁRBOL — del pulso ternario, directos al dosillo y al cuatrillo',rows:[
+    {label:'el pulso',lvl:0,nodes:[{id:'root',notes:['qd'],label:'negra con puntillo',timbre:'drum',loopBeats:1.5,stretch:2.4}]},
+    {label:'los grupos de la carta',lvl:2,nodes:[
+      {id:'l0',notes:['8','8','8'],beams:[[0,1,2]],label:'3 corcheas (legal)',timbre:'wood',loopBeats:1.5},
+      {id:'l1',notes:['8','8'],beams:[[0,1]],tuplets:[{idx:[0,1],num:2,occ:3}],label:'dosillo',timbre:'clave',loopBeats:1.5},
+      {id:'l2',notes:['8','8','8','8'],beams:[[0,1,2,3]],tuplets:[{idx:[0,1,2,3],num:4,occ:3}],label:'cuatrillo',timbre:'bell',loopBeats:1.5}]}],
+   foot:'Dosillo contra 3 corcheas: el 2 contra 3 en su versión compuesta.'}];}};
+
+D['4.4']={spq:0.9,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['8']},a:'¡Solo <b>media parte</b>! El tresillo se encoge: cabe en una fracción.'},
+    {q:'¿Dónde vive?',meters:BIN},
+    {q:'La miniatura',a:'Tres semicorcheas en el espacio de dos: el tresillo de la carta 4.1… a mitad de tamaño.'},
+    {q:'¿De qué lo conoces?',a:'De las <b>2 corcheas</b> (las fracciones) y del <b>seisillo</b> (carta 4.2): el tresillo de fracción es MEDIO seisillo.',
+     figs:[B2C,{notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],tuplets:[{idx:[0,1,2,3,4,5],num:6,occ:4}]}]}]},
+  {type:'genesis',mode:'tajo',title:'El tresillo se encoge',loopBeats:1,pulse:{notes:['q']},timbre:'clave',base:{notes:['8','8'],beams:[[0,1]]},steps:[
+    {notes:['8','8'],beams:[[0,1]],caption:'El pulso partido en dos: cada mitad es una FRACCIÓN.'},
+    {notes:['16','16','16','8'],beams:[[0,1,2,3]],tuplets:[{idx:[0,1,2],num:3,occ:2}],mark:[0,1,2],cut:0,anim:'magia',btn:'🪄 TAJO en la primera fracción',caption:'Tresillo de semicorcheas en media parte: tres donde cabían dos… semicorcheas.'},
+    {notes:['8','16','16','16'],beams:[[0,1,2,3]],tuplets:[{idx:[1,2,3],num:3,occ:2}],mark:[1,2,3],cut:1,viaBase:true,anim:'magia',btn:'🪄 …o en la segunda',caption:'Las dos variantes: según qué mitad del pulso reciba el tresillo.'}]},
+  m4Tree(card,{loop:1,root:'q',rootLab:'negra',spq:0.9,
+    legal:[B2C,{notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],tuplets:[{idx:[0,1,2,3,4,5],num:6,occ:4}],label:'seisillo (4.2)'}],
+    art:[{notes:['16','16','16','8'],beams:[[0,1,2,3]],tuplets:[{idx:[0,1,2],num:3,occ:2}],label:'en la 1ª fracción',timbre:'clave'},
+         {notes:['8','16','16','16'],beams:[[0,1,2,3]],tuplets:[{idx:[1,2,3],num:3,occ:2}],label:'en la 2ª fracción',timbre:'bell'}],
+    foot:'El tresillo de fracción es MEDIO seisillo: enciende el seisillo y una variante, y escucha cómo coinciden.'})];}};
+
+D['4.5']={spq:0.9,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['q']},a:'Una <b>negra</b> — un pulso.'},
+    {q:'¿Dónde vive?',meters:BIN},
+    {q:'La proporción',a:'<b>CINCO</b> semicorcheas donde caben cuatro.'},
+    {q:'¿De qué lo conoces?',a:'Del pulso lleno legal: las 4 semicorcheas.',figs:[B4S]}]},
+  {type:'genesis',mode:'tajo',title:'Cinco donde caben cuatro',loopBeats:1,pulse:{notes:['q']},timbre:'clave',steps:[
+    {notes:['16','16','16','16'],beams:[[0,1,2,3]],caption:'Cuatro semicorcheas: el máximo legal del pulso.'},
+    {notes:['16','16','16','16','16'],beams:[[0,1,2,3,4]],tuplets:[{idx:[0,1,2,3,4],num:5,occ:4}],anim:'magia',btn:'🪄 ¡CINQUILLO! — cinco donde cabían cuatro',caption:'Una más de contrabando. El 5 encima avisa: esto va contra la ley del pulso.'}]},
+  m4Tree(card,{loop:1,root:'q',rootLab:'negra',spq:0.9,
+    legal:[B2C,B4S],
+    art:[{notes:['16','16','16','16','16'],beams:[[0,1,2,3,4]],tuplets:[{idx:[0,1,2,3,4],num:5,occ:4}],label:'cinquillo',timbre:'clave'}],
+    foot:'Cinquillo contra 4 semicorcheas: cinco contra cuatro, la más fina de las luchas.'})];}};
+
+/* ================= MUNDO 5 — mix de 6 semicorcheas ================= */
+function m5Tree(card,extraFoot,compact){ return {type:'tree',spq:0.8,loopBeats:1.5,rows:[
+    {label:'el pulso',nodes:[{id:'root',notes:['qd'],label:'negra con puntillo',timbre:'drum',loopBeats:1.5,stretch:2.4}]},
+    {label:'de dónde viene TODO',nodes:[Object.assign({},A3C,{id:'a1',timbre:'wood',loopBeats:1.5}),Object.assign({},A6S,{id:'a2',timbre:'shaker',loopBeats:1.5})]},
+    {label:'los ritmos de la carta',cls:compact?'wrap2':'',nodes:leaves(card,1.5).map(n=>compact?Object.assign(n,{h:52,stretch:0.85,minInner:26}):n)}],
+   foot:extraFoot||'Todo este mundo sale de las 6 semicorcheas: fusiones y silencios sobre el pulso lleno.'};}
+
+D['5.1']={spq:0.8,slides:function(card){ return [
+  cover(card,'Todo el vocabulario del pulso ternario reunido: el punto de partida del mundo V.'),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa cada célula?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso. Todas.'},
+    {q:'¿Dónde viven?',meters:TERN},
+    {q:'¿Qué hay aquí?',a:'NADA nuevo: semicorcheas (2 y 4 por pulso), semicorchea + negra y las corcheas punteadas. El equipaje completo con el que arrancamos este mundo.'},
+    {q:'¿De qué lo conoces?',a:'Todo nace de aquí:',figs:[A3C,A6S]}]},
+  m5Tree(card,'Once células, un solo pulso. Superpón las que quieras: todas nacen de la misma madre.',true)];}};
+
+D['5.2']={spq:0.8,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — el pulso LLENO: seis semicorcheas.'},
+    {q:'¿Dónde vive?',meters:TERN},
+    {q:'El juego',a:'Apagar UNA de las seis. Seis posiciones posibles para el silencio.'},
+    {q:'¿De qué lo conoces?',a:'Del pulso lleno: las seis semicorcheas.',figs:[A6S]}]},
+  {type:'genesis',mode:'apagar',title:'Seis semicorcheas… y un hueco viajero',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',steps:[
+    {notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],caption:'El pulso lleno: seis semicorcheas.'},
+    {notes:['16r','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],btn:'🕳 Apaga la PRIMERA',caption:'El hueco ocupa el sitio exacto de la semicorchea apagada: posición 1.'},
+    {notes:['16','16r','16','16','16','16'],beams:[[0,1,2,3,4,5]],btn:'🕳 La segunda',caption:'Posición 2.'},
+    {notes:['16','16','16r','16','16','16'],beams:[[0,1,2,3,4,5]],btn:'🕳 La tercera',caption:'Posición 3.'},
+    {notes:['16','16','16','16r','16','16'],beams:[[0,1,2,3,4,5]],btn:'🕳 La cuarta',caption:'Posición 4.'},
+    {notes:['16','16','16','16','16r','16'],beams:[[0,1,2,3,4,5]],btn:'🕳 La quinta',caption:'Posición 5.'},
+    {notes:['16','16','16','16','16','16r'],beams:[[0,1,2,3,4,5]],btn:'🕳 …y la sexta',caption:'Las SEIS posiciones del silencio. Escucha con el tono largo/corto cómo cambia el hueco de sitio.'}]},
+  m5Tree(card)];}};
+
+D['5.3']={spq:0.8,slides:function(card){ return [
+  cover(card,'Los números son valores en semicorcheas: 3+2+1 y su espejo 1+2+3.'),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso.'},
+    {q:'¿Dónde vive?',meters:TERN},
+    {q:'El código',a:'<b>3+2+1</b> = tres semicorcheas + una corchea (vale 2) + una semicorchea. <b>1+2+3</b>, lo mismo del revés.'},
+    {q:'¿De qué lo conoces?',a:'De las seis semicorcheas, con una fusión dentro.',figs:[A6S]}]},
+  {type:'genesis',mode:'fusion',title:'Una fusión dentro de las seis',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]]},steps:[
+    {notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],caption:'Las seis semicorcheas: el ritmo base.'},
+    {notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],ties:[[3,4]],mark:[3,4],btn:'✨ Liga la 4ª y la 5ª',caption:'Dos semicorcheas se hacen una…'},
+    {notes:['16','16','16','8','16'],beams:[[0,1,2,3,4]],mark:[3],join:[3,4],btn:'✨ Fusión: 3+2+1',caption:'Tres semicorcheas + <b>corchea</b> + semicorchea: 3+2+1.'},
+    {notes:['16','8','16','16','16'],beams:[[0,1,2,3,4]],mark:[1],join:[1,2],viaBase:true,btn:'↔ El espejo: 1+2+3',anim:'fusion',caption:'La misma fusión al principio: semicorchea + corchea + tres semicorcheas.'}]},
+  m5Tree(card)];}};
+
+D['5.4']={spq:0.8,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso.'},
+    {q:'¿Dónde vive?',meters:TERN},
+    {q:'El código',a:'<b>1+2+2+1</b>: las dos corcheas centrales quedan A CONTRATIEMPO. Síncopa doble, versión compuesta.'},
+    {q:'¿De qué lo conoces?',a:'De las seis semicorcheas, con DOS fusiones dentro.',figs:[A6S]}]},
+  {type:'genesis',mode:'fusion',title:'Dos fusiones a la vez',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]]},steps:[
+    {notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],caption:'Las seis semicorcheas: el ritmo base.'},
+    {notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],ties:[[1,2],[3,4]],mark:[1,2,3,4],btn:'✨ Liga 2ª–3ª y 4ª–5ª',caption:'DOS ligaduras a la vez. Escucha cómo el centro del pulso se queda flotando…'},
+    {notes:['16','8','8','16'],beams:[[0,1,2,3]],mark:[1,2],join:[[1,2],[3,4]],btn:'✨ Consuma las dos fusiones',caption:'Semicorchea + <b>corchea + corchea</b> + semicorchea: la síncopa doble del compás compuesto.'}]},
+  m5Tree(card)];}};
+
+D['5.5']={spq:0.8,slides:function(card){ return [
+  cover(card),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['qd']},a:'Una <b>negra con puntillo</b> — un pulso.'},
+    {q:'¿Dónde vive?',meters:TERN},
+    {q:'El código',a:'Alternancia pura: <b>2+1+2+1</b> y <b>1+2+1+2</b>. El bonus final del mundo.'},
+    {q:'¿De qué lo conoces?',a:'De las seis semicorcheas, fusionadas en alternancia.',figs:[A6S]}]},
+  {type:'genesis',mode:'fusion',title:'La alternancia',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]]},steps:[
+    {notes:['16','16','16','16','16','16'],beams:[[0,1,2,3,4,5]],caption:'Las seis semicorcheas: el ritmo base.'},
+    {notes:['8','16','8','16'],beams:[[0,1,2,3]],mark:[0,2],join:[[0,1],[3,4]],btn:'✨ Fusiona 1ª–2ª y 4ª–5ª',caption:'<b>2+1+2+1</b>: corchea, semicorchea, corchea, semicorchea — cojera elegante dentro del pulso.'},
+    {notes:['16','8','16','8'],beams:[[0,1,2,3]],mark:[1,3],join:[[1,2],[4,5]],viaBase:true,btn:'↔ El espejo: 1+2+1+2',anim:'fusion',caption:'La alternancia empezando por la semicorchea. Los dos sentidos del bonus.'}]},
+  m5Tree(card)];}};
+
+/* ================= MUNDO 6 — fusas y 5/8 ================= */
+D['6.1']={spq:1.15,slides:function(card){ return [
+  cover(card,'La figura más pequeña del curso: ocho fusas por pulso. El tempo baja para hacerles sitio.'),
+  {type:'facts',blocks:[
+    {q:'¿Cuánto ocupa?',fig:{notes:['q']},a:'Una <b>negra</b> — un pulso… lleno con OCHO fusas.'},
+    {q:'¿Dónde vive?',meters:BIN},
+    {q:'La cadena',a:'Cada tajo <b>duplica</b>: negra → 2 corcheas → 4 semicorcheas → <b>8 fusas</b>.',figs:[{notes:['8','8'],beams:[[0,1]]},{notes:['16','16','16','16'],beams:[[0,1,2,3]]},{notes:['32','32','32','32','32','32','32','32'],beams:[[0,1,2,3,4,5,6,7]]}]}]},
+  {type:'genesis',mode:'cascade',title:'El tajo en cascada',loopBeats:1,pulse:{notes:['q']},timbre:'clave',steps:[
+    {notes:['q'],caption:'Una negra. Un pulso.'},
+    {notes:['8','8'],beams:[[0,1]],btn:'⚡ ¡TAJO! — dos corcheas',caption:'Primer tajo: el pulso en dos.'},
+    {notes:['16','16','16','16'],beams:[[0,1,2,3]],btn:'⚡ ¡TAJO! — cuatro semicorcheas',caption:'Segundo tajo: en cuatro.'},
+    {notes:['32','32','32','32','32','32','32','32'],beams:[[0,1,2,3,4,5,6,7]],btn:'⚡ ¡TAJO! — ¡OCHO FUSAS!',caption:'Tercer tajo: la FUSA. Tan pequeña que el tempo tiene que bajar para que quepa con dignidad.'}]},
+  {type:'tree',spq:1.15,loopBeats:1,rows:[
+    {label:'el pulso',nodes:[{id:'root',notes:['q'],label:'negra',timbre:'drum',loopBeats:1,stretch:2.4}]},
+    {label:'la cascada',nodes:[Object.assign({},B2C,{id:'a1',timbre:'wood',loopBeats:1}),Object.assign({},B4S,{id:'a2',timbre:'shaker',loopBeats:1})]},
+    {label:'los ritmos de la carta',nodes:[
+      {id:'f1',notes:['32','32','32','32','32','32','32','32'],beams:[[0,1,2,3,4,5,6,7]],label:'8 fusas',loopBeats:1},
+      {id:'f2',notes:['8','32','32','32','32'],beams:[[0,1,2,3,4]],label:'corchea + 4 fusas',loopBeats:1},
+      {id:'f3',notes:['16','32','32','16','32','32'],beams:[[0,1,2],[3,4,5]],label:'semicorchea + 2 fusas ×2',loopBeats:1}]}],
+   foot:'Solo el pulso de las fusas, sin reposo: enciende negra + corcheas + semicorcheas + fusas y escucha la pirámide entera.'}];}};
+
+D['6.2']={spq:0.66,slides:function(card){ return [
+  cover(card,'Un compás cuyos pulsos NO son iguales. Camina con él y entenderás por qué cojea.'),
+  {type:'facts',blocks:[
+    {q:'¿Qué es un compás DISPAR?',a:'Un compás con pulsos <b>desiguales</b>: unos largos (3 corcheas) y otros cortos (2). Al repartir 5 corcheas no hay manera de hacer pulsos iguales.'},
+    {q:'¿Dónde vive?',meters:['5/8']},
+    {q:'¿Cuántas caras tiene?',a:'Dos variantes principales — <b>3+2</b> y <b>2+3</b> — y una curiosidad regional: el <b>zortziko</b> vasco (1+2+2). ✳'}]},
+  {type:'dispar'},
+  {type:'disparListen'},
+  {type:'walk'}];}};
+
+window.CARD_INTROS=D;
+})();
+
+</script>
+<script id="introEquiv">
+/* ============================================================
+   CARTA 6.3 — Cambios de compás · figura = figura
+   Intro (demos de equivalencia + mesa de crafteo) y QUIZ propio
+   de 3 fases (test · ¿bien o mal? · a tocar).
+   ============================================================ */
+(function(){
+'use strict';
+const L=window.__INTRO_LIB, S=window.__INTRO_SLIDE_TYPES;
+const el=L.el, iDraw=L.iDraw, iOnsets=L.iOnsets, TIMBRES=L.TIMBRES, iCtx=L.iCtx, iFlash=L.iFlash, stagger=L.stagger, paperChip=L.paperChip;
+
+/* ---------- métricas y generador de compases ---------- */
+const EQMET={
+  '2/4':{e:4,pulses:[2,2],pf:'♩'},
+  '3/4':{e:6,pulses:[2,2,2],pf:'♩'},
+  '6/8':{e:6,pulses:[3,3],pf:'♩.'},
+  '9/8':{e:9,pulses:[3,3,3],pf:'♩.'},
+  '5/8':{e:5,pulses:[3,2],pf:'?',irr:true},
+};
+const EQPOOL={2:[['q'],['8','8'],['q'],['8','8']],3:[['qd'],['8','8','8'],['q','8'],['8','8','8']]};
+function eqBar(m){
+  const M=EQMET[m]; const notes=[],beams=[];
+  M.pulses.forEach(p=>{
+    const cell=EQPOOL[p][Math.floor(Math.random()*EQPOOL[p].length)];
+    const s=notes.length; cell.forEach(x=>notes.push(x));
+    const run=[]; for(let i=s;i<notes.length;i++){ if(notes[i]==='8') run.push(i); }
+    if(run.length>1) beams.push(run);
+  });
+  return {notes:notes,beams:beams,ts:m};
+}
+/* corcheas por pulso "de referencia" de un compás */
+function eqN(m){ return EQMET[m].pulses[0]; }
+/* tiempos: seg por corchea en A y B según el modo */
+function eqTiming(mode,mA,mB,e0){
+  const E0=e0||0.38, P0=(e0||0.38)*2.5;
+  if(mode==='figura') return {eA:E0,eB:E0};
+  return {eA:P0/eqN(mA), eB:P0/eqN(mB)};
+}
+function eqBadge(mode,mA,mB){ return mode==='figura' ? '♪ = ♪' : (EQMET[mA].pf+' = '+EQMET[mB].pf); }
+/* resumen: qué hace el pulso y qué hacen las figuras al pasar de A a B */
+function eqSummary(mode,mA,mB){
+  const nA=eqN(mA), nB=eqN(mB);
+  if(mode==='pulso') return {pulso:'igual', figuras: nB>nA?'rapido':(nB<nA?'lento':'igual')};
+  return {figuras:'igual', pulso: nB>nA?'lento':(nB<nA?'rapido':'igual')};
+}
+const ARR={rapido:'⬆ más rápido',lento:'⬇ más lento',igual:'= se mantiene'};
+const CLS={rapido:'up',lento:'down',igual:'same'};
+
+/* ---------- mini-secuenciador en segundos (tempo por tramos) ---------- */
+function EqSeq(){
+  this.evs=[]; this.visQ=[]; this.t0=0; this.timer=null; this.raf=null; this.n=0; this.loopS=0; this.running=false; this.onend=null;
+}
+EqSeq.prototype.start=function(){
+  const c=iCtx(); if(!c) return; this.stop();
+  this.t0=c.currentTime+0.12; this.n=0; this.k=0; this.running=true;
+  this.evs.sort((a,b)=>a.t-b.t);
+  this.timer=setInterval(()=>{
+    const horizon=c.currentTime+0.14;
+    for(let guard=0;guard<128;guard++){
+      if(this.n>=this.evs.length){
+        if(this.loopS>0){ this.n=0; this.k++; }
+        else { if(!this.doneAt) this.doneAt=this.t0+this.evs.length ? (this.lastT||0)+0.4 : c.currentTime; break; }
+      }
+      const ev=this.evs[this.n]; const t=this.t0+this.k*this.loopS+ev.t;
+      if(t>horizon) break;
+      if(t>c.currentTime-0.05){
+        try{
+          if(ev.timbre) (TIMBRES[ev.timbre]||TIMBRES.tick)(c,Math.max(t,c.currentTime+0.001),ev.gain||1);
+          if(ev.tone && window.__INTRO_LIB.toneHit) window.__INTRO_LIB.toneHit(c,Math.max(t,c.currentTime+0.001),0.13,Math.max(0.09,(ev.d||0.3)-0.05),ev.freq||523);
+        }catch(e){}
+        this.visQ.push({t:t,ev:ev});
+        this.lastT=t;
+      }
+      this.n++;
+    }
+    if(this.loopS<=0 && this.n>=this.evs.length && c.currentTime>(this.lastT||0)+0.5){ const f=this.onend; this.stop(); if(f)f(); }
+  },25);
+  const step=()=>{ if(!this.running) return;
+    const now=c.currentTime;
+    while(this.visQ.length && this.visQ[0].t<=now+0.02){
+      const v=this.visQ.shift(); const ev=v.ev; if(v.t<now-0.3) continue;
+      if(ev.el) iFlash(ev.el,ev.flashMs||130);
+      if(ev.cb) try{ev.cb();}catch(e){}
+    }
+    this.raf=requestAnimationFrame(step); };
+  this.raf=requestAnimationFrame(step);
+};
+EqSeq.prototype.stop=function(){ this.running=false; if(this.timer){clearInterval(this.timer);this.timer=null;} if(this.raf){cancelAnimationFrame(this.raf);this.raf=null;} this.visQ.length=0; this.doneAt=null; };
+
+/* construye eventos de una secuencia de compases con tempo por tramos.
+   segs: [{bar:{notes,beams,ts}, e:segPerEighth, drawn:{els}, lampEls?, count?:n}] */
+function eqEvents(segs,opts){
+  opts=opts||{}; const evs=[]; let t=0;
+  segs.forEach(sg=>{
+    const M=EQMET[sg.bar.ts];
+    if(sg.count){ /* compás de claqueta previa (sin notas) */
+      M.pulses.forEach((p,pi)=>{ evs.push({t:t,timbre:'drum',gain:pi===0?1.1:0.9,cb:sg.countCb?(()=>sg.countCb(pi)):null}); t+=p*sg.e; });
+      return;
+    }
+    const on=iOnsets(sg.bar); // beats en negras
+    let pE=0;
+    M.pulses.forEach((p,pi)=>{
+      if(!opts.noPulse) evs.push({t:t+pE*sg.e,timbre:'drum',gain:pi===0?1.05:0.85,el:sg.lampEls?sg.lampEls[pi]:null,flashMs:Math.round(p*sg.e*500)});
+      pE+=p;
+    });
+    on.onsets.forEach(o=>{
+      const tE=o.t*2; // negras -> corcheas
+      evs.push({t:t+tE*sg.e,timbre:opts.noteTimbre||'tick',gain:0.62,el:sg.drawn?sg.drawn.els[o.i]:null,
+        tone:!!opts.tone,d:(o.d||0.5)*2*sg.e,freq:opts.freq||587,expected:true,segRef:sg,noteIdx:o.i,abs:t+tE*sg.e});
+    });
+    t+=M.e*sg.e;
+  });
+  return {evs:evs,total:t};
+}
+
+/* ============ DIAPOSITIVA 'equiv' — demo con música pasando ============ */
+S.equiv=function(host,s){
+  const c=el('div','igenesis');
+  c.appendChild(el('p','ikicker',s.kicker||(s.mode==='pulso'?'REPASO — PULSO = PULSO':'LA NOVEDAD — FIGURA = FIGURA')));
+  c.appendChild(el('h2','ititle2',s.title));
+  const row=el('div','ieq-row');
+  const t=eqTiming(s.mode,s.mA,s.mB,s.e0);
+  const barA=s.fixedA||eqBar(s.mA), barB=s.fixedB||eqBar(s.mB);
+  const boxA=el('div','ieq-box'), boxB=el('div','ieq-box');
+  boxA.appendChild(el('p','ieq-m',s.mA)); boxB.appendChild(el('p','ieq-m',s.mB));
+  const chipA=el('div','ipaper'); const dA=iDraw(chipA,barA,{height:96,stretch:1.5,ts:s.mA});
+  const chipB=el('div','ipaper'); const dB=iDraw(chipB,barB,{height:96,stretch:1.5,ts:s.mB});
+  boxA.appendChild(chipA); boxB.appendChild(chipB);
+  const lampsA=el('div','ilamps'), lampsB=el('div','ilamps');
+  const lampElsA=[],lampElsB=[];
+  EQMET[s.mA].pulses.forEach(p=>{ const l=el('span','ilamp'+(p>=3?' big':'')); l.style.width=l.style.height=(12+p*7*(t.eA/0.38))+'px'; lampsA.appendChild(l); lampElsA.push(l); });
+  EQMET[s.mB].pulses.forEach(p=>{ const l=el('span','ilamp'+(p>=3?' big':'')); l.style.width=l.style.height=(12+p*7*(t.eB/0.38))+'px'; lampsB.appendChild(l); lampElsB.push(l); });
+  boxA.appendChild(lampsA); boxB.appendChild(lampsB);
+  const mid=el('div','ieq-mid');
+  mid.appendChild(el('div','ieq-badge',eqBadge(s.mode,s.mA,s.mB)));
+  row.appendChild(boxA); row.appendChild(mid); row.appendChild(boxB);
+  c.appendChild(row);
+  /* resumen de qué cambia */
+  const sum=eqSummary(s.mode,s.mA,s.mB);
+  const sr=el('div','ieq-sum');
+  sr.appendChild(el('span','ieq-tag '+CLS[sum.pulso],'PULSO '+ARR[sum.pulso]));
+  sr.appendChild(el('span','ieq-tag '+CLS[sum.figuras],'FIGURAS '+ARR[sum.figuras]));
+  c.appendChild(sr);
+  c.appendChild(el('p','igen-cap',s.caption||''));
+  const controls=el('div','igen-controls');
+  const btn=el('button','ibtn action','▶ Escúchalo pasar');
+  controls.appendChild(btn); c.appendChild(controls);
+  host.appendChild(c);
+  stagger([].slice.call(c.children),60,130);
+
+  const seq=new EqSeq();
+  const segs=[
+    {bar:barA,e:t.eA,drawn:dA,lampEls:lampElsA},
+    {bar:barA,e:t.eA,drawn:dA,lampEls:lampElsA},
+    {bar:barB,e:t.eB,drawn:dB,lampEls:lampElsB},
+    {bar:barB,e:t.eB,drawn:dB,lampEls:lampElsB},
+  ];
+  const built=eqEvents(segs,{tone:true});
+  seq.evs=built.evs; seq.loopS=built.total;
+  /* iluminar la caja activa */
+  let segTimes=[]; let acc=0;
+  segs.forEach((sg,i)=>{ segTimes.push({t0:acc,box:(i<2?boxA:boxB)}); acc+=EQMET[sg.bar.ts].e*sg.e; });
+  segs.forEach((sg,i)=>{ seq.evs.push({t:segTimes[i].t0,cb:()=>{ boxA.classList.toggle('playing',i<2); boxB.classList.toggle('playing',i>=2); }}); });
+  let on=false;
+  btn.onclick=()=>{ if(on){ seq.stop(); on=false; btn.textContent='▶ Escúchalo pasar'; boxA.classList.remove('playing'); boxB.classList.remove('playing'); return; }
+    on=true; btn.textContent='⏸ Parar'; seq.start(); };
+  return function(){ seq.stop(); };
+};
+
+/* ============ DIAPOSITIVA 'craft' — mesa de crafteo ============ */
+S.craft=function(host,s){
+  const c=el('div','icraft');
+  c.appendChild(el('p','ikicker','LA MESA DE CRAFTEO — monta tu propio cambio de compás'));
+  /* selectores */
+  const ctr=el('div','icraft-ctr');
+  const mkSel=(lab,init)=>{
+    const box=el('div','icraft-sel'); box.appendChild(el('span','icraft-lab',lab));
+    const rowB=el('div','icraft-chips'); const st={v:init,btns:{}};
+    Object.keys(EQMET).forEach(m=>{ const b=el('button','ibtn seg'+(m===init?' on':''),m);
+      b.onclick=()=>{ st.v=m; rowB.querySelectorAll('.seg').forEach(x=>x.classList.remove('on')); b.classList.add('on'); refresh(); };
+      st.btns[m]=b; rowB.appendChild(b); });
+    box.appendChild(rowB); ctr.appendChild(box); return st;
+  };
+  const selA=mkSel('Compás A','2/4');
+  const selB=mkSel('Compás B','6/8');
+  const modeBox=el('div','icraft-sel'); modeBox.appendChild(el('span','icraft-lab','Equivalencia'));
+  const modeRow=el('div','icraft-chips');
+  const st={mode:'figura'};
+  const bPul=el('button','ibtn seg','pulso = pulso');
+  const bFig=el('button','ibtn seg on','figura = figura');
+  bPul.onclick=()=>{ st.mode='pulso'; bPul.classList.add('on'); bFig.classList.remove('on'); refresh(); };
+  bFig.onclick=()=>{ st.mode='figura'; bFig.classList.add('on'); bPul.classList.remove('on'); refresh(); };
+  modeRow.appendChild(bPul); modeRow.appendChild(bFig); modeBox.appendChild(modeRow); ctr.appendChild(modeBox);
+  const rnd=el('button','ibtn action dice','🎲 Sorpréndeme');
+  ctr.appendChild(rnd);
+  c.appendChild(ctr);
+  /* resumen */
+  const sum=el('div','icraft-sum'); c.appendChild(sum);
+  /* cinta de música */
+  const view=el('div','iwalk-view'); const strip=el('div','iwalk-strip'); view.appendChild(strip);
+  const needle=el('div','iwalk-needle'); view.appendChild(needle);
+  c.appendChild(view);
+  const tr=el('div','iwalk-tempo');
+  const playBtn=el('button','ibtn action','▶ Generar y escuchar');
+  tr.appendChild(playBtn); c.appendChild(tr);
+  c.appendChild(el('p','itree-foot','La música se genera sola: dos compases de A, la señal de equivalencia, dos de B… y vuelta. Cambia lo que quieras y dale otra vez.'));
+  host.appendChild(c);
+  stagger([].slice.call(c.children),60,120);
+
+  const PPS=150; // px por segundo (¡el tiempo se VE!)
+  let running=false, t0=0, raf=null, timer=null, items=[], evQ=[], visQ=[], genT=0, segIdx=0;
+  function lock58(){
+    const has58=(selA.v==='5/8'||selB.v==='5/8');
+    bPul.disabled=has58; bPul.style.opacity=has58?0.35:1;
+    if(has58&&st.mode==='pulso'){ st.mode='figura'; bFig.classList.add('on'); bPul.classList.remove('on'); }
+  }
+  function refresh(){
+    lock58();
+    const sm=eqSummary(st.mode,selA.v,selB.v);
+    sum.innerHTML='<span class="ieq-badge small">'+eqBadge(st.mode,selA.v,selB.v)+'</span>'+
+      '<span class="ieq-tag '+CLS[sm.pulso]+'">PULSO '+ARR[sm.pulso]+'</span>'+
+      '<span class="ieq-tag '+CLS[sm.figuras]+'">FIGURAS '+ARR[sm.figuras]+'</span>'+
+      ((selA.v==='5/8'||selB.v==='5/8')?'<span class="ieq-note">con 5/8 solo cabe figura = figura (sus pulsos son desiguales)</span>':'');
+    if(running) restart();
+  }
+  rnd.onclick=()=>{
+    const ms=Object.keys(EQMET); let a=ms[Math.floor(Math.random()*ms.length)], b=ms[Math.floor(Math.random()*ms.length)];
+    while(b===a) b=ms[Math.floor(Math.random()*ms.length)];
+    selA.v=a; selB.v=b;
+    Object.keys(selA.btns).forEach(m=>selA.btns[m].classList.toggle('on',m===a));
+    Object.keys(selB.btns).forEach(m=>selB.btns[m].classList.toggle('on',m===b));
+    st.mode=(a==='5/8'||b==='5/8')?'figura':(Math.random()<0.5?'pulso':'figura');
+    bPul.classList.toggle('on',st.mode==='pulso'); bFig.classList.toggle('on',st.mode==='figura');
+    refresh();
+    if(!running) playBtn.click();
+  };
+  function now(){ const c2=iCtx(); return c2?(c2.currentTime-t0):0; }
+  function mkBarChip(m,e,atT){
+    const bar=eqBar(m); const M=EQMET[m];
+    const secs=M.e*e; const w=el('div','iwalk-bar');
+    w.style.left=(atT*PPS)+'px'; w.style.width=(secs*PPS)+'px';
+    const d=iDraw(w,bar,{width:Math.max(120,secs*PPS-10),height:100,ts:m});
+    strip.appendChild(w); items.push({el:w,end:atT+secs});
+    const on=iOnsets(bar); let pE=0;
+    M.pulses.forEach((p,pi)=>{ evQ.push({t:atT+pE*e,kind:'pulse',first:pi===0}); pE+=p; });
+    on.onsets.forEach(o=>{ evQ.push({t:atT+o.t*2*e,kind:'note',el:d.els[o.i]}); });
+    return secs;
+  }
+  function mkChange(atT,badge){
+    const w=el('div','iwalk-bar chg'); w.style.left=(atT*PPS)+'px'; w.style.width='58px';
+    w.innerHTML='<span class="iwalk-eq">'+badge+'</span>';
+    strip.appendChild(w); items.push({el:w,end:atT+0.4});
+    return 0; // la señal no ocupa tiempo musical
+  }
+  function gen(){
+    const t=eqTiming(st.mode,selA.v,selB.v);
+    const horizon=now()+9;
+    let guard=0;
+    while(genT<horizon && guard++<24){
+      const phase=segIdx%4;
+      if(phase<2){ genT+=mkBarChip(selA.v,t.eA,genT); if(phase===1) mkChange(genT,eqBadge(st.mode,selA.v,selB.v)); }
+      else { genT+=mkBarChip(selB.v,t.eB,genT); if(phase===3) mkChange(genT,eqBadge(st.mode,selB.v,selA.v)); }
+      segIdx++;
+    }
+    const nb=now();
+    items=items.filter(it=>{ if(it.end<nb-4){ try{it.el.remove();}catch(e){} return false; } return true; });
+  }
+  function schedule(){ const c2=iCtx(); if(!c2)return; const horizon=c2.currentTime+0.14;
+    evQ.sort((a,b)=>a.t-b.t);
+    while(evQ.length && t0+evQ[0].t<=horizon){
+      const e=evQ.shift(); const tt=t0+e.t; if(tt<c2.currentTime-0.05) continue;
+      if(e.kind==='note') TIMBRES.tick(c2,Math.max(tt,c2.currentTime+0.001),0.55);
+      else TIMBRES.drum(c2,Math.max(tt,c2.currentTime+0.001),e.first?1.1:0.88);
+      visQ.push({t:tt,e:e});
+    }
+  }
+  function frame(){ if(!running) return;
+    const c2=iCtx(); const nb=now();
+    strip.style.transform='translateX('+(view.clientWidth*0.3 - nb*PPS)+'px)';
+    while(visQ.length && c2 && visQ[0].t<=c2.currentTime+0.02){
+      const v=visQ.shift(); if(v.e.kind==='note'&&v.e.el) iFlash(v.e.el,110);
+    }
+    gen(); raf=requestAnimationFrame(frame);
+  }
+  function stop(){ running=false; playBtn.textContent='▶ Generar y escuchar'; if(timer){clearInterval(timer);timer=null;} if(raf)cancelAnimationFrame(raf); }
+  function restart(){ stop(); playBtn.click(); }
+  playBtn.onclick=()=>{
+    if(running){ stop(); return; }
+    const c2=iCtx(); if(!c2) return;
+    running=true; playBtn.textContent='⏸ Parar';
+    strip.innerHTML=''; items=[]; evQ.length=0; visQ.length=0; genT=0; segIdx=0;
+    t0=c2.currentTime+0.15; gen(); timer=setInterval(schedule,25); raf=requestAnimationFrame(frame);
+  };
+  refresh();
+  return function(){ stop(); };
+};
+
+/* ============ INTRO de la carta 6.3 ============ */
+window.CARD_INTROS['6.3']={spq:0.76,slides:function(card){ return [
+  {type:'cover',kicker:'INTRO · CARTA 6.3',title:'Cambios de compás · figura = figura',
+   sub:'Cuando la música cruza a otro compás, una pequeña señal te dice qué se mantiene. Hasta ahora casi siempre era el pulso… hoy toca lo contrario.',
+   cells:[{notes:['8','8','8','8'],beams:[[0,1],[2,3]]},{notes:['8','8','8','8','8','8'],beams:[[0,1,2],[3,4,5]]}],ref:card.ref||''},
+  {type:'facts',blocks:[
+    {q:'¿Qué es una equivalencia?',a:'La nota que aparece <b>sobre el cambio de compás</b> y que dice qué elemento vale lo mismo a los dos lados de la barra.'},
+    {q:'La de siempre: PULSO = PULSO',a:'<b>♩ = ♩.</b> El pulso dura lo mismo; las figuras corren más o menos. Es la más común — la has vivido en todas las lecturas con cambio.'},
+    {q:'La nueva: FIGURA = FIGURA',a:'<b>♪ = ♪</b> La corchea vale lo mismo a ambos lados; el que se estira o se encoge es el <b>PULSO</b>.'}]},
+  {type:'equiv',mode:'pulso',mA:'2/4',mB:'6/8',title:'Repaso: pulso = pulso',
+   caption:'El tambor no cambia NUNCA: el pulso se mantiene. Pero fíjate en las corcheas: en 6/8 caben TRES por pulso — van más rápidas. <b>Pulso igual, figuras más rápidas.</b>'},
+  {type:'equiv',mode:'figura',mA:'2/4',mB:'6/8',title:'La novedad: figura = figura',
+   caption:'Ahora las corcheas son clavadas a ambos lados — la lámpara del pulso, en cambio, se agranda: cada pulso de 6/8 espera TRES corcheas. <b>Figuras iguales, pulso más lento.</b>'},
+  {type:'equiv',mode:'figura',mA:'5/8',mB:'2/4',title:'Y con el 5/8 de la carta anterior',
+   caption:'Del compás cojo al 2/4: la corchea no se inmuta (♪ = ♪). Lo que cambia es el suelo que pisas: de pulsos desiguales a pulsos iguales. <b>Por eso el 5/8 solo cambia por figura = figura.</b>'},
+  {type:'craft'}];}};
+
+/* ============ QUIZ 6.3 — overlay propio con 3 fases ============ */
+let QOV=null,qStage=null,qSteps=null,qPhase=0,qDone=[false,false,false];
+function buildQuiz(){
+  if(QOV) return;
+  QOV=el('div','intro-ov eq-ov'); QOV.id='eqQuizOv';
+  QOV.innerHTML='<div class="intro-bar">'+
+    '<span class="intro-brand">QUIZ <span>· 6.3 figura = figura</span></span>'+
+    '<div class="eq-steps" id="eqSteps"></div>'+
+    '<div class="intro-nav"><button class="intro-x" id="eqClose">✕</button></div></div>'+
+    '<div class="intro-stage" id="eqStage"></div>';
+  document.body.appendChild(QOV);
+  qStage=QOV.querySelector('#eqStage'); qSteps=QOV.querySelector('#eqSteps');
+  QOV.querySelector('#eqClose').onclick=closeQuiz;
+}
+let qCleanup=null;
+function closeQuiz(){ if(qCleanup){try{qCleanup();}catch(e){}} qCleanup=null; if(QOV)QOV.classList.remove('show'); }
+function paintSteps(){ qSteps.innerHTML='';
+  ['1 · Test','2 · ¿Bien o mal?','3 · ¡A tocar!'].forEach((nm,i)=>{
+    const s=el('span','eqstep'+(i===qPhase?' cur':(qDone[i]?' done':'')),nm+(qDone[i]?' ✓':''));
+    s.onclick=()=>{ if(i<=qPhase||qDone[i]||qDone[Math.max(0,i-1)]) showPhase(i); };
+    qSteps.appendChild(s); });
+}
+function showPhase(i){ if(qCleanup){try{qCleanup();}catch(e){}} qCleanup=null;
+  qPhase=i; paintSteps(); qStage.innerHTML='';
+  const host=el('div','islide show'); qStage.appendChild(host);
+  qCleanup=[phase1,phase2,phase3][i](host)||null;
+}
+window.launchEquivQuiz=function(){ buildQuiz(); qDone=[false,false,false]; QOV.classList.add('show'); showPhase(0); };
+
+/* --- utilidades comunes de las fases --- */
+function scenario(){
+  const ms=Object.keys(EQMET);
+  let a=ms[Math.floor(Math.random()*ms.length)], b=ms[Math.floor(Math.random()*ms.length)];
+  let tries=0;
+  while((b===a || eqN(a)===eqN(b)) && tries++<20){ b=ms[Math.floor(Math.random()*ms.length)]; }
+  const mode=(a==='5/8'||b==='5/8')?'figura':(Math.random()<0.5?'pulso':'figura');
+  return {mA:a,mB:b,mode:mode};
+}
+function triRow(lab,onPick){
+  const r=el('div','eq-tri'); r.appendChild(el('span','eq-tri-l',lab));
+  const btns=[];
+  [['lento','⬇ más lento'],['igual','= igual'],['rapido','⬆ más rápido']].forEach(([v,txt])=>{
+    const b=el('button','ibtn seg',txt); b.dataset.v=v;
+    b.onclick=()=>{ btns.forEach(x=>x.classList.remove('on')); b.classList.add('on'); onPick(v); };
+    btns.push(b); r.appendChild(b); });
+  r.__btns=btns; return r;
+}
+function markTri(row,correct,picked){
+  row.__btns.forEach(b=>{ b.disabled=true;
+    if(b.dataset.v===correct) b.classList.add('good');
+    else if(b.dataset.v===picked) b.classList.add('bad'); });
+}
+function scenChips(host,sc,opts){
+  opts=opts||{};
+  const row=el('div','ieq-row');
+  const t=eqTiming(sc.mode,sc.mA,sc.mB);
+  const barA=eqBar(sc.mA), barB=eqBar(sc.mB);
+  const boxA=el('div','ieq-box'), boxB=el('div','ieq-box');
+  boxA.appendChild(el('p','ieq-m',sc.mA)); boxB.appendChild(el('p','ieq-m',sc.mB));
+  const chipA=el('div','ipaper'), chipB=el('div','ipaper');
+  const dA=iDraw(chipA,barA,{height:88,stretch:1.35,ts:sc.mA});
+  const dB=iDraw(chipB,barB,{height:88,stretch:1.35,ts:sc.mB});
+  boxA.appendChild(chipA); boxB.appendChild(chipB);
+  const mid=el('div','ieq-mid'); mid.appendChild(el('div','ieq-badge',eqBadge(sc.mode,sc.mA,sc.mB)));
+  row.appendChild(boxA); row.appendChild(mid); row.appendChild(boxB);
+  host.appendChild(row);
+  return {barA:barA,barB:barB,dA:dA,dB:dB,t:t,boxA:boxA,boxB:boxB};
+}
+function playScen(sc,parts,wrong,onEnd){
+  const t=eqTiming(sc.mode,sc.mA,sc.mB);
+  let eB=t.eB;
+  if(wrong){ const other=eqTiming(sc.mode==='pulso'?'figura':'pulso',sc.mA,sc.mB); eB=other.eB; }
+  const segs=[
+    {bar:parts.barA,e:t.eA,drawn:parts.dA},
+    {bar:parts.barA,e:t.eA,drawn:parts.dA},
+    {bar:parts.barB,e:eB,drawn:parts.dB},
+    {bar:parts.barB,e:eB,drawn:parts.dB}];
+  const seq=new EqSeq();
+  const built=eqEvents(segs,{tone:true});
+  seq.evs=built.evs; seq.loopS=0; seq.onend=onEnd||null;
+  let acc=0; segs.forEach((sg,i)=>{ seq.evs.push({t:acc,cb:()=>{ parts.boxA.classList.toggle('playing',i<2); parts.boxB.classList.toggle('playing',i>=2); }}); acc+=EQMET[sg.bar.ts].e*sg.e; });
+  seq.evs.push({t:built.total+0.05,cb:()=>{ parts.boxA.classList.remove('playing'); parts.boxB.classList.remove('playing'); }});
+  seq.start();
+  return seq;
+}
+
+/* ============ FASE 1 — test (5 preguntas) ============ */
+function phase1(host){
+  let qn=0, score=0, seq=null;
+  const c=el('div','eqp');
+  host.appendChild(c);
+  function question(){
+    c.innerHTML=''; if(seq)seq.stop();
+    const sc=scenario();
+    c.appendChild(el('p','ikicker','FASE 1 · PREGUNTA '+(qn+1)+' DE 5'));
+    c.appendChild(el('h2','ititle2','En este cambio…'));
+    const parts=scenChips(c,sc);
+    const correct=eqSummary(sc.mode,sc.mA,sc.mB);
+    let pickP=null,pickF=null;
+    const rowP=triRow('El PULSO va…',v=>{pickP=v;check.disabled=!(pickP&&pickF);});
+    const rowF=triRow('Las FIGURAS van…',v=>{pickF=v;check.disabled=!(pickP&&pickF);});
+    c.appendChild(rowP); c.appendChild(rowF);
+    const fb=el('p','eq-fb',''); c.appendChild(fb);
+    const controls=el('div','igen-controls');
+    const check=el('button','ibtn action','Comprobar'); check.disabled=true;
+    const next=el('button','ibtn primary','Siguiente →'); next.style.display='none';
+    controls.appendChild(check); controls.appendChild(next); c.appendChild(controls);
+    check.onclick=()=>{
+      const okP=(pickP===correct.pulso), okF=(pickF===correct.figuras);
+      markTri(rowP,correct.pulso,pickP); markTri(rowF,correct.figuras,pickF);
+      if(okP&&okF) score++;
+      fb.innerHTML=(okP&&okF)?'✅ ¡Eso es! Escúchalo…':'❌ Casi. Escucha y fíjate en el tambor (pulso) y en las corcheas (figuras)…';
+      fb.className='eq-fb '+((okP&&okF)?'good':'bad');
+      check.style.display='none';
+      seq=playScen(sc,parts,false,()=>{ next.style.display=''; });
+    };
+    next.onclick=()=>{ qn++; if(qn<5) question(); else finish(); };
+  }
+  function finish(){
+    c.innerHTML='';
+    c.appendChild(el('p','ikicker','FASE 1 COMPLETADA'));
+    c.appendChild(el('h2','ititle2',score+' de 5 correctas'));
+    c.appendChild(el('p','igen-cap',score>=4?'Dominas la teoría. A la fase 2.':'Repasa la idea: pulso=pulso → el pulso no cambia; figura=figura → las figuras no cambian.'));
+    const b=el('button','ibtn action','Ir a la fase 2 →'); b.onclick=()=>{ qDone[0]=true; showPhase(1); };
+    const controls=el('div','igen-controls'); controls.appendChild(b); c.appendChild(controls);
+  }
+  question();
+  return function(){ if(seq)seq.stop(); };
+}
+
+/* ============ FASE 2 — ¿bien o mal ejecutado? (4 ítems) ============ */
+function phase2(host){
+  let qn=0, score=0, seq=null;
+  const c=el('div','eqp'); host.appendChild(c);
+  function item(){
+    c.innerHTML=''; if(seq)seq.stop();
+    const sc=scenario();
+    const wrong=Math.random()<0.5;
+    c.appendChild(el('p','ikicker','FASE 2 · ESCUCHA '+(qn+1)+' DE 4'));
+    c.appendChild(el('h2','ititle2','¿Se ha ejecutado BIEN la equivalencia?'));
+    const parts=scenChips(c,sc);
+    c.appendChild(el('p','igen-cap','La partitura promete <b>'+eqBadge(sc.mode,sc.mA,sc.mB)+'</b> ('+(sc.mode==='pulso'?'pulso = pulso':'figura = figura')+'). El motor la va a tocar… a su manera. Tú decides si ha cumplido.'));
+    const fb=el('p','eq-fb',''); c.appendChild(fb);
+    const controls=el('div','igen-controls');
+    const play=el('button','ibtn action','▶ Escuchar');
+    const bOK=el('button','ibtn seg','✔ Bien ejecutado');
+    const bKO=el('button','ibtn seg','✘ Mal ejecutado');
+    const next=el('button','ibtn primary','Siguiente →'); next.style.display='none';
+    bOK.disabled=true; bKO.disabled=true;
+    controls.appendChild(play); controls.appendChild(bOK); controls.appendChild(bKO); controls.appendChild(next);
+    c.appendChild(controls);
+    play.onclick=()=>{ if(seq)seq.stop(); seq=playScen(sc,parts,wrong,()=>{ bOK.disabled=false; bKO.disabled=false; }); };
+    function answer(saidOK){
+      const okAns=(saidOK!==wrong);
+      if(okAns)score++;
+      fb.innerHTML=okAns?'✅ ¡Correcto! '+(wrong?'Había trampa: mantuvo lo que no era.':'Cumplió la equivalencia al pie de la letra.')
+                        :'❌ '+(wrong?'Había trampa y coló: mantuvo lo que NO era.':'Era correcta: lo prometido se mantuvo.');
+      fb.className='eq-fb '+(okAns?'good':'bad');
+      bOK.disabled=true; bKO.disabled=true; next.style.display='';
+    }
+    bOK.onclick=()=>answer(true); bKO.onclick=()=>answer(false);
+    next.onclick=()=>{ qn++; if(qn<4) item(); else fin(); };
+  }
+  function fin(){ c.innerHTML='';
+    c.appendChild(el('p','ikicker','FASE 2 COMPLETADA'));
+    c.appendChild(el('h2','ititle2',score+' de 4 correctas'));
+    const b=el('button','ibtn action','Ir a la fase 3 →'); b.onclick=()=>{ qDone[1]=true; showPhase(2); };
+    const controls=el('div','igen-controls'); controls.appendChild(b); c.appendChild(controls); }
+  item();
+  return function(){ if(seq)seq.stop(); };
+}
+
+/* ============ FASE 3 — teoría + ejecución con barra espaciadora (×3) ============ */
+function phase3(host){
+  let trial=0, seq=null, tapHandler=null;
+  const c=el('div','eqp'); host.appendChild(c);
+
+  function mkTrial(){
+    c.innerHTML=''; if(seq)seq.stop();
+    /* 3 frases × 2 compases con 2 cambios: uno pulso=pulso y otro figura=figura (orden aleatorio) */
+    const modes=Math.random()<0.5?['pulso','figura']:['figura','pulso'];
+    const pool=['2/4','3/4','6/8','9/8'];
+    const M1=pool[Math.floor(Math.random()*pool.length)];
+    let M2=pool[Math.floor(Math.random()*pool.length)]; while(eqN(M2)===eqN(M1)) M2=pool[Math.floor(Math.random()*pool.length)];
+    let M3=pool[Math.floor(Math.random()*pool.length)]; while(eqN(M3)===eqN(M2)) M3=pool[Math.floor(Math.random()*pool.length)];
+    const e1=0.4;
+    const e2=(modes[0]==='figura')?e1:(e1*eqN(M1))/eqN(M2);
+    const e3=(modes[1]==='figura')?e2:(e2*eqN(M2))/eqN(M3);
+    const BARS=2;
+    const phr=[{m:M1,e:e1},{m:M2,e:e2},{m:M3,e:e3}];
+    c.appendChild(el('p','ikicker','FASE 3 · PRUEBA '+(trial+1)+' DE 3 — primero la teoría, luego a tocar'));
+    /* partitura: 3 líneas de 2 compases */
+    const lines=el('div','eq-lines');
+    const segs=[]; const annots=[];
+    phr.forEach((P,pi)=>{
+      const line=el('div','eq-line');
+      line.appendChild(el('span','ieq-m',P.m));
+      for(let b=0;b<BARS;b++){
+        const bar=eqBar(P.m); const chip=el('div','ipaper');
+        const d=iDraw(chip,bar,{height:84,stretch:1.3,ts:b===0?P.m:null});
+        line.appendChild(chip);
+        segs.push({bar:bar,e:P.e,drawn:d,phrase:pi});
+      }
+      if(pi<2){
+        const an=el('div','eq-annot');
+        an.innerHTML='<span class="ieq-badge small">'+eqBadge(modes[pi],P.m,phr[pi+1].m)+'</span><span class="eq-an-res"></span>';
+        line.appendChild(an); annots.push(an);
+      }
+      lines.appendChild(line);
+    });
+    c.appendChild(lines);
+    /* teoría por cambio */
+    const theory=el('div','eq-theory'); c.appendChild(theory);
+    const fb=el('p','eq-fb',''); c.appendChild(fb);
+    const controls=el('div','igen-controls'); c.appendChild(controls);
+    const hint=el('p','itree-foot','');
+    c.appendChild(hint);
+    let chg=0;
+    function askChange(){
+      theory.innerHTML='';
+      theory.appendChild(el('h2','ititle2','Cambio '+(chg+1)+': '+phr[chg].m+' → '+phr[chg+1].m+' con '+eqBadge(modes[chg],phr[chg].m,phr[chg+1].m)));
+      const correct=eqSummary(modes[chg],phr[chg].m,phr[chg+1].m);
+      let pickP=null,pickF=null;
+      const rowP=triRow('El PULSO será…',v=>{pickP=v;check.disabled=!(pickP&&pickF);});
+      const rowF=triRow('Las FIGURAS serán…',v=>{pickF=v;check.disabled=!(pickP&&pickF);});
+      theory.appendChild(rowP); theory.appendChild(rowF);
+      const check=el('button','ibtn action','Comprobar'); check.disabled=true;
+      const cc=el('div','igen-controls'); cc.appendChild(check); theory.appendChild(cc);
+      check.onclick=()=>{
+        markTri(rowP,correct.pulso,pickP); markTri(rowF,correct.figuras,pickF);
+        const ok=(pickP===correct.pulso&&pickF===correct.figuras);
+        annots[chg].querySelector('.eq-an-res').innerHTML=(ok?'✅ ':'⚠ ')+'pulso '+ARR[correct.pulso].replace('⬆','↑').replace('⬇','↓')+' · figuras '+ARR[correct.figuras].replace('⬆','↑').replace('⬇','↓');
+        fb.innerHTML=ok?'✅ Anotado en la partitura.':'❌ La respuesta correcta queda anotada en la partitura — úsala al tocar.';
+        fb.className='eq-fb '+(ok?'good':'bad');
+        setTimeout(()=>{ chg++; fb.textContent=''; if(chg<2) askChange(); else readyToPlay(); },1400);
+      };
+    }
+    function readyToPlay(){
+      theory.innerHTML='';
+      theory.appendChild(el('h2','ititle2','Teoría lista. Ahora, de arriba abajo: marca cada nota con la BARRA ESPACIADORA.'));
+      const play=el('button','ibtn action','▶ Claqueta y ¡dentro!');
+      const cc=el('div','igen-controls'); cc.appendChild(play); theory.appendChild(cc);
+      hint.textContent='La claqueta marca el pulso y se adapta sola en cada cambio. Tolerancia humana: no hace falta ser un robot.';
+      play.onclick=()=>{ play.disabled=true; run(); };
+    }
+    function run(){
+      /* claqueta: 1 compás de M1 + las 3 frases con pulso continuo */
+      const count={bar:{notes:[],beams:[],ts:M1},e:e1,count:true};
+      const allSegs=[count].concat(segs);
+      const built=eqEvents(allSegs,{tone:false,noteTimbre:'clave'});
+      /* cuenta 3-2-1 visual */
+      const cd=el('div','eq-count'); c.appendChild(cd);
+      const nPulses=EQMET[M1].pulses.length;
+      count.countCb=(pi)=>{ const n=nPulses-pi; cd.textContent=(n<=3)?String(n):''; if(pi===nPulses-1) setTimeout(()=>{cd.textContent='';},e1*EQMET[M1].pulses[0]*1000); };
+      seq=new EqSeq(); seq.evs=built.evs; seq.loopS=0;
+      const expected=built.evs.filter(ev=>ev.expected).map(ev=>({t:ev.t,el:ev.segRef.drawn.els[ev.noteIdx],hit:false}));
+      const c2=iCtx(); const t0=c2.currentTime+0.12;
+      let taps=0,hits=0;
+      tapHandler=(e)=>{
+        if(e.code!=='Space'&&e.key!==' ') return; e.preventDefault();
+        if(e.repeat) return;
+        taps++;
+        const now=c2.currentTime-seq.t0;
+        let best=null,bd=1e9;
+        expected.forEach(x=>{ if(!x.hit){ const d=Math.abs(x.t-now); if(d<bd){bd=d;best=x;} } });
+        if(best && bd<=0.19){ best.hit=true; hits++; if(best.el){ best.el.classList.add('eq-hit'); } }
+      };
+      document.addEventListener('keydown',tapHandler);
+      seq.onend=()=>{
+        document.removeEventListener('keydown',tapHandler); tapHandler=null;
+        expected.forEach(x=>{ if(!x.hit&&x.el) x.el.classList.add('eq-miss'); });
+        const pct=Math.round(100*hits/Math.max(1,expected.length));
+        const passed=(pct>=75 && taps<=expected.length+4);
+        theory.innerHTML='';
+        theory.appendChild(el('h2','ititle2',(passed?'✅ ¡Prueba superada! ':'❌ Aún no… ')+pct+'% de notas en su sitio'));
+        const cc=el('div','igen-controls');
+        if(passed){ const b=el('button','ibtn action',trial<2?'Siguiente prueba →':'Terminar el quiz 🎉');
+          b.onclick=()=>{ trial++; if(trial<3) mkTrial(); else done(); }; cc.appendChild(b); }
+        else { const b=el('button','ibtn action','↺ Repetir esta prueba');
+          b.onclick=()=>{ mkTrial0(phr,modes); }; cc.appendChild(b);
+          const b2=el('button','ibtn ghost','Nueva prueba distinta'); b2.onclick=()=>mkTrial(); cc.appendChild(b2); }
+        theory.appendChild(cc);
+      };
+      /* pulsos de claqueta también DURANTE las frases (ya vienen en eqEvents como 'drum') */
+      seq.start();
+    }
+    function mkTrial0(){ mkTrial(); }
+    askChange();
+  }
+  function done(){ c.innerHTML='';
+    c.appendChild(el('p','ikicker','QUIZ COMPLETADO'));
+    c.appendChild(el('h2','ititle2','🎉 Las tres pruebas superadas'));
+    c.appendChild(el('p','igen-cap','Pulso = pulso y figura = figura, en la teoría y en las manos. Cambios de compás: dominados.'));
+    const b=el('button','ibtn action','Cerrar'); b.onclick=closeQuiz;
+    const cc=el('div','igen-controls'); cc.appendChild(b); c.appendChild(cc);
+    qDone[2]=true; paintSteps();
+  }
+  mkTrial();
+  return function(){ if(seq)seq.stop(); if(tapHandler)document.removeEventListener('keydown',tapHandler); };
+}
+})();
+
 </script>
 </body></html>
