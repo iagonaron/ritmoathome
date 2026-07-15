@@ -905,7 +905,85 @@ footer .lock{color:var(--gold1);}
 .eq-pad.hit{background:radial-gradient(circle at 35% 30%,rgba(52,211,153,.55),rgba(52,211,153,.15));border-color:#34d399;transform:scale(.96);}
 .eq-hit,.eq-hit *{fill:#0ea36f !important;stroke:#0ea36f !important;}
 .eq-miss,.eq-miss *{fill:#c2374b !important;stroke:#c2374b !important;}
-</style></head>
+</style><script>
+/* ============================================================
+   SUITE · TIEMPO DE ACTIVIDAD · r1 (Iago 15-jul-2026)
+   ------------------------------------------------------------
+   Cuenta SOLO el tiempo real de trabajo del alumno:
+     · pestaña visible (si se va a otra pestaña, no cuenta)
+     · con actividad (ratón/teclado/toque); un hueco de MÁS DE
+       2 MINUTOS sin actividad no se cuenta (baño, distracción…)
+     · acumula entre días y dispositivos (tabla
+       suite_actividad_tiempo vía RPC suite_tiempo_ping — ver
+       suite_tiempo_actividad.sql)
+   El tiempo aparece discretamente en la campana del Diario junto
+   a cada ficha entregada / quiz completado.
+   ============================================================ */
+window.SuiteTiempo=(function(){
+  'use strict';
+  var SB='https://woiptkyrxkbpnvioypit.supabase.co';
+  var AN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvaXB0a3lyeGticG52aW95cGl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzI2ODYsImV4cCI6MjA5MjA0ODY4Nn0.B2nKgj5rD0rkdLeMIrd9KgD8lUPWsBT4Y7aCtmnvbjA';
+  var IDLE_S=120, FLUSH_MS=45000;
+  var cuenta=null, tipo=null, ref=null;
+  var last=null, acc=0, enviado=0, previo=0, on=false;
+  function actividad(){
+    if(!on || document.visibilityState!=='visible') return;
+    var now=Date.now();
+    if(last!=null){ var d=(now-last)/1000; if(d>0 && d<IDLE_S) acc+=d; }
+    last=now;
+  }
+  function corta(){ last=null; }
+  function flush(final){
+    if(!on) return;
+    var s=Math.floor(acc); if(s<1) return;
+    acc-=s; enviado+=s;
+    try{
+      fetch(SB+'/rest/v1/rpc/suite_tiempo_ping',{method:'POST', keepalive:!!final,
+        headers:{'Content-Type':'application/json','apikey':AN,'Authorization':'Bearer '+AN},
+        body:JSON.stringify({p_cuenta_id:cuenta, p_tipo:tipo, p_ref:ref, p_secs:s})
+      }).catch(function(){});
+    }catch(e){}
+  }
+  function leerPrevio(){
+    try{
+      fetch(SB+'/rest/v1/suite_actividad_tiempo?select=secs&cuenta_id=eq.'+encodeURIComponent(cuenta)+
+        '&tipo=eq.'+encodeURIComponent(tipo)+'&ref=eq.'+encodeURIComponent(ref),
+        {headers:{'apikey':AN,'Authorization':'Bearer '+AN}})
+      .then(function(r){ return r.ok?r.json():[]; })
+      .then(function(rows){ previo=(rows&&rows[0]&&rows[0].secs)||0; })
+      .catch(function(){});
+    }catch(e){}
+  }
+  function docAttach(doc){
+    if(!doc || doc.__suiteTiempo) return; doc.__suiteTiempo=1;
+    ['pointerdown','pointermove','mousemove','keydown','touchstart','wheel'].forEach(function(ev){
+      try{ doc.addEventListener(ev, actividad, {passive:true, capture:true}); }catch(e){}
+    });
+  }
+  function start(c, t, r){
+    if(on || !c || !r) return;
+    cuenta=String(c); tipo=String(t); ref=String(r); on=true;
+    docAttach(document);
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState!=='visible'){ corta(); flush(); } else { last=Date.now(); }
+    });
+    window.addEventListener('pagehide', function(){ corta(); flush(true); });
+    setInterval(flush, FLUSH_MS);
+    // fases del quiz en iframe (mismo origen): engancharse a su documento
+    setInterval(function(){
+      try{
+        var frs=document.querySelectorAll('iframe');
+        for(var i=0;i<frs.length;i++){ try{ var d=frs[i].contentDocument; if(d) docAttach(d); }catch(e2){} }
+      }catch(e){}
+    }, 2000);
+    leerPrevio();
+    last=Date.now();
+  }
+  function total(){ return Math.round(previo+enviado+acc); }
+  return { start:start, total:total, flush:flush, activo:function(){return on;} };
+})();
+</script>
+</head>
 
 <body>
 
@@ -5481,6 +5559,8 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
 
   const qs=new URLSearchParams(location.search);
   const CARTA=qs.get('quizCarta'), ENVIO=qs.get('envio'), CUENTA=qs.get('cuenta');
+  // TIEMPO DE ACTIVIDAD (15-jul): rastreo del trabajo real en el quiz de tareas
+  try{ if(ENVIO && CUENTA && window.SuiteTiempo) window.SuiteTiempo.start(CUENTA, 'quiz', ENVIO); }catch(e){}
   let _sb=null, _enviado=false, _enviando=false;
 
   function cargarSupabase(){
@@ -5537,6 +5617,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   async function completar(){
     if(!ENVIO || !CUENTA || _enviado || _enviando) return;
     _enviando=true;
+    try{ if(window.SuiteTiempo) window.SuiteTiempo.flush(); }catch(e){}   // tiempo al día antes de avisar
     banner('Avisando a Iago de que has terminado…');
     const c=await sb();
     if(!c){ _enviando=false; banner('⚠ No se pudo avisar (sin conexión). <button id="suiteQuizRetry" style="margin-left:8px;border:0;border-radius:8px;padding:5px 12px;font-weight:800;cursor:pointer;background:#ff5c80;color:#2b0812">↻ Reintentar</button>','err'); return; }
