@@ -452,6 +452,7 @@ footer .lock{color:var(--gold1);}
 .setup-card .sc-ex{background:var(--paper);border-radius:10px;padding:12px 14px;min-height:92px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
 .setup-card .sc-ex svg{display:block;width:100%;height:auto;max-height:84px;}
 .setup-card .c-num{font-size:11px;font-weight:900;color:#06281b;background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-radius:6px;padding:1px 7px;flex:0 0 auto;}
+.setup-card .c-lec{margin-left:auto;font-size:10px;font-weight:700;color:rgba(214,226,220,.5);letter-spacing:.03em;flex:0 0 auto;}
 .setup-card .sc-ex .ex-empty{color:#9aa;font-size:12px;margin:auto;}
 .setup-card .sc-ex.ex-text-host{flex-direction:column;gap:4px;}
 .setup-card .ex-text{font-size:34px;font-weight:700;color:#0a1028;letter-spacing:.06em;font-family:Georgia,'Times New Roman',serif;line-height:1;}
@@ -905,85 +906,7 @@ footer .lock{color:var(--gold1);}
 .eq-pad.hit{background:radial-gradient(circle at 35% 30%,rgba(52,211,153,.55),rgba(52,211,153,.15));border-color:#34d399;transform:scale(.96);}
 .eq-hit,.eq-hit *{fill:#0ea36f !important;stroke:#0ea36f !important;}
 .eq-miss,.eq-miss *{fill:#c2374b !important;stroke:#c2374b !important;}
-</style><script>
-/* ============================================================
-   SUITE · TIEMPO DE ACTIVIDAD · r1 (Iago 15-jul-2026)
-   ------------------------------------------------------------
-   Cuenta SOLO el tiempo real de trabajo del alumno:
-     · pestaña visible (si se va a otra pestaña, no cuenta)
-     · con actividad (ratón/teclado/toque); un hueco de MÁS DE
-       2 MINUTOS sin actividad no se cuenta (baño, distracción…)
-     · acumula entre días y dispositivos (tabla
-       suite_actividad_tiempo vía RPC suite_tiempo_ping — ver
-       suite_tiempo_actividad.sql)
-   El tiempo aparece discretamente en la campana del Diario junto
-   a cada ficha entregada / quiz completado.
-   ============================================================ */
-window.SuiteTiempo=(function(){
-  'use strict';
-  var SB='https://woiptkyrxkbpnvioypit.supabase.co';
-  var AN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvaXB0a3lyeGticG52aW95cGl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzI2ODYsImV4cCI6MjA5MjA0ODY4Nn0.B2nKgj5rD0rkdLeMIrd9KgD8lUPWsBT4Y7aCtmnvbjA';
-  var IDLE_S=120, FLUSH_MS=45000;
-  var cuenta=null, tipo=null, ref=null;
-  var last=null, acc=0, enviado=0, previo=0, on=false;
-  function actividad(){
-    if(!on || document.visibilityState!=='visible') return;
-    var now=Date.now();
-    if(last!=null){ var d=(now-last)/1000; if(d>0 && d<IDLE_S) acc+=d; }
-    last=now;
-  }
-  function corta(){ last=null; }
-  function flush(final){
-    if(!on) return;
-    var s=Math.floor(acc); if(s<1) return;
-    acc-=s; enviado+=s;
-    try{
-      fetch(SB+'/rest/v1/rpc/suite_tiempo_ping',{method:'POST', keepalive:!!final,
-        headers:{'Content-Type':'application/json','apikey':AN,'Authorization':'Bearer '+AN},
-        body:JSON.stringify({p_cuenta_id:cuenta, p_tipo:tipo, p_ref:ref, p_secs:s})
-      }).catch(function(){});
-    }catch(e){}
-  }
-  function leerPrevio(){
-    try{
-      fetch(SB+'/rest/v1/suite_actividad_tiempo?select=secs&cuenta_id=eq.'+encodeURIComponent(cuenta)+
-        '&tipo=eq.'+encodeURIComponent(tipo)+'&ref=eq.'+encodeURIComponent(ref),
-        {headers:{'apikey':AN,'Authorization':'Bearer '+AN}})
-      .then(function(r){ return r.ok?r.json():[]; })
-      .then(function(rows){ previo=(rows&&rows[0]&&rows[0].secs)||0; })
-      .catch(function(){});
-    }catch(e){}
-  }
-  function docAttach(doc){
-    if(!doc || doc.__suiteTiempo) return; doc.__suiteTiempo=1;
-    ['pointerdown','pointermove','mousemove','keydown','touchstart','wheel'].forEach(function(ev){
-      try{ doc.addEventListener(ev, actividad, {passive:true, capture:true}); }catch(e){}
-    });
-  }
-  function start(c, t, r){
-    if(on || !c || !r) return;
-    cuenta=String(c); tipo=String(t); ref=String(r); on=true;
-    docAttach(document);
-    document.addEventListener('visibilitychange', function(){
-      if(document.visibilityState!=='visible'){ corta(); flush(); } else { last=Date.now(); }
-    });
-    window.addEventListener('pagehide', function(){ corta(); flush(true); });
-    setInterval(flush, FLUSH_MS);
-    // fases del quiz en iframe (mismo origen): engancharse a su documento
-    setInterval(function(){
-      try{
-        var frs=document.querySelectorAll('iframe');
-        for(var i=0;i<frs.length;i++){ try{ var d=frs[i].contentDocument; if(d) docAttach(d); }catch(e2){} }
-      }catch(e){}
-    }, 2000);
-    leerPrevio();
-    last=Date.now();
-  }
-  function total(){ return Math.round(previo+enviado+acc); }
-  return { start:start, total:total, flush:flush, activo:function(){return on;} };
-})();
-</script>
-</head>
+</style></head>
 
 <body>
 
@@ -1242,24 +1165,24 @@ const GE_WORLDS=[
   { id:"m1", name:"Repaso de 3º", kicker:"1er trimestre · cimientos", desc:"Consolidación de lo aprendido en 3º: semicorcheas en s.ternaria (separando por número de semicorcheas por pulso), síncopas s.binaria con todas sus variantes, silencios de semicorchea en sus cuatro posiciones y ligaduras.", range:"L1–L43 · págs. 9–22",
     meterPool:["6/8","2/4"], basePulse:54, basePulseComp:46,
     cards:[
-      { id:"c1_1", atlasId:"1.1", name:"Semicorcheas s.ternaria · 2 por pulso", ref:"pág. 13", note:"Una sola corchea del pulso se divide en dos semicorcheas. Tres colocaciones posibles dentro del pulso.",
+      { id:"c1_1", atlasId:"1.1", name:"Semicorcheas s.ternaria · 2 por pulso", ref:"pág. 13", lec:"Lecciones 13–19", note:"Una sola corchea del pulso se divide en dos semicorcheas. Tres colocaciones posibles dentro del pulso.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","8","8"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16","16","8"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8","16","16"],"beams":[[0,1,2,3]]}
       ] },
-      { id:"c1_2", atlasId:"1.2", name:"Semicorcheas s.ternaria · 4 por pulso", ref:"pág. 13", note:"Dos corcheas del pulso se dividen en semicorcheas. Tres colocaciones del par de corcheas que queda.",
+      { id:"c1_2", atlasId:"1.2", name:"Semicorcheas s.ternaria · 4 por pulso", ref:"pág. 13", lec:"Lecciones 13–19", note:"Dos corcheas del pulso se dividen en semicorcheas. Tres colocaciones del par de corcheas que queda.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","16","16","8"],"beams":[[0,1,2,3,4]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","8","16","16"],"beams":[[0,1,2,3,4]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16","16","16","16"],"beams":[[0,1,2,3,4]]}
       ] },
-      { id:"c1_3", atlasId:"1.3", name:"Semicorchea + negra (s.ternaria)", ref:"pág. 16", note:"Dos semicorcheas + negra, y la inversa (negra + dos semicorcheas). El «idem II» de la página 16.",
+      { id:"c1_3", atlasId:"1.3", name:"Semicorchea + negra (s.ternaria)", ref:"pág. 16", lec:"Lecciones 20–24", note:"Dos semicorcheas + negra, y la inversa (negra + dos semicorcheas). El «idem II» de la página 16.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","q"],"beams":[[0,1]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["q","16","16"],"beams":[[1,2]]}
       ] },
-      { id:"c1_4", atlasId:"1.4", name:"Síncopas (s.binaria) · todas las variantes", ref:"pág. 18", note:"Síncopa simple (de pulso), síncopa breve (de fracción) y combinaciones con corchea + negra + dos semicorcheas y similares.",
+      { id:"c1_4", atlasId:"1.4", name:"Síncopas (s.binaria) · todas las variantes", ref:"pág. 18", lec:"Lecciones 25–28", note:"Síncopa simple (de pulso), síncopa breve (de fracción) y combinaciones con corchea + negra + dos semicorcheas y similares.",
         cells:[
         {"ts":"2/4","notes":["8","q","8"],"label":"simple"},
         {"ts":"2/4","notes":["16","8","16","16","8","16"],"beams":[[0,1,2],[3,4,5]],"label":"breve"},
@@ -1267,14 +1190,14 @@ const GE_WORLDS=[
         {"ts":"2/4","notes":["16","16","q","8"],"beams":[[0,1]]},
         {"ts":"2/4","notes":["16","16","q","16","16"],"beams":[[0,1],[3,4]]}
       ] },
-      { id:"c1_5", atlasId:"1.5", name:"Silencio de semicorchea (s.binaria)", ref:"pág. 20", note:"El silencio de semicorchea en sus cuatro posiciones dentro del pulso de cuatro semicorcheas.",
+      { id:"c1_5", atlasId:"1.5", name:"Silencio de semicorchea (s.binaria)", ref:"pág. 20", lec:"Lecciones 29–32", note:"El silencio de semicorchea en sus cuatro posiciones dentro del pulso de cuatro semicorcheas.",
         cells:[
         {"ts":"2/4","beats":1,"beat":4,"notes":["16r","16","16","16"],"beams":[[0,1,2,3]]},
         {"ts":"2/4","beats":1,"beat":4,"notes":["16","16r","16","16"],"beams":[[0,1,2,3]]},
         {"ts":"2/4","beats":1,"beat":4,"notes":["16","16","16r","16"],"beams":[[0,1,2,3]]},
         {"ts":"2/4","beats":1,"beat":4,"notes":["16","16","16","16r"],"beams":[[0,1,2,3]]}
       ] },
-      { id:"c1_6", atlasId:"1.6", name:"Ligaduras (s.binaria)", ref:"pág. 22", note:"La ligadura prolonga el sonido sobre el pulso o la fracción siguiente y genera síncopa. Conviene combinar muchos tipos.",
+      { id:"c1_6", atlasId:"1.6", name:"Ligaduras (s.binaria)", ref:"pág. 22", lec:"Lecciones 33–34", note:"La ligadura prolonga el sonido sobre el pulso o la fracción siguiente y genera síncopa. Conviene combinar muchos tipos.",
         cells:[
         {"ts":"2/4","notes":["8","8","8","8"],"beams":[[0,1],[2,3]],"ties":[[1,2]]},
         {"ts":"2/4","notes":["q","8","8"],"beams":[[1,2]],"ties":[[0,1]]},
@@ -1285,7 +1208,7 @@ const GE_WORLDS=[
   { id:"m2", name:"Compases de pulso blanca", kicker:"1er trimestre · unidad = blanca", desc:"La unidad de tiempo deja de ser la negra y pasa a ser la blanca. Mismo lenguaje rítmico, otra escala de valores. Cada carta recoge el repertorio de combinaciones rítmicas habitual del compás.", range:"págs. 23–25",
     meterPool:["2/2","3/2","4/2"], basePulse:60, basePulseComp:60,
     cards:[
-      { id:"c2_1", atlasId:"2.1", name:"Compás de 2/2  (¢)", ref:"pág. 23", note:"Compasillo binario. Vocabulario: blanca + negras, negra + dos corcheas, tresillo de negras, síncopa negra–blanca–negra, corcheas.",
+      { id:"c2_1", atlasId:"2.1", name:"Compás de 2/2  (¢)", ref:"pág. 23", lec:"Lecciones 35–37", note:"Compasillo binario. Vocabulario: blanca + negras, negra + dos corcheas, tresillo de negras, síncopa negra–blanca–negra, corcheas.",
         cells:[
         {"ts":"2/2","notes":["h","q","q"]},
         {"ts":"2/2","notes":["q","8","8","h"],"beams":[[1,2]]},
@@ -1294,7 +1217,7 @@ const GE_WORLDS=[
         {"ts":"2/2","notes":["q","h","8","8"],"beams":[[2,3]]},
         {"ts":"2/2","notes":["8","8","8","8","h"],"beams":[[0,1,2,3]]}
       ] },
-      { id:"c2_2", atlasId:"2.2", name:"Compás de 3/2", ref:"pág. 24", note:"Ternario de blanca. Blanca + negras, redonda + blanca, síncopa amplia y figuras con corcheas.",
+      { id:"c2_2", atlasId:"2.2", name:"Compás de 3/2", ref:"pág. 24", lec:"Lecciones 38–40", note:"Ternario de blanca. Blanca + negras, redonda + blanca, síncopa amplia y figuras con corcheas.",
         cells:[
         {"ts":"3/2","notes":["h","h","h"]},
         {"ts":"3/2","notes":["h","q","q","q","q"]},
@@ -1302,7 +1225,7 @@ const GE_WORLDS=[
         {"ts":"3/2","notes":["q","h","h","q"],"label":"síncopa doble · pulso blanca"},
         {"ts":"3/2","notes":["h","q","8","8","h"],"beams":[[2,3]]}
       ] },
-      { id:"c2_3", atlasId:"2.3", name:"Compás de 4/2", ref:"pág. 25", note:"Cuaternario de blanca. La redonda ocupa dos tiempos. Mismo repertorio ampliado a cuatro tiempos.",
+      { id:"c2_3", atlasId:"2.3", name:"Compás de 4/2", ref:"pág. 25", lec:"Lecciones 41–43", note:"Cuaternario de blanca. La redonda ocupa dos tiempos. Mismo repertorio ampliado a cuatro tiempos.",
         cells:[
         {"ts":"4/2","notes":["w","h","h"]},
         {"ts":"4/2","notes":["h","h","q","q","q","q"]},
@@ -1314,17 +1237,17 @@ const GE_WORLDS=[
   { id:"m3", name:"Corcheas punteadas en ternario", kicker:"1er–2º trimestre · galope ternario", desc:"El puntillo dentro del pulso ternario: corchea con puntillo + semicorchea en sus distintas colocaciones, cada una con su versión equivalente sustituyendo el puntillo por silencio de semicorchea.", range:"págs. 26–32",
     meterPool:["6/8"], basePulse:46, basePulseComp:46,
     cards:[
-      { id:"c3_1", atlasId:"3.1", name:"Corchea punteada I", ref:"pág. 26", note:"Corchea con puntillo + semicorchea + corchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
+      { id:"c3_1", atlasId:"3.1", name:"Corchea punteada I", ref:"pág. 26", lec:"Lecciones 44–47", note:"Corchea con puntillo + semicorchea + corchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8d","16","8"],"beams":[[0,1,2]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16r","16","8"],"beams":[[0,1,2,3]],"label":"con silencio"}
       ] },
-      { id:"c3_2", atlasId:"3.2", name:"Corchea punteada II", ref:"pág. 28", note:"Corchea + corchea con puntillo + semicorchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
+      { id:"c3_2", atlasId:"3.2", name:"Corchea punteada II", ref:"pág. 28", lec:"Lecciones 48–52", note:"Corchea + corchea con puntillo + semicorchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8d","16"],"beams":[[0,1,2]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8","16r","16"],"beams":[[0,1,2,3]],"label":"con silencio"}
       ] },
-      { id:"c3_3", atlasId:"3.3", name:"Corchea punteada III + semicorcheas", ref:"pág. 30", note:"Corchea con puntillo + semicorchea + dos semicorcheas. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
+      { id:"c3_3", atlasId:"3.3", name:"Corchea punteada III + semicorcheas", ref:"pág. 30", lec:"Lecciones 53–59", note:"Corchea con puntillo + semicorchea + dos semicorcheas. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8d","16","16","16"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16r","16","16","16"],"beams":[[0,1,2,3,4]],"label":"con silencio"}
@@ -1334,27 +1257,27 @@ const GE_WORLDS=[
   { id:"m4", name:"Grupos de valoración especial", kicker:"2º trimestre · contra el pulso", desc:"Grupos artificiales: tresillo (regular, irregular y con silencio), seisillo, dosillo y cuatrillo, tresillo de fracción y cinquillo. Cada carta indica la página del libro donde el ritmo aparece por primera vez.", range:"págs. 33–58",
     meterPool:["2/4","6/8"], basePulse:54, basePulseComp:46,
     cards:[
-      { id:"c4_1", atlasId:"4.1", name:"Tresillo", ref:"pág. 33", note:"Tresillo de corcheas: regular, con silencio interior e irregular (negra + corchea dentro del tresillo).",
+      { id:"c4_1", atlasId:"4.1", name:"Tresillo", ref:"pág. 33", lec:"Lecciones 60–67", note:"Tresillo de corcheas: regular, con silencio interior e irregular (negra + corchea dentro del tresillo).",
         cells:[
         {"ts":"2/4","notes":["8","8","8","q"],"beams":[[0,1,2]],"tuplets":[{"idx":[0,1,2],"num":3,"occ":2}]},
         {"ts":"2/4","notes":["8","8r","8","q"],"beams":[[0,1,2]],"tuplets":[{"idx":[0,1,2],"num":3,"occ":2}],"label":"con silencio"},
         {"ts":"2/4","notes":["q","8","q"],"tuplets":[{"idx":[0,1],"num":3,"occ":2}],"label":"irregular"}
       ] },
-      { id:"c4_2", atlasId:"4.2", name:"Seisillo", ref:"pág. 36", note:"Seis semicorcheas en el tiempo de un pulso. Se rotula sólo con el «6», sin la proporción 6:4.",
+      { id:"c4_2", atlasId:"4.2", name:"Seisillo", ref:"pág. 36", lec:"Lecciones 68–74", note:"Seis semicorcheas en el tiempo de un pulso. Se rotula sólo con el «6», sin la proporción 6:4.",
         cells:[
         {"ts":"2/4","notes":["16","16","16","16","16","16","q"],"beams":[[0,1,2,3,4,5]],"tuplets":[{"idx":[0,1,2,3,4,5],"num":6,"occ":4}]}
       ] },
-      { id:"c4_3", atlasId:"4.3", name:"Dosillo y cuatrillo", ref:"pág. 39", note:"En s.ternaria: el dosillo (2 en el espacio de 3) y el cuatrillo (4 en el espacio de 3).",
+      { id:"c4_3", atlasId:"4.3", name:"Dosillo y cuatrillo", ref:"pág. 39", lec:"Lecciones 75–82", note:"En s.ternaria: el dosillo (2 en el espacio de 3) y el cuatrillo (4 en el espacio de 3).",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8"],"beams":[[0,1]],"tuplets":[{"idx":[0,1],"num":2,"occ":3}],"label":"dosillo"},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8","8","8"],"beams":[[0,1,2,3]],"tuplets":[{"idx":[0,1,2,3],"num":4,"occ":3}],"label":"cuatrillo"}
       ] },
-      { id:"c4_4", atlasId:"4.4", name:"Tresillo de fracción", ref:"pág. 42", note:"Tresillo de semicorcheas dentro de media parte. Dos variantes según ocupe la primera o la segunda mitad del pulso.",
+      { id:"c4_4", atlasId:"4.4", name:"Tresillo de fracción", ref:"pág. 42", lec:"Lecciones 83–92", note:"Tresillo de semicorcheas dentro de media parte. Dos variantes según ocupe la primera o la segunda mitad del pulso.",
         cells:[
         {"ts":"2/4","notes":["16","16","16","8","q"],"beams":[[0,1,2,3]],"tuplets":[{"idx":[0,1,2],"num":3,"occ":2}]},
         {"ts":"2/4","notes":["8","16","16","16","q"],"beams":[[0,1,2,3]],"tuplets":[{"idx":[1,2,3],"num":3,"occ":2}]}
       ] },
-      { id:"c4_5", atlasId:"4.5", name:"Cinquillo", ref:"pág. 55", note:"Cinco semicorcheas en el tiempo de un pulso.",
+      { id:"c4_5", atlasId:"4.5", name:"Cinquillo", ref:"pág. 55", lec:"Lecciones 114–125", note:"Cinco semicorcheas en el tiempo de un pulso.",
         cells:[
         {"ts":"2/4","notes":["16","16","16","16","16","q"],"beams":[[0,1,2,3,4]],"tuplets":[{"idx":[0,1,2,3,4],"num":5,"occ":4}]}
       ] },
@@ -1405,22 +1328,22 @@ const GE_WORLDS=[
   { id:"m6", name:"Últimos pasos", kicker:"3er trimestre · últimos pasos", desc:"Los tres frentes finales del curso: las fusas (valor menor, tempo más lento en el motor), el compás dispar de 5/8 y la lectura en clave de Do.", range:"págs. 46–86",
     meterPool:["2/4","5/8","4/4"], basePulse:50, basePulseComp:46,
     cards:[
-      { id:"c6_1", atlasId:"6.1", name:"Fusas", ref:"pág. 46", note:"Ocho fusas por pulso. ⚙ Motor: en este mundo el tempo de generación debe bajar respecto al resto.", slow:true, dense:true,
+      { id:"c6_1", atlasId:"6.1", name:"Fusas", ref:"pág. 46", lec:"Lecciones 93–113", note:"Ocho fusas por pulso. ⚙ Motor: en este mundo el tempo de generación debe bajar respecto al resto.", slow:true, dense:true,
         cells:[
         {"ts":"2/4","notes":["32","32","32","32","32","32","32","32","q"],"beams":[[0,1,2,3,4,5,6,7]]},
         {"ts":"2/4","notes":["8","32","32","32","32","q"],"beams":[[0,1,2,3,4]],"label":"corchea + 4 fusas"},
         {"ts":"2/4","notes":["16","32","32","16","32","32","q"],"beams":[[0,1,2,3,4,5]],"label":"semicorchea + 2 fusas"}
       ] },
-      { id:"c6_2", atlasId:"6.2", name:"Dispar · compás de 5/8", ref:"pág. 65", note:"Compás de pulso irregular. Las dos agrupaciones: 3+2 y 2+3.", disp:true,
+      { id:"c6_2", atlasId:"6.2", name:"Dispar · compás de 5/8", ref:"pág. 65", lec:"Lecciones 139–153", note:"Compás de pulso irregular. Las dos agrupaciones: 3+2 y 2+3.", disp:true,
         cells:[
         {"ts":"5/8","notes":["8","8","8","8","8"],"beams":[[0,1,2],[3,4]],"label":"3+2"},
         {"ts":"5/8","notes":["8","8","8","8","8"],"beams":[[0,1],[2,3,4]],"label":"2+3"}
       ] },
-      { id:"c6_e", atlasId:"6.3", name:"Cambios de compás · figura = figura", ref:"págs. 62–74",
+      { id:"c6_e", atlasId:"6.3", name:"Cambios de compás · figura = figura", ref:"págs. 62–74", lec:"Lecciones 133–138 y 154–163",
         note:"La figura se mantiene constante al cambiar de compás (la corchea vale lo mismo); el que cambia es el PULSO. Presentación y quiz propios; la generación de lecturas llegará con el mundo de cambios de compás.",
         introOnly:true, customQuiz:true, equivEx:true, exText:"♪ = ♪", exSub:"figura = figura",
         cells:[] },
-      { id:"c6_3", atlasId:"6.4", name:"Clave de Do", ref:"págs. 83 y 86", note:"Lectura en clave de Do en 3ª (contralto) y 4ª línea (tenor). Sólo negras, corcheas, blancas y silencios: lecturas muy sencillas.", clave:true,
+      { id:"c6_3", atlasId:"6.4", name:"Clave de Do", ref:"págs. 83 y 86", lec:"Lecciones 180–203", note:"Lectura en clave de Do en 3ª (contralto) y 4ª línea (tenor). Sólo negras, corcheas, blancas y silencios: lecturas muy sencillas.", clave:true,
         cells:[
         {"clef":"alto","ts":"4/4","notes":[{"d":"h","keys":["c/4"]},{"d":"q","keys":["d/4"]},{"d":"q","keys":["e/4"]}],"label":"Do en 3ª"},
         {"clef":"tenor","ts":"4/4","notes":[{"d":"q","keys":["c/4"]},{"d":"8","keys":["d/4"]},{"d":"8","keys":["e/4"]},{"d":"q","keys":["f/4"]},{"d":"q","rest":true}],"beams":[[1,2]],"label":"Do en 4ª"}
@@ -1430,13 +1353,13 @@ const GE_WORLDS=[
   { id:"m7", name:"Cambios de compás", kicker:"mundo especial · generador", desc:"Mundo especial pendiente de desarrollo: un generador configurable de ejercicios resumen que combina ritmos ya trabajados con dos modos de cambio de compás. La estructura definitiva se definirá más adelante.", range:"págs. 59–82 (resumen de equivalencias)",
     meterPool:["2/4","6/8","3/4"], basePulse:50, basePulseComp:46, special:"combine",
     cards:[
-      { id:"cE_a", atlasId:"E.a", name:"Cambio · pulso = pulso", ref:"págs. 70–82", note:"El pulso se mantiene constante al cambiar de compás (p. ej. negra en 2/4 = negra con puntillo en 6/8).", equivCard:true,
+      { id:"cE_a", atlasId:"E.a", name:"Cambio · pulso = pulso", ref:"págs. 70–82", lec:"Lecciones 164–179", note:"El pulso se mantiene constante al cambiar de compás (p. ej. negra en 2/4 = negra con puntillo en 6/8).", equivCard:true,
         cells:[
         {"ts":"2/4","notes":["q","q"]},
         {"equiv":true},
         {"ts":"6/8","notes":["8","8","8","8","8","8"],"beams":[[0,1,2],[3,4,5]]}
       ] },
-      { id:"cE_b", atlasId:"E.b", name:"Cambio · figura = figura", ref:"págs. 62–74", note:"La figura se mantiene constante al cambiar de compás (la corchea vale lo mismo en 6/8 y en 3/4); cambia el pulso.", equivCard:true,
+      { id:"cE_b", atlasId:"E.b", name:"Cambio · figura = figura", ref:"págs. 62–74", lec:"Lecciones 133–138 y 154–163", note:"La figura se mantiene constante al cambiar de compás (la corchea vale lo mismo en 6/8 y en 3/4); cambia el pulso.", equivCard:true,
         cells:[
         {"ts":"6/8","notes":["8","8","8","8","8","8"],"beams":[[0,1,2],[3,4,5]]},
         {"equiv":true},
@@ -4224,7 +4147,7 @@ function renderSetupCards(){
       const on=cards.includes(c.id);
       const el=document.createElement('div');
       el.className='setup-card'+(on?' on':'');
-      el.innerHTML=`<div class="sc-head"><span class="c-num">${c.atlasId||''}</span><span class="c-n">${c.name}</span></div>`+
+      el.innerHTML=`<div class="sc-head"><span class="c-num">${c.atlasId||''}</span>${c.lec?`<span class="c-lec">${c.lec}</span>`:''}<span class="c-n">${c.name}</span></div>`+
                    `<div class="sc-ex" aria-hidden="true"></div>`;
       // botón INTRO (presentación en clase) — solo si la carta tiene intro definida
       if(window.CARD_INTROS && window.CARD_INTROS[c.atlasId]){
@@ -5559,8 +5482,6 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
 
   const qs=new URLSearchParams(location.search);
   const CARTA=qs.get('quizCarta'), ENVIO=qs.get('envio'), CUENTA=qs.get('cuenta');
-  // TIEMPO DE ACTIVIDAD (15-jul): rastreo del trabajo real en el quiz de tareas
-  try{ if(ENVIO && CUENTA && window.SuiteTiempo) window.SuiteTiempo.start(CUENTA, 'quiz', ENVIO); }catch(e){}
   let _sb=null, _enviado=false, _enviando=false;
 
   function cargarSupabase(){
@@ -5584,11 +5505,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     const mundos=(typeof GE_WORLDS!=='undefined' && GE_WORLDS) || [];
     for(const w of mundos){
       for(const c of (w.cards||[])){
-        if(c.atlasId!==atlasId) continue;
-        // 15-jul-2026: las cartas con quiz PROPIO (6.3 · customQuiz) también se
-        // lanzan desde la notificación del portal (launchEquivQuiz).
-        if(c.customQuiz) return {c,w,custom:true};
-        if(c.cells && c.cells.length && !c.equivCard && !c.base && !c.pending) return {c,w};
+        if(c.atlasId===atlasId && c.cells && c.cells.length && !c.equivCard && !c.base && !c.pending) return {c,w};
       }
     }
     return null;
@@ -5617,7 +5534,6 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   async function completar(){
     if(!ENVIO || !CUENTA || _enviado || _enviando) return;
     _enviando=true;
-    try{ if(window.SuiteTiempo) window.SuiteTiempo.flush(); }catch(e){}   // tiempo al día antes de avisar
     banner('Avisando a Iago de que has terminado…');
     const c=await sb();
     if(!c){ _enviando=false; banner('⚠ No se pudo avisar (sin conexión). <button id="suiteQuizRetry" style="margin-left:8px;border:0;border-radius:8px;padding:5px 12px;font-weight:800;cursor:pointer;background:#ff5c80;color:#2b0812">↻ Reintentar</button>','err'); return; }
@@ -5659,10 +5575,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       }catch(e){ console.warn('[suite-quiz] lecciones', e); }
     }
     // lanza el quiz directamente sobre lo que haya (overlay a pantalla completa)
-    setTimeout(()=>{ try{
-      if(hit.custom && window.launchEquivQuiz) window.launchEquivQuiz(hit.c);
-      else if(window.launchCardQuiz) window.launchCardQuiz(hit.c, hit.w.id);
-    }catch(e){ console.error('[suite-quiz] lanzar', e); } }, 120);
+    setTimeout(()=>{ try{ if(window.launchCardQuiz) window.launchCardQuiz(hit.c, hit.w.id); }catch(e){ console.error('[suite-quiz] lanzar', e); } }, 120);
   }
 
   window.SuiteQuizRitmo={ completar: completar };
@@ -7696,9 +7609,6 @@ function phase3(host){
     const b=el('button','ibtn action','Cerrar'); b.onclick=closeQuiz;
     const cc=el('div','igen-controls'); cc.appendChild(b); q.appendChild(cc);
     qDone[2]=true; paintSteps();
-    // 15-jul-2026: si el quiz llegó desde la campana del portal (?envio&cuenta),
-    // avisar a Iago igual que hacen los quiz estándar de la suite.
-    try{ if(window.SuiteQuizRitmo && window.SuiteQuizRitmo.completar) window.SuiteQuizRitmo.completar(); }catch(e){}
   }
   mkTrial();
   return function(){ if(seq)seq.stop(); if(tapHandler)document.removeEventListener('keydown',tapHandler); };
