@@ -1319,15 +1319,15 @@ const GE_WORLDS=[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8d","16","8"],"beams":[[0,1,2]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16r","16","8"],"beams":[[0,1,2,3]],"label":"con silencio"}
       ] },
-      { id:"c3_2", atlasId:"3.2", name:"Corchea punteada II", ref:"pág. 28", note:"Corchea + corchea con puntillo + semicorchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
-        cells:[
-        {"ts":"6/8","beats":3,"beat":8,"notes":["8","8d","16"],"beams":[[0,1,2]]},
-        {"ts":"6/8","beats":3,"beat":8,"notes":["8","8","16r","16"],"beams":[[0,1,2,3]],"label":"con silencio"}
-      ] },
-      { id:"c3_3", atlasId:"3.3", name:"Corchea punteada III + semicorcheas", ref:"pág. 30", note:"Corchea con puntillo + semicorchea + dos semicorcheas. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
+      { id:"c3_2", atlasId:"3.2", name:"Corchea punteada III + 3 semicorcheas", ref:"pág. 30", note:"Corchea con puntillo + semicorchea + dos semicorcheas. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8d","16","16","16"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16r","16","16","16"],"beams":[[0,1,2,3,4]],"label":"con silencio"}
+      ] },
+      { id:"c3_3", atlasId:"3.3", name:"Corchea punteada III", ref:"pág. 28", note:"Corchea + corchea con puntillo + semicorchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
+        cells:[
+        {"ts":"6/8","beats":3,"beat":8,"notes":["8","8d","16"],"beams":[[0,1,2]]},
+        {"ts":"6/8","beats":3,"beat":8,"notes":["8","8","16r","16"],"beams":[[0,1,2,3]],"label":"con silencio"}
       ] },
     ]
   },
@@ -1391,14 +1391,14 @@ const GE_WORLDS=[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","16","8","16"],"beams":[[0,1,2,3,4]],"label":"3+2+1"},
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","8","16","16","16"],"beams":[[0,1,2,3,4]],"label":"1+2+3"}
       ] },
-      { id:"c5_4", atlasId:"5.4", name:"Síncopa doble en compás compuesto", ref:"síntesis", note:"Semicorchea + corchea + corchea + semicorchea (1+2+2+1). Las dos corcheas centrales quedan a contratiempo.",
-        cells:[
-        {"ts":"6/8","beats":3,"beat":8,"notes":["16","8","8","16"],"beams":[[0,1,2,3]]}
-      ] },
-      { id:"c5_5", atlasId:"5.5", name:"Bonus final", ref:"síntesis", note:"Alternancias de corchea y semicorchea dentro del pulso, en sus dos sentidos (2+1+2+1 y 1+2+1+2).",
+      { id:"c5_4", atlasId:"5.4", name:"Bonus", ref:"síntesis", note:"Alternancias de corchea y semicorchea dentro del pulso, en sus dos sentidos (2+1+2+1 y 1+2+1+2).",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16","8","16"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","8","16","8"],"beams":[[0,1,2,3]]}
+      ] },
+      { id:"c5_5", atlasId:"5.5", name:"Síncopa doble en compás compuesto", ref:"síntesis", note:"Semicorchea + corchea + corchea + semicorchea (1+2+2+1). Las dos corcheas centrales quedan a contratiempo.",
+        cells:[
+        {"ts":"6/8","beats":3,"beat":8,"notes":["16","8","8","16"],"beams":[[0,1,2,3]]}
       ] },
     ]
   },
@@ -7705,43 +7705,5 @@ function phase3(host){
 }
 })();
 
-</script>
-<script>
-/* ============================================================
-   «VER EXPLICACIÓN» desde el portal del alumno (Iago, jul-2026)
-   ?introCarta=X.X → localiza la carta por atlasId y abre su INTRO
-   a pantalla completa (para repasar lo visto en clase o si faltó).
-   Sin intro todavía → aviso amable. No cambia nada del uso normal.
-   ============================================================ */
-(function(){
-  try{
-    var qs=new URLSearchParams(location.search);
-    var id=qs.get('introCarta'); if(!id) return;
-    function buscar(){
-      var Ws=(typeof GP1_WORLDS!=='undefined'&&GP1_WORLDS)||(typeof GE_WORLDS!=='undefined'&&GE_WORLDS)||[];
-      for(var i=0;i<Ws.length;i++){ var cs=Ws[i].cards||[];
-        for(var k=0;k<cs.length;k++){ if(cs[k].atlasId===id) return cs[k]; } }
-      return null;
-    }
-    function aviso(txt){
-      var d=document.createElement('div');
-      d.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99999;background:rgba(30,24,12,.96);border:1.5px solid #b8860b;color:#ffd766;padding:13px 22px;border-radius:14px;font:700 14px/1.5 "Helvetica Neue",Arial,sans-serif;max-width:88vw;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.45)';
-      d.textContent=txt; document.body.appendChild(d);
-      setTimeout(function(){ try{d.remove();}catch(e){} },8000);
-    }
-    function arrancar(){
-      var card=buscar();
-      if(card && window.CARD_INTROS && window.CARD_INTROS[card.atlasId] && window.launchCardIntro){
-        setTimeout(function(){ try{ window.launchCardIntro(card); }catch(e){ console.warn('[introCarta]',e); } },160);
-      } else if(card){
-        setTimeout(function(){ aviso('La carta '+id+' todavía no tiene INTRO aquí: pídesela a Iago en clase 😉'); },500);
-      } else {
-        setTimeout(function(){ aviso('No encuentro la carta '+id+' en esta app.'); },500);
-      }
-    }
-    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',arrancar);
-    else arrancar();
-  }catch(e){}
-})();
 </script>
 </body></html>
