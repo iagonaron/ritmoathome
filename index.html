@@ -561,6 +561,7 @@ footer .lock{color:var(--gold1);}
   background:linear-gradient(135deg,var(--gold-soft),var(--gold2));border-radius:7px;padding:3px 8px;
   box-shadow:0 0 0 0 rgba(34,201,138,.45);animation:istarGlow 2.6s ease-in-out infinite;transition:transform .14s;}
 .card-istar:hover{transform:scale(1.1);}
+.setup-card .c-lecs{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);margin:-2px 0 0 1px;}
 @keyframes istarGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,201,138,.0);}50%{box-shadow:0 0 14px 2px rgba(34,201,138,.4);}}
 /* el título de la carta SIEMPRE en su propia línea (misma maqueta en todas las cartas) */
 .setup-card .c-n{flex:1 0 100%;margin-top:2px;}
@@ -1242,24 +1243,24 @@ const GE_WORLDS=[
   { id:"m1", name:"Repaso de 3º", kicker:"1er trimestre · cimientos", desc:"Consolidación de lo aprendido en 3º: semicorcheas en s.ternaria (separando por número de semicorcheas por pulso), síncopas s.binaria con todas sus variantes, silencios de semicorchea en sus cuatro posiciones y ligaduras.", range:"L1–L43 · págs. 9–22",
     meterPool:["6/8","2/4"], basePulse:54, basePulseComp:46,
     cards:[
-      { id:"c1_1", atlasId:"1.1", name:"Semicorcheas s.ternaria · 2 por pulso", ref:"pág. 13", note:"Una sola corchea del pulso se divide en dos semicorcheas. Tres colocaciones posibles dentro del pulso.",
+      { id:"c1_1", atlasId:"1.1", name:"Semicorcheas s.ternaria · 2 por pulso", lecs:"13–19", ref:"pág. 13", note:"Una sola corchea del pulso se divide en dos semicorcheas. Tres colocaciones posibles dentro del pulso.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","8","8"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16","16","8"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8","16","16"],"beams":[[0,1,2,3]]}
       ] },
-      { id:"c1_2", atlasId:"1.2", name:"Semicorcheas s.ternaria · 4 por pulso", ref:"pág. 13", note:"Dos corcheas del pulso se dividen en semicorcheas. Tres colocaciones del par de corcheas que queda.",
+      { id:"c1_2", atlasId:"1.2", name:"Semicorcheas s.ternaria · 4 por pulso", lecs:"13–19", ref:"pág. 13", note:"Dos corcheas del pulso se dividen en semicorcheas. Tres colocaciones del par de corcheas que queda.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","16","16","8"],"beams":[[0,1,2,3,4]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","8","16","16"],"beams":[[0,1,2,3,4]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16","16","16","16"],"beams":[[0,1,2,3,4]]}
       ] },
-      { id:"c1_3", atlasId:"1.3", name:"Semicorchea + negra (s.ternaria)", ref:"pág. 16", note:"Dos semicorcheas + negra, y la inversa (negra + dos semicorcheas). El «idem II» de la página 16.",
+      { id:"c1_3", atlasId:"1.3", name:"Semicorchea + negra (s.ternaria)", lecs:"20–24", ref:"pág. 16", note:"Dos semicorcheas + negra, y la inversa (negra + dos semicorcheas). El «idem II» de la página 16.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","q"],"beams":[[0,1]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["q","16","16"],"beams":[[1,2]]}
       ] },
-      { id:"c1_4", atlasId:"1.4", name:"Síncopas (s.binaria) · todas las variantes", ref:"pág. 18", note:"Síncopa simple (de pulso), síncopa breve (de fracción) y combinaciones con corchea + negra + dos semicorcheas y similares.",
+      { id:"c1_4", atlasId:"1.4", name:"Síncopas (s.binaria) · todas las variantes", lecs:"25–28", ref:"pág. 18", note:"Síncopa simple (de pulso), síncopa breve (de fracción) y combinaciones con corchea + negra + dos semicorcheas y similares.",
         cells:[
         {"ts":"2/4","notes":["8","q","8"],"label":"simple"},
         {"ts":"2/4","notes":["16","8","16","16","8","16"],"beams":[[0,1,2],[3,4,5]],"label":"breve"},
@@ -1267,14 +1268,14 @@ const GE_WORLDS=[
         {"ts":"2/4","notes":["16","16","q","8"],"beams":[[0,1]]},
         {"ts":"2/4","notes":["16","16","q","16","16"],"beams":[[0,1],[3,4]]}
       ] },
-      { id:"c1_5", atlasId:"1.5", name:"Silencio de semicorchea (s.binaria)", ref:"pág. 20", note:"El silencio de semicorchea en sus cuatro posiciones dentro del pulso de cuatro semicorcheas.",
+      { id:"c1_5", atlasId:"1.5", name:"Silencio de semicorchea (s.binaria)", lecs:"29–32", ref:"pág. 20", note:"El silencio de semicorchea en sus cuatro posiciones dentro del pulso de cuatro semicorcheas.",
         cells:[
         {"ts":"2/4","beats":1,"beat":4,"notes":["16r","16","16","16"],"beams":[[0,1,2,3]]},
         {"ts":"2/4","beats":1,"beat":4,"notes":["16","16r","16","16"],"beams":[[0,1,2,3]]},
         {"ts":"2/4","beats":1,"beat":4,"notes":["16","16","16r","16"],"beams":[[0,1,2,3]]},
         {"ts":"2/4","beats":1,"beat":4,"notes":["16","16","16","16r"],"beams":[[0,1,2,3]]}
       ] },
-      { id:"c1_6", atlasId:"1.6", name:"Ligaduras (s.binaria)", ref:"pág. 22", note:"La ligadura prolonga el sonido sobre el pulso o la fracción siguiente y genera síncopa. Conviene combinar muchos tipos.",
+      { id:"c1_6", atlasId:"1.6", name:"Ligaduras (s.binaria)", lecs:"33–34", ref:"pág. 22", note:"La ligadura prolonga el sonido sobre el pulso o la fracción siguiente y genera síncopa. Conviene combinar muchos tipos.",
         cells:[
         {"ts":"2/4","notes":["8","8","8","8"],"beams":[[0,1],[2,3]],"ties":[[1,2]]},
         {"ts":"2/4","notes":["q","8","8"],"beams":[[1,2]],"ties":[[0,1]]},
@@ -1285,7 +1286,7 @@ const GE_WORLDS=[
   { id:"m2", name:"Compases de pulso blanca", kicker:"1er trimestre · unidad = blanca", desc:"La unidad de tiempo deja de ser la negra y pasa a ser la blanca. Mismo lenguaje rítmico, otra escala de valores. Cada carta recoge el repertorio de combinaciones rítmicas habitual del compás.", range:"págs. 23–25",
     meterPool:["2/2","3/2","4/2"], basePulse:60, basePulseComp:60,
     cards:[
-      { id:"c2_1", atlasId:"2.1", name:"Compás de 2/2  (¢)", ref:"pág. 23", note:"Compasillo binario. Vocabulario: blanca + negras, negra + dos corcheas, tresillo de negras, síncopa negra–blanca–negra, corcheas.",
+      { id:"c2_1", atlasId:"2.1", name:"Compás de 2/2  (¢)", lecs:"35–37", ref:"pág. 23", note:"Compasillo binario. Vocabulario: blanca + negras, negra + dos corcheas, tresillo de negras, síncopa negra–blanca–negra, corcheas.",
         cells:[
         {"ts":"2/2","notes":["h","q","q"]},
         {"ts":"2/2","notes":["q","8","8","h"],"beams":[[1,2]]},
@@ -1294,7 +1295,7 @@ const GE_WORLDS=[
         {"ts":"2/2","notes":["q","h","8","8"],"beams":[[2,3]]},
         {"ts":"2/2","notes":["8","8","8","8","h"],"beams":[[0,1,2,3]]}
       ] },
-      { id:"c2_2", atlasId:"2.2", name:"Compás de 3/2", ref:"pág. 24", note:"Ternario de blanca. Blanca + negras, redonda + blanca, síncopa amplia y figuras con corcheas.",
+      { id:"c2_2", atlasId:"2.2", name:"Compás de 3/2", lecs:"38–40", ref:"pág. 24", note:"Ternario de blanca. Blanca + negras, redonda + blanca, síncopa amplia y figuras con corcheas.",
         cells:[
         {"ts":"3/2","notes":["h","h","h"]},
         {"ts":"3/2","notes":["h","q","q","q","q"]},
@@ -1302,7 +1303,7 @@ const GE_WORLDS=[
         {"ts":"3/2","notes":["q","h","h","q"],"label":"síncopa doble · pulso blanca"},
         {"ts":"3/2","notes":["h","q","8","8","h"],"beams":[[2,3]]}
       ] },
-      { id:"c2_3", atlasId:"2.3", name:"Compás de 4/2", ref:"pág. 25", note:"Cuaternario de blanca. La redonda ocupa dos tiempos. Mismo repertorio ampliado a cuatro tiempos.",
+      { id:"c2_3", atlasId:"2.3", name:"Compás de 4/2", lecs:"41–43", ref:"pág. 25", note:"Cuaternario de blanca. La redonda ocupa dos tiempos. Mismo repertorio ampliado a cuatro tiempos.",
         cells:[
         {"ts":"4/2","notes":["w","h","h"]},
         {"ts":"4/2","notes":["h","h","q","q","q","q"]},
@@ -1314,17 +1315,17 @@ const GE_WORLDS=[
   { id:"m3", name:"Corcheas punteadas en ternario", kicker:"1er–2º trimestre · galope ternario", desc:"El puntillo dentro del pulso ternario: corchea con puntillo + semicorchea en sus distintas colocaciones, cada una con su versión equivalente sustituyendo el puntillo por silencio de semicorchea.", range:"págs. 26–32",
     meterPool:["6/8"], basePulse:46, basePulseComp:46,
     cards:[
-      { id:"c3_1", atlasId:"3.1", name:"Corchea punteada I", ref:"pág. 26", note:"Corchea con puntillo + semicorchea + corchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
+      { id:"c3_1", atlasId:"3.1", name:"Corchea punteada I", lecs:"44–47", ref:"pág. 26", note:"Corchea con puntillo + semicorchea + corchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8d","16","8"],"beams":[[0,1,2]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16r","16","8"],"beams":[[0,1,2,3]],"label":"con silencio"}
       ] },
-      { id:"c3_2", atlasId:"3.2", name:"Corchea punteada III + 3 semicorcheas", ref:"pág. 30", note:"Corchea con puntillo + semicorchea + dos semicorcheas. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
+      { id:"c3_2", atlasId:"3.2", name:"Corchea punteada II + 3 semicorcheas", lecs:"48–52", ref:"pág. 30", note:"Corchea con puntillo + semicorchea + dos semicorcheas. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8d","16","16","16"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16r","16","16","16"],"beams":[[0,1,2,3,4]],"label":"con silencio"}
       ] },
-      { id:"c3_3", atlasId:"3.3", name:"Corchea punteada III", ref:"pág. 28", note:"Corchea + corchea con puntillo + semicorchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
+      { id:"c3_3", atlasId:"3.3", name:"Corchea punteada III", lecs:"53–59", ref:"pág. 28", note:"Corchea + corchea con puntillo + semicorchea. Segunda célula: la versión con silencio de semicorchea en lugar del puntillo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8d","16"],"beams":[[0,1,2]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8","16r","16"],"beams":[[0,1,2,3]],"label":"con silencio"}
@@ -1334,27 +1335,27 @@ const GE_WORLDS=[
   { id:"m4", name:"Grupos de valoración especial", kicker:"2º trimestre · contra el pulso", desc:"Grupos artificiales: tresillo (regular, irregular y con silencio), seisillo, dosillo y cuatrillo, tresillo de fracción y cinquillo. Cada carta indica la página del libro donde el ritmo aparece por primera vez.", range:"págs. 33–58",
     meterPool:["2/4","6/8"], basePulse:54, basePulseComp:46,
     cards:[
-      { id:"c4_1", atlasId:"4.1", name:"Tresillo", ref:"pág. 33", note:"Tresillo de corcheas: regular, con silencio interior e irregular (negra + corchea dentro del tresillo).",
+      { id:"c4_1", atlasId:"4.1", name:"Tresillo", lecs:"60–67", ref:"pág. 33", note:"Tresillo de corcheas: regular, con silencio interior e irregular (negra + corchea dentro del tresillo).",
         cells:[
         {"ts":"2/4","notes":["8","8","8","q"],"beams":[[0,1,2]],"tuplets":[{"idx":[0,1,2],"num":3,"occ":2}]},
         {"ts":"2/4","notes":["8","8r","8","q"],"beams":[[0,1,2]],"tuplets":[{"idx":[0,1,2],"num":3,"occ":2}],"label":"con silencio"},
         {"ts":"2/4","notes":["q","8","q"],"tuplets":[{"idx":[0,1],"num":3,"occ":2}],"label":"irregular"}
       ] },
-      { id:"c4_2", atlasId:"4.2", name:"Seisillo", ref:"pág. 36", note:"Seis semicorcheas en el tiempo de un pulso. Se rotula sólo con el «6», sin la proporción 6:4.",
+      { id:"c4_2", atlasId:"4.2", name:"Seisillo", lecs:"68–74", ref:"pág. 36", note:"Seis semicorcheas en el tiempo de un pulso. Se rotula sólo con el «6», sin la proporción 6:4.",
         cells:[
         {"ts":"2/4","notes":["16","16","16","16","16","16","q"],"beams":[[0,1,2,3,4,5]],"tuplets":[{"idx":[0,1,2,3,4,5],"num":6,"occ":4}]}
       ] },
-      { id:"c4_3", atlasId:"4.3", name:"Dosillo y cuatrillo", ref:"pág. 39", note:"En s.ternaria: el dosillo (2 en el espacio de 3) y el cuatrillo (4 en el espacio de 3).",
+      { id:"c4_3", atlasId:"4.3", name:"Dosillo y cuatrillo", lecs:"75–82", ref:"pág. 39", note:"En s.ternaria: el dosillo (2 en el espacio de 3) y el cuatrillo (4 en el espacio de 3).",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8"],"beams":[[0,1]],"tuplets":[{"idx":[0,1],"num":2,"occ":3}],"label":"dosillo"},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8","8","8"],"beams":[[0,1,2,3]],"tuplets":[{"idx":[0,1,2,3],"num":4,"occ":3}],"label":"cuatrillo"}
       ] },
-      { id:"c4_4", atlasId:"4.4", name:"Tresillo de fracción", ref:"pág. 42", note:"Tresillo de semicorcheas dentro de media parte. Dos variantes según ocupe la primera o la segunda mitad del pulso.",
+      { id:"c4_4", atlasId:"4.4", name:"Tresillo de fracción", lecs:"83–92", ref:"pág. 42", note:"Tresillo de semicorcheas dentro de media parte. Dos variantes según ocupe la primera o la segunda mitad del pulso.",
         cells:[
         {"ts":"2/4","notes":["16","16","16","8","q"],"beams":[[0,1,2,3]],"tuplets":[{"idx":[0,1,2],"num":3,"occ":2}]},
         {"ts":"2/4","notes":["8","16","16","16","q"],"beams":[[0,1,2,3]],"tuplets":[{"idx":[1,2,3],"num":3,"occ":2}]}
       ] },
-      { id:"c4_5", atlasId:"4.5", name:"Cinquillo", ref:"pág. 55", note:"Cinco semicorcheas en el tiempo de un pulso.",
+      { id:"c4_5", atlasId:"4.5", name:"Cinquillo", lecs:"114–125", ref:"pág. 55", note:"Cinco semicorcheas en el tiempo de un pulso.",
         cells:[
         {"ts":"2/4","notes":["16","16","16","16","16","q"],"beams":[[0,1,2,3,4]],"tuplets":[{"idx":[0,1,2,3,4],"num":5,"occ":4}]}
       ] },
@@ -1363,7 +1364,7 @@ const GE_WORLDS=[
   { id:"m5", name:"Mix de 6 semicorcheas", kicker:"2º trimestre · el pulso lleno", desc:"El pulso ternario completamente subdividido en seis semicorcheas, y todo lo que se puede hacer con él: repaso previo, silencios, agrupaciones, síncopa doble y combinaciones de bonus.", range:"págs. 13–58 (síntesis)",
     meterPool:["6/8"], basePulse:46, basePulseComp:46,
     cards:[
-      { id:"c5_1", atlasId:"5.1", name:"Repaso hasta ahora", ref:"síntesis · cartas 1.1–1.3 + mundo III", note:"Recoge todo lo trabajado en el pulso ternario: semicorcheas (2 y 4 por pulso, semicorchea + negra) y corcheas punteadas. Es el vocabulario completo del que parte el mundo.",
+      { id:"c5_1", atlasId:"5.1", name:"Repaso hasta ahora", lecs:"generadas · Mundo 1", ref:"síntesis · cartas 1.1–1.3 + mundo III", note:"Recoge todo lo trabajado en el pulso ternario: semicorcheas (2 y 4 por pulso, semicorchea + negra) y corcheas punteadas. Es el vocabulario completo del que parte el mundo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","8","8"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16","16","8"],"beams":[[0,1,2,3]]},
@@ -1377,7 +1378,7 @@ const GE_WORLDS=[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","8d","16"],"beams":[[0,1,2]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["8d","16","16","16"],"beams":[[0,1,2,3]]}
       ] },
-      { id:"c5_2", atlasId:"5.2", name:"Silencio de semicorchea", ref:"síntesis", note:"Todas las variantes con un silencio de semicorchea y las otras cinco semicorcheas sonando. Las seis posiciones del silencio.",
+      { id:"c5_2", atlasId:"5.2", name:"Silencio de semicorchea", lecs:"99–104", ref:"síntesis", note:"Todas las variantes con un silencio de semicorchea y las otras cinco semicorcheas sonando. Las seis posiciones del silencio.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16r","16","16","16","16","16"],"beams":[[0,1,2,3,4,5]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16r","16","16","16","16"],"beams":[[0,1,2,3,4,5]]},
@@ -1386,17 +1387,17 @@ const GE_WORLDS=[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","16","16","16r","16"],"beams":[[0,1,2,3,4,5]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","16","16","16","16r"],"beams":[[0,1,2,3,4,5]]}
       ] },
-      { id:"c5_3", atlasId:"5.3", name:"3+2+1  /  1+2+3", ref:"síntesis", note:"Los números son valores en semicorcheas: 3+2+1 = tres semicorcheas + una corchea (vale 2) + una semicorchea; 1+2+3 a la inversa.",
+      { id:"c5_3", atlasId:"5.3", name:"3+2+1  /  1+2+3", lecs:"105–108", ref:"síntesis", note:"Los números son valores en semicorcheas: 3+2+1 = tres semicorcheas + una corchea (vale 2) + una semicorchea; 1+2+3 a la inversa.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","16","8","16"],"beams":[[0,1,2,3,4]],"label":"3+2+1"},
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","8","16","16","16"],"beams":[[0,1,2,3,4]],"label":"1+2+3"}
       ] },
-      { id:"c5_4", atlasId:"5.4", name:"Bonus", ref:"síntesis", note:"Alternancias de corchea y semicorchea dentro del pulso, en sus dos sentidos (2+1+2+1 y 1+2+1+2).",
+      { id:"c5_4", atlasId:"5.4", name:"Bonus", lecs:"105–109", ref:"síntesis", note:"Alternancias de corchea y semicorchea dentro del pulso, en sus dos sentidos (2+1+2+1 y 1+2+1+2).",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["8","16","8","16"],"beams":[[0,1,2,3]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","8","16","8"],"beams":[[0,1,2,3]]}
       ] },
-      { id:"c5_5", atlasId:"5.5", name:"Síncopa doble en compás compuesto", ref:"síntesis", note:"Semicorchea + corchea + corchea + semicorchea (1+2+2+1). Las dos corcheas centrales quedan a contratiempo.",
+      { id:"c5_5", atlasId:"5.5", name:"Síncopa doble en compás compuesto", lecs:"110–113", ref:"síntesis", note:"Semicorchea + corchea + corchea + semicorchea (1+2+2+1). Las dos corcheas centrales quedan a contratiempo.",
         cells:[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","8","8","16"],"beams":[[0,1,2,3]]}
       ] },
@@ -1405,22 +1406,22 @@ const GE_WORLDS=[
   { id:"m6", name:"Últimos pasos", kicker:"3er trimestre · últimos pasos", desc:"Los tres frentes finales del curso: las fusas (valor menor, tempo más lento en el motor), el compás dispar de 5/8 y la lectura en clave de Do.", range:"págs. 46–86",
     meterPool:["2/4","5/8","4/4"], basePulse:50, basePulseComp:46,
     cards:[
-      { id:"c6_1", atlasId:"6.1", name:"Fusas", ref:"pág. 46", note:"Ocho fusas por pulso. ⚙ Motor: en este mundo el tempo de generación debe bajar respecto al resto.", slow:true, dense:true,
+      { id:"c6_1", atlasId:"6.1", name:"Fusas", lecs:"93–98 · 112", ref:"pág. 46", note:"Ocho fusas por pulso. ⚙ Motor: en este mundo el tempo de generación debe bajar respecto al resto.", slow:true, dense:true,
         cells:[
         {"ts":"2/4","notes":["32","32","32","32","32","32","32","32","q"],"beams":[[0,1,2,3,4,5,6,7]]},
         {"ts":"2/4","notes":["8","32","32","32","32","q"],"beams":[[0,1,2,3,4]],"label":"corchea + 4 fusas"},
         {"ts":"2/4","notes":["16","32","32","16","32","32","q"],"beams":[[0,1,2,3,4,5]],"label":"semicorchea + 2 fusas"}
       ] },
-      { id:"c6_2", atlasId:"6.2", name:"Dispar · compás de 5/8", ref:"pág. 65", note:"Compás de pulso irregular. Las dos agrupaciones: 3+2 y 2+3.", disp:true,
+      { id:"c6_2", atlasId:"6.2", name:"Dispar · compás de 5/8", lecs:"139–153", ref:"pág. 65", note:"Compás de pulso irregular. Las dos agrupaciones: 3+2 y 2+3.", disp:true,
         cells:[
         {"ts":"5/8","notes":["8","8","8","8","8"],"beams":[[0,1,2],[3,4]],"label":"3+2"},
         {"ts":"5/8","notes":["8","8","8","8","8"],"beams":[[0,1],[2,3,4]],"label":"2+3"}
       ] },
-      { id:"c6_e", atlasId:"6.3", name:"Cambios de compás · figura = figura", ref:"págs. 62–74",
+      { id:"c6_e", atlasId:"6.3", name:"Cambios de compás · figura = figura", lecs:"133–138 · 154–163", ref:"págs. 62–74",
         note:"La figura se mantiene constante al cambiar de compás (la corchea vale lo mismo); el que cambia es el PULSO. Presentación y quiz propios; la generación de lecturas llegará con el mundo de cambios de compás.",
         introOnly:true, customQuiz:true, equivEx:true, exText:"♪ = ♪", exSub:"figura = figura",
         cells:[] },
-      { id:"c6_3", atlasId:"6.4", name:"Clave de Do", ref:"págs. 83 y 86", note:"Lectura en clave de Do en 3ª (contralto) y 4ª línea (tenor). Sólo negras, corcheas, blancas y silencios: lecturas muy sencillas.", clave:true,
+      { id:"c6_3", atlasId:"6.4", name:"Clave de Do", lecs:"180–203", ref:"págs. 83 y 86", note:"Lectura en clave de Do en 3ª (contralto) y 4ª línea (tenor). Sólo negras, corcheas, blancas y silencios: lecturas muy sencillas.", clave:true,
         cells:[
         {"clef":"alto","ts":"4/4","notes":[{"d":"h","keys":["c/4"]},{"d":"q","keys":["d/4"]},{"d":"q","keys":["e/4"]}],"label":"Do en 3ª"},
         {"clef":"tenor","ts":"4/4","notes":[{"d":"q","keys":["c/4"]},{"d":"8","keys":["d/4"]},{"d":"8","keys":["e/4"]},{"d":"q","keys":["f/4"]},{"d":"q","rest":true}],"beams":[[1,2]],"label":"Do en 4ª"}
@@ -4225,6 +4226,7 @@ function renderSetupCards(){
       const el=document.createElement('div');
       el.className='setup-card'+(on?' on':'');
       el.innerHTML=`<div class="sc-head"><span class="c-num">${c.atlasId||''}</span><span class="c-n">${c.name}</span></div>`+
+                   (c.lecs?`<div class="c-lecs">Lecciones ${c.lecs}</div>`:'')+
                    `<div class="sc-ex" aria-hidden="true"></div>`;
       // botón INTRO (presentación en clase) — solo si la carta tiene intro definida
       if(window.CARD_INTROS && window.CARD_INTROS[c.atlasId]){
@@ -6996,6 +6998,8 @@ D['6.2']={spq:0.66,slides:function(card){ return [
   {type:'walk'}];}};
 
 window.CARD_INTROS=D;
+/* trueque jul-2026: 3.2⇄3.3 y 5.4⇄5.5 — las cartas intercambiaron contenido, sus intros van con él */
+(function(){ var t=D['3.2']; D['3.2']=D['3.3']; D['3.3']=t; t=D['5.4']; D['5.4']=D['5.5']; D['5.5']=t; })();
 })();
 
 </script>
