@@ -1430,23 +1430,6 @@ const GE_WORLDS=[
       ] },
     ]
   },
-  { id:"m7", name:"Cambios de compás", kicker:"mundo especial · generador", desc:"Mundo especial pendiente de desarrollo: un generador configurable de ejercicios resumen que combina ritmos ya trabajados con dos modos de cambio de compás. La estructura definitiva se definirá más adelante.", range:"págs. 59–82 (resumen de equivalencias)",
-    meterPool:["2/4","6/8","3/4"], basePulse:50, basePulseComp:46, special:"combine",
-    cards:[
-      { id:"cE_a", atlasId:"E.a", name:"Cambio · pulso = pulso", ref:"págs. 70–82", note:"El pulso se mantiene constante al cambiar de compás (p. ej. negra en 2/4 = negra con puntillo en 6/8).", equivCard:true,
-        cells:[
-        {"ts":"2/4","notes":["q","q"]},
-        {"equiv":true},
-        {"ts":"6/8","notes":["8","8","8","8","8","8"],"beams":[[0,1,2],[3,4,5]]}
-      ] },
-      { id:"cE_b", atlasId:"E.b", name:"Cambio · figura = figura", ref:"págs. 62–74", note:"La figura se mantiene constante al cambiar de compás (la corchea vale lo mismo en 6/8 y en 3/4); cambia el pulso.", equivCard:true,
-        cells:[
-        {"ts":"6/8","notes":["8","8","8","8","8","8"],"beams":[[0,1,2],[3,4,5]]},
-        {"equiv":true},
-        {"ts":"3/4","notes":["8","8","8","8","8","8"],"beams":[[0,1],[2,3],[4,5]]}
-      ] },
-    ]
-  },
 ];
 const GP1_WORLDS=GE_WORLDS;
 
@@ -7235,6 +7218,11 @@ D['6.2']={spq:0.66,slides:function(card){ return [
   {type:'walk'}];}};
 
 window.CARD_INTROS=D;
+window.CARD_INTROS['6.4']={spq:0.8,slides:function(card){ return [
+  {type:'cover',kicker:'INTRO · CARTA 6.4',title:'Clave de Do',
+   sub:'Las figuras de siempre en una llave nueva: la clave de Do coloca el Do en 3\u00aa l\u00ednea (contralto) y en 4\u00aa (tenor). Solo negras, corcheas, blancas y silencios; lo que cambia es d\u00f3nde cae cada nota. Lecturas muy sencillas para acostumbrar el ojo.',
+   cells:[{notes:['h','q','q']},{notes:['q','8','8','q','q'],beams:[[1,2]]}],ref:card.ref||''}
+]; }};
 /* trueque jul-2026: 3.2⇄3.3 y 5.4⇄5.5 — las cartas intercambiaron contenido, sus intros van con él */
 (function(){ var t=D['3.2']; D['3.2']=D['3.3']; D['3.3']=t; t=D['5.4']; D['5.4']=D['5.5']; D['5.5']=t; })();
 })();
