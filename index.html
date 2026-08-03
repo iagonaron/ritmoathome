@@ -1548,8 +1548,9 @@ function genMeasureFromCards(time, activeCards, pick, opts={}){
     return {time,notes,beams,cap,grouping:grp,_hasHard:hadHard};
   }
   // si hay células de COMPÁS ENTERO (síncopas binarias, blanca, GVE, fusas...), con buena prob soltar una
+  // (3-ago · PROPUESTA: solo se añade la etiqueta _cell para el filtro anti-repetición; la probabilidad NO cambia)
   if(barCells.length && (!pulseCells.length || pick([true,true,false]))){
-    return geCellToMeasure(pick(barCells), cap);
+    const mm=geCellToMeasure(pick(barCells), cap); mm._cell=true; return mm;
   }
   // TILE por pulsos: bloque de 2 pulsos (síncopa de otra métrica), célula de pulso (dificultad) o relleno neutro
   const notes=[],beams=[],tuplets=[]; let groupInfo=null, placedTuplet=false;
@@ -1557,11 +1558,21 @@ function genMeasureFromCards(time, activeCards, pick, opts={}){
   let p=0;
   while(p<P){
     // ¿colocar un BLOQUE de 2 pulsos? (síncopa binaria en 3/4·4/4, o célula 6/8 en 9/8·12/8)
-    if(blockCells.length && (P-p)>=2 && pick([true,false])){
-      const cell=pick(blockCells); const base=notes.length;
-      cell.notes.forEach(n=>notes.push(geNoteFrom(n)));
-      (cell.beams||[]).forEach(b=>beams.push(b.map(i=>i+base)));
-      p+=2; continue;
+    if(blockCells.length && (P-p)>=2 && pick([true,true,false])){   /* 3-ago (Iago·G2): 50%→67%, más materia en compases de 3-4 pulsos */
+      const cell=pick(blockCells);
+      const hasTupB=!!(cell.tuplets&&cell.tuplets.length);
+      if(!(hasTupB && placedTuplet)){                       /* norma: máx. 1 grupo por compás */
+        const base=notes.length;
+        cell.notes.forEach(n=>notes.push(geNoteFrom(n)));
+        (cell.beams||[]).forEach(b=>beams.push(b.map(i=>i+base)));
+        if(hasTupB){                                        /* FIX 3-ago: el corchete viaja con el bloque (antes se perdía y el validador expulsaba la célula) */
+          const t=cell.tuplets[0]; const info=geTupletOcc(cell,t); const idx=t.idx.map(i=>i+base);
+          tuplets.push({idx, group:{ratioNum:info.ratioNum, ratioDen:info.ratioDen}});
+          groupInfo={idx, written:info.written, occ:info.occBeats, ratioNum:info.ratioNum, ratioDen:info.ratioDen, label:cell.label||''};
+          placedTuplet=true;
+        }
+        p+=2; continue;
+      }
     }
     if(pulseCells.length && pick([true,true,false])){
       const cell=pick(pulseCells);
@@ -3311,6 +3322,14 @@ function genLessonGP1(worldId, cards, seed, second){
       const gen=()=> reliefFa ? geBasicMeasure(time,prPick,{startSix:prevSix,dispGroup,simpleDisp})
                               : (elemental ? geElementalMeasure(time,prPick) : genMeasureFromCards(time, cfg.activeCards, prPick, {dispGroup,simpleDisp}));
       do{ m = gen(); tries++; } while(!validateMeasure(m)&&tries<40);
+      /* 3-ago-2026 (PROPUESTA): variedad — evitar dos compases IDÉNTICOS seguidos (si el vocabulario da) */
+      { const _sg=mm=>mm&&mm.notes?mm.notes.map(n=>(n.dur||'')+(n.rest?'r':'')).join(' '):'';
+        if(c>0 && measures[c-1] && !measures[c-1]._cell && _sg(m)===_sg(measures[c-1])){
+          let rt=0, m2=m;
+          while(rt++<6){ let t3=0, cand; do{ cand=gen(); t3++; }while(!validateMeasure(cand)&&t3<40);
+            if(validateMeasure(cand) && _sg(cand)!==_sg(measures[c-1])){ m2=cand; break; } }
+          m=m2;
+        } }
       // (1) compases de 4 pulsos (4/4 y 12/8): el 4º pulso del COMPÁS 1 de la frase = figura de pulso (respiro)
       const is4pulse=(time==='4/4' || is12_8);
       if(c===0 && is4pulse){
@@ -3610,7 +3629,8 @@ let BARLINE_POS=[];        // {x,yTop,yBot} de la barra izquierda de cada compá
 function buildNoteVF(n,clef,keysig){ let sn;
   if(n.rest){ sn=new VF.StaveNote({clef,keys:[restCenter[clef]],duration:n.dur.replace('d','')+'r'}); if(n.dur.endsWith('d'))VF.Dot.buildAndAttach([sn]); }
   else{ const kk = RHYTHM_XHEADS ? (n.key+'/x2') : n.key;
-    sn=new VF.StaveNote({clef,keys:[kk],duration:n.dur.replace('d','')}); if(n.dur.endsWith('d'))VF.Dot.buildAndAttach([sn]);
+    /* 3-ago-2026 (PROPUESTA · regla de Iago): plica según altura — por encima de la 3ª línea, hacia abajo */
+    sn=new VF.StaveNote(RHYTHM_XHEADS?{clef,keys:[kk],duration:n.dur.replace('d','')}:{clef,keys:[kk],duration:n.dur.replace('d',''),auto_stem:true}); if(n.dur.endsWith('d'))VF.Dot.buildAndAttach([sn]);
     if(!RHYTHM_XHEADS){ const acc=accidentalFor(n.key,keysig); if(acc) sn.addModifier(new VF.Accidental(acc),0); } }
   return sn; }
 function voiceOf(m){ const [num,den]=m.time.split('/').map(Number); return new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); }
@@ -3687,7 +3707,7 @@ function renderLesson(container,L){
       (m.beams||[]).forEach(g=>{ const sounding=g.filter(k=>{const nn=m.notes[k];return nn&&!nn.rest&&db(nn.dur)<1;}); if(sounding.length<2) return;
         g.forEach(k=>{ const nn=m.notes[k]; if(nn&&nn.rest&&['16','32'].includes(nn.dur.replace('d',''))){
           try{ const lk=restLow[clef]||restCenter[clef]; const r=new VF.StaveNote({clef,keys:[lk],duration:nn.dur.replace('d','')+'r'}); if(nn.dur.endsWith('d'))VF.Dot.buildAndAttach([r]); vf[k]=r; }catch(e){} } }); });
-      const beams=[];(m.beams||[]).forEach(g=>{ const run=g.filter(k=>{ const n=m.notes[k]; return n && !n.rest && db(n.dur)<1; }); if(run.length>1) beams.push(new VF.Beam(run.map(k=>vf[k]))); });   // el corchete pasa por encima de los silencios intermedios
+      const beams=[];(m.beams||[]).forEach(g=>{ const run=g.filter(k=>{ const n=m.notes[k]; return n && !n.rest && db(n.dur)<1; }); if(run.length>1) beams.push(new VF.Beam(run.map(k=>vf[k]),true)); });   // el corchete pasa por encima de los silencios intermedios · (PROPUESTA) dirección por mayoría, como el PRO
       const tups=[];(m.tuplets||[]).forEach(t=>{const g=t.group;tups.push(new VF.Tuplet(t.idx.map(k=>vf[k]),{num_notes:g.ratioNum,notes_occupied:g.ratioDen,ratioed:false}));});
       const voice=voiceOf(m); voice.addTickables(vf);
       const endRes=(j===ln.ms.length-1)?(ln._endExtra||0):0;
