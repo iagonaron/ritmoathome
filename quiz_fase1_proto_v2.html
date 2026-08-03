@@ -239,14 +239,23 @@ const CARD = _CFG ? {
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
   const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125,'64':0.0625}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
 function meterCapQ(time){ const [n,d]=time.split('/').map(Number); return n*4/d; }
-function noteBeats(m){ return m.notes.map(n=>durQ(n.dur)); }
+function noteBeats(m){ return (m.beatsReal&&m.beatsReal.length===m.notes.length)?m.beatsReal.slice():m.notes.map(n=>durQ(n.dur)); }
 function pulseOnsets(m){ const [n,d]=m.time.split('/').map(Number); const unit=4/d; const comp=(d===8&&n%3===0); const step=comp?unit*3:unit;
   const cap=n*unit,out=[]; for(let x=0;x+1e-6<cap;x+=step) out.push(x); return out; }
-function cellToMeasure(cell){ const comp=(cell.beat===8); const time=comp?'6/8':'2/4';
-  const notes=cell.notes.map(tok=>{ const rest=tok.endsWith('r'); return rest?{dur:tok.slice(0,-1),rest:true}:{dur:tok}; });
+function cellToMeasure(cell){
+  /* 3-ago-2026 · quiz-fix H3: compás REAL de la célula; el cierre (figura de pulso) solo se añade
+     a las células de PULSO (beats/beat); las de compás entero ya están completas. Tuplets conservados. */
+  const time=cell.ts || ((cell.beat===8)?'6/8':'2/4');
+  const isPulse=(cell.beats!=null && cell.beat!=null);
+  const notes=cell.notes.map(tok=>{ tok=String(tok); const rest=tok.endsWith('r'); return rest?{dur:tok.slice(0,-1),rest:true}:{dur:tok}; });
   const beams=(cell.beams||[]).map(b=>b.slice()); const ties=(cell.ties||[]).map(t=>t.slice());
-  notes.push({dur:comp?'qd':'q'}); return {time,notes,beams,ties,tuplets:[],clef:'treble'}; }
-function orderedMeasures(card){ const firstRest=(c)=>{ const ns=c.notes||[]; for(let i=0;i<ns.length;i++){ if(ns[i].endsWith('r'))return i; } return Infinity; };
+  const beatsReal=(cell.beatsReal&&cell.beatsReal.slice())||cell.notes.map(t=>durQ(String(t)));
+  if(isPulse){ const [n,d]=time.split('/').map(Number);
+    const cierre = (d===2)?'h' : (d===8&&n%3===0)?'qd' : 'q';
+    notes.push({dur:cierre}); beatsReal.push(durQ(cierre)); }
+  const tups=(cell.tuplets||[]).map(t=>({idx:t.idx.slice(),num:t.num,occ:t.occ}));
+  return {time,notes,beams,ties,tuplets:tups,clef:'treble',beatsReal}; }
+function orderedMeasures(card){ const firstRest=(c)=>{ const ns=c.notes||[]; for(let i=0;i<ns.length;i++){ if(String(ns[i]).endsWith('r'))return i; } return Infinity; };
   return card.cells.slice().sort((a,b)=>firstRest(b)-firstRest(a)).map(cellToMeasure); }
 
 /* ===== render mini compás ===== */
@@ -270,6 +279,8 @@ function renderMiniMeasure(m){
     const voice=new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); voice.addTickables(vf);
     new VF.Formatter().joinVoices([voice]).format([voice], STAVE_W-92); voice.draw(ctx,st);
     beams.forEach(b=>b.setContext(ctx).draw());
+    (m.tuplets||[]).forEach(t=>{ try{ const grp=t.idx.map(i=>vf[i]).filter(Boolean);
+      if(grp.length>1) new VF.Tuplet(grp,{num_notes:t.num,notes_occupied:t.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} });
     (m.ties||[]).forEach(pair=>{ const a=pair[0],b=pair[1]; if(vf[a]&&vf[b]){ try{ new VF.StaveTie({first_note:vf[a],last_note:vf[b],first_indices:[0],last_indices:[0]}).setContext(ctx).draw(); }catch(e){} } });
     const svg=host.querySelector('svg');
     if(svg){ const staveTop=st.getYForLine(0), staveBot=st.getYForLine(4); const lastX=(st.getX()+st.getWidth())+4;

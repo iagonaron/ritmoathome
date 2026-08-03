@@ -226,13 +226,24 @@ const FILLERS = _CFG ? _CFG.fillers : (COMPOUND
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
   const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
 function patternQ(tokens){ return tokens.map(durQ); }                 // duraciones de un patrón de pulso
-function cellTokens(cell){ return cell.notes.slice(); }                // tokens del objetivo
+function cellTokens(cell){ return (cell.unit?cell.unit.toks:cell.notes).slice(); }   // 3-ago: unidad característica si existe
+function cellBeatsQ(cell){ const u=cell.unit; if(u&&u.beats) return u.beats.slice();
+  if(cell.beatsReal) return cell.beatsReal.slice(); return cell.notes.map(durQ); }      // duración REAL (tuplets comprimidos)
+function cellTup(cell){ return (cell.unit&&cell.unit.tup)?cell.unit.tup:((cell.tuplets&&cell.tuplets[0])||null); }
 
 /* ===== render mini (tarjeta objetivo, SIN negra de reposo: "sin resolver") ===== */
 function renderTarget(cell){
-  const time=COMPOUND?'6/8':'2/4';
-  const notes=cell.notes.map(t=>({dur:t}));
-  const m={time,notes,beams:(cell.beams||[]).map(b=>b.slice()),ties:[],clef:'treble'};
+  const time=cell.ts||(COMPOUND?'6/8':'2/4');
+  const u=cell.unit;
+  const toks=u?u.toks:cell.notes;
+  const notes=toks.map(t=>({dur:t}));
+  let beams;
+  if(u){ const beamable=t=>['8','16','32'].includes(t.replace('d','').replace('r',''))&&!t.endsWith('r');
+    beams=[]; let run=[]; toks.forEach((t,i)=>{ if(beamable(t)) run.push(i); else { if(run.length>1)beams.push(run); run=[]; } });
+    if(run.length>1)beams.push(run); }
+  else beams=(cell.beams||[]).map(b=>b.slice());
+  const m={time,notes,beams,ties:[],clef:'treble'};
+  const tp=cellTup(cell); if(tp) m.tuplets=[{idx:tp.idx.slice(),num:tp.num,occ:tp.occ}];
   return renderMiniMeasure(m,true);
 }
 function renderMiniMeasure(m, noTS){
@@ -253,6 +264,8 @@ function renderMiniMeasure(m, noTS){
     const voice=new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); voice.addTickables(vf);
     new VF.Formatter().joinVoices([voice]).format([voice],STAVE_W-70); voice.draw(ctx,st);
     beams.forEach(b=>b.setContext(ctx).draw());
+    (m.tuplets||[]).forEach(t=>{ try{ const grp=t.idx.map(i=>vf[i]).filter(Boolean);
+      if(grp.length>1) new VF.Tuplet(grp,{num_notes:t.num,notes_occupied:t.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} });
     const svg=host.querySelector('svg');
     if(svg){ const top=st.getYForLine(0),bot=st.getYForLine(4); const lastX=(st.getX()+st.getWidth())+4;
       const vbX=Math.max(0,PAD_L-4),vbY=Math.max(0,top-20),vbW=Math.min(CANVAS_W-vbX,(lastX-vbX)+8),vbH=(bot+22)-vbY;
@@ -355,7 +368,7 @@ function newRound(){
   lastTargetPulse=targetPulse;
   const pulses=[];
   for(let i=0;i<N_PULSES;i++){
-    if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:patternQ(targetTokens), target:true}); }
+    if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:cellBeatsQ(CARD.cells[targetCellIdx]), target:true}); }
     else { let f; do{ f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; }while(f.join(',')===tgtKey); pulses.push({tokens:f.slice(), q:patternQ(f), target:false}); }
   }
   round={pulses, targetPulse};
@@ -405,11 +418,11 @@ function playOnePulse(idx){
   const c=ac(); if(!c)return; const t0=c.currentTime+0.08; const pl=round.pulses[idx]; let acc=0;
   pl.q.forEach((dq,k)=>{ const tok=pl.tokens[k]; if(!tok.endsWith('r')) ritmoSound(t0+acc*spq, dq*spq, .42); acc+=dq; });
 }
-function lightTargetHeads(tokens){
+function lightTargetHeads(tokens,beatsQ){
   const svg=document.querySelector('#targetPaper svg'); if(!svg)return;
   const heads=[...svg.querySelectorAll('g.vf-stavenote')]; heads.forEach(h=>h.classList.remove('vf-hit'));
   let acc=0;
-  tokens.forEach((tok,k)=>{ const dq=durQ(tok);
+  tokens.forEach((tok,k)=>{ const dq=(beatsQ&&beatsQ[k]!=null)?beatsQ[k]:durQ(tok);
     if(!tok.endsWith('r')){ const at=(0.08+acc*spq)*1000;
       setTimeout(()=>{ heads.forEach((h,j)=>h.classList.toggle('vf-hit', j===k)); }, at);
       setTimeout(()=>{ if(heads[k]) heads[k].classList.remove('vf-hit'); }, at+dq*spq*1000); }
@@ -435,9 +448,10 @@ function playTargetCard(force){
   if(btn){ btn.classList.add('suena'); btn.innerHTML='🔊 Sonando…'; }
   showSpotlight();
   const toks=cellTokens(CARD.cells[targetCellIdx]);
+  const qs2=cellBeatsQ(CARD.cells[targetCellIdx]);
   const t0=c.currentTime+0.08; let acc=0;
-  toks.forEach(tok=>{ const dq=durQ(tok); if(!tok.endsWith('r')) ritmoSound(t0+acc*spq, dq*spq, .42); acc+=dq; });
-  lightTargetHeads(toks);
+  toks.forEach((tok,k)=>{ const dq=qs2[k]; if(!tok.endsWith('r')) ritmoSound(t0+acc*spq, dq*spq, .42); acc+=dq; });
+  lightTargetHeads(toks,qs2);
   const ms=Math.round((0.08+acc*spq)*1000)+500;
   setTimeout(()=>{ targetPlaying=false;
     if(btn){ btn.classList.remove('suena'); btn.innerHTML='🔊 Escuchar'; }
@@ -466,7 +480,7 @@ function onPick(idx,g){
   else { g.classList.add('bad'); score=Math.max(0,score-16.5); toast('Ese no','no'); flashBarBad(); }
   setBar();
   // revelar el pulso correcto + FOCO en la tarjeta y sonar su ritmo (con cabezas iluminándose)
-  setTimeout(()=>{ if(correctG) correctG.classList.add('reveal'); showSpotlight(); playOnePulse(round.targetPulse); lightTargetHeads(CARD.cells[targetCellIdx].notes); if(good) burst(); }, 430);
+  setTimeout(()=>{ if(correctG) correctG.classList.add('reveal'); showSpotlight(); playOnePulse(round.targetPulse); lightTargetHeads(cellTokens(CARD.cells[targetCellIdx]),cellBeatsQ(CARD.cells[targetCellIdx])); if(good) burst(); }, 430);
   const revealMs = 430 + Math.round(PULSE_Q*spq*1000) + 750;
   setTimeout(()=>{ hideSpotlight();
     if(hits>=3){ document.getElementById('ovWin').classList.add('show'); burst(); }

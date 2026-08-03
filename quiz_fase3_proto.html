@@ -176,7 +176,12 @@ function autoBeam(toks){ const beamable=t=>['8','16','32'].includes(t.replace('d
   if(run.length>1)out.push(run); return out; }
 
 /* mini render de un pulso: altura fija H, ancho proporcional al nº de figuras (espaciado equiparable) */
-function renderPulseMini(toks, beams, H){
+function renderPulseMini(toks, beams, H, tup){
+  if(tup){ const m={time:MEAS,notes:toks.map(t=>({dur:t})),beams:(beams&&beams.length?beams:autoBeam(toks)).map(b=>b.slice()),clef:'treble',tuplets:[{idx:tup.idx.slice(),num:tup.num,occ:tup.occ}]};
+    return renderMini(m, H||56, true); }
+  return renderPulseMini_.apply(null,[toks,beams,H]);
+}
+function renderPulseMini_(toks, beams, H){
   const notes=toks.map(t=>({dur:t}));
   const m={time:MEAS,notes,beams:(beams&&beams.length?beams:autoBeam(toks)).map(b=>b.slice()),clef:'treble'};
   return renderMini(m, H||56, true);
@@ -197,6 +202,8 @@ function renderMini(m, H, noTS){
     const [num,den]=time.split('/').map(Number);
     const voice=new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); voice.addTickables(vf);
     new VF.Formatter({softmaxFactor:5}).joinVoices([voice]).format([voice],STAVE_W-36); voice.draw(ctx,st); beams.forEach(b=>b.setContext(ctx).draw());
+    (m.tuplets||[]).forEach(t=>{ try{ const grp=t.idx.map(i=>vf[i]).filter(Boolean);
+      if(grp.length>1) new VF.Tuplet(grp,{num_notes:t.num,notes_occupied:t.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} });
     const svg=host.querySelector('svg');
     if(svg){ const top=st.getYForLine(0),bot=st.getYForLine(4); const lastX=(st.getX()+st.getWidth())+4;
       const vbX=Math.max(0,PAD_L-4),vbY=Math.max(0,top-26),vbW=Math.min(CW-vbX,(lastX-vbX)+10),vbH=(bot+28)-vbY;
@@ -233,15 +240,27 @@ function setSounding(on){ const b=document.getElementById('playBtn').querySelect
 /* ===== estado de ronda ===== */
 let solution=[], pool=[], placed=[], clickCursor=0, round={hits:0,score:0,firstFailUsed:false};
 
+function cellSlot(cell){
+  /* 3-ago-2026 · quiz-fix H1: contenido del hueco = unidad característica si existe (tuplets con
+     duración real y corchete); si no, la célula entera (compases enteros: síncopas, blanca…). */
+  if(cell.unit){ const u=cell.unit;
+    return {toks:u.toks.slice(), beams:autoBeam(u.toks), beats:u.beats.slice(), tup:u.tup?{idx:u.tup.idx.slice(),num:u.tup.num,occ:u.tup.occ}:null}; }
+  const toks=cell.notes.slice();
+  return {toks:toks, beams:(cell.beams||[]).map(b=>b.slice()),
+          beats:(cell.beatsReal&&cell.beatsReal.slice())||toks.map(durQ),
+          tup:(cell.tuplets&&cell.tuplets[0])?{idx:cell.tuplets[0].idx.slice(),num:cell.tuplets[0].num,occ:cell.tuplets[0].occ}:null};
+}
 function buildSolution(){
-  // 2 variaciones objetivo (distintas si se puede) + relleno
-  const idxs=[0,1,2].sort(()=>Math.random()-.5);
-  const tA=CARD.cells[idxs[0]], tB=CARD.cells[idxs[1]];
+  // 2 variaciones objetivo (distintas si se puede — con 1 célula se repite) + relleno
+  const n=CARD.cells.length;
+  const orden=CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5);
+  const iA=orden[0], iB=(n>1)?orden[1]:orden[0];
+  const tA=CARD.cells[iA], tB=CARD.cells[iB];
   const posA=Math.floor(Math.random()*N_PULSES); let posB; do{ posB=Math.floor(Math.random()*N_PULSES); }while(posB===posA);
   const sol=new Array(N_PULSES).fill(null);
-  sol[posA]={toks:tA.notes.slice(),beams:(tA.beams||[]).map(b=>b.slice())};
-  sol[posB]={toks:tB.notes.slice(),beams:(tB.beams||[]).map(b=>b.slice())};
-  for(let i=0;i<N_PULSES;i++){ if(sol[i])continue; const f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; sol[i]={toks:f.slice(),beams:autoBeam(f)}; }
+  sol[posA]=cellSlot(tA);
+  sol[posB]=cellSlot(tB);
+  for(let i=0;i<N_PULSES;i++){ if(sol[i])continue; const f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; sol[i]={toks:f.slice(),beams:autoBeam(f),beats:f.map(durQ),tup:null}; }
   return sol;
 }
 
@@ -263,12 +282,13 @@ function renderPhrase(){
     if(i===N_MEAS-1) st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw(); staves.push(st);
     measGeom.push({x0:st.getNoteStartX(), x1:st.getX()+st.getWidth()-10}); }
   const staveTop=staves[0].getYForLine(0), staveBot=staves[0].getYForLine(4);
-  for(let i=0;i<N_MEAS;i++){ const st=staves[i]; const notes=[]; const beamGroups=[]; let nIdx=0;
+  for(let i=0;i<N_MEAS;i++){ const st=staves[i]; const notes=[]; const beamGroups=[]; const tupGroups=[]; let nIdx=0;
     for(let p=0;p<PULSES_PER_MEAS;p++){ const idx=i*PULSES_PER_MEAS+p; const cont=placed[idx];
       if(cont){ const toks=cont.toks; const lb=(cont.beams&&cont.beams.length?cont.beams:autoBeam(toks)); const startN=nIdx;
         toks.forEach(t=>{ const isRest=t.endsWith('r'); const base=t.replace('d','').replace('r','');
           const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:base+(isRest?'r':'')}); if(t.replace('r','').endsWith('d'))VF.Dot.buildAndAttach([sn]); notes.push(sn); nIdx++; });
         lb.forEach(g=>beamGroups.push(g.map(k=>startN+k)));
+        if(cont.tup) tupGroups.push({idx:cont.tup.idx.map(k=>startN+k),num:cont.tup.num,occ:cont.tup.occ});
       } else { const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:'qr'}); VF.Dot.buildAndAttach([sn]); sn.setStyle({fillStyle:'rgba(0,0,0,0)',strokeStyle:'rgba(0,0,0,0)'}); notes.push(sn); nIdx++; }
     }
     const voice=new VF.Voice({num_beats:6,beat_value:8}).setStrict(false); voice.addTickables(notes);
@@ -276,6 +296,8 @@ function renderPhrase(){
     new VF.Formatter({softmaxFactor:5}).joinVoices([voice]).format([voice], ws[i]-(i===0?72:26));
     voice.draw(ctx,st);                                  // los beams ya existen → no se dibujan corchetes sueltos
     beamObjs.forEach(b=>{ try{ b.setContext(ctx).draw(); }catch(e){} });
+    tupGroups.forEach(t=>{ try{ const grp=t.idx.map(k=>notes[k]).filter(Boolean);
+      if(grp.length>1) new VF.Tuplet(grp,{num_notes:t.num,notes_occupied:t.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} });
   }
   const svg=host.querySelector('svg'); const pulseY=staveBot+30; ensureXGrad(svg);
   for(let i=0;i<N_MEAS;i++){ const g=measGeom[i], span=g.x1-g.x0;
@@ -315,7 +337,7 @@ function bounds(){ const s=document.getElementById('floatTop'); const top=s?s.ge
   return {l:14, t:top, r:innerWidth-14, b:innerHeight-14}; }
 function makeFloatCard(ct){
   const layer=document.getElementById('floatLayer'); const el=document.createElement('div'); el.className='fcard';
-  el.innerHTML=`<div class="fmini">${renderPulseMini(ct.toks,ct.beams,64)}</div>`; layer.appendChild(el);
+  el.innerHTML=`<div class="fmini">${renderPulseMini(ct.toks,ct.beams,64,ct.tup)}</div>`; layer.appendChild(el);
   const bb=bounds(); const w=el.offsetWidth||110,h=el.offsetHeight||74;
   const x=bb.l+Math.random()*Math.max(40,bb.r-bb.l-w), y=bb.t+Math.random()*Math.max(60,bb.b-bb.t-h);
   const ang=Math.random()*Math.PI*2, sp=10+Math.random()*14;
@@ -357,7 +379,7 @@ function attachDrag(card){
   el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
 }
 function placeCard(card, idx){
-  placed[idx]={toks:card.ct.toks.slice(),beams:(card.ct.beams||[]).map(b=>b.slice())};
+  placed[idx]={toks:card.ct.toks.slice(),beams:(card.ct.beams||[]).map(b=>b.slice()),beats:(card.ct.beats||card.ct.toks.map(durQ)).slice(),tup:card.ct.tup?{idx:card.ct.tup.idx.slice(),num:card.ct.tup.num,occ:card.ct.tup.occ}:null};
   clickCursor=idx+1;                                   // las clicadas siguientes van a partir de aquí
   pool=pool.filter(c=>c!==card); card.el.remove();
   renderPhrase(); updateCheck(); ping();
@@ -379,7 +401,7 @@ function playPhrase(noClick){
   const start = noClick ? t0 : t0+measSec;                       // refuerzo: sin compás de claqueta previo
   if(!noClick){ for(let p=0;p<PULSES_PER_MEAS;p++) click(t0+p*secPerPulse,p===0,phraseBus); }
   solution.forEach((s,i)=>{ const ps=start+i*secPerPulse; let acc=0;
-    patternQ(s.toks).forEach((dq,k)=>{ if(!s.toks[k].endsWith('r')) ritmoSound(ps+acc*spq,dq*spq,.34,phraseBus); acc+=dq; }); });
+    (s.beats||patternQ(s.toks)).forEach((dq,k)=>{ if(!s.toks[k].endsWith('r')) ritmoSound(ps+acc*spq,dq*spq,.34,phraseBus); acc+=dq; }); });
   if(!noClick){ for(let i=0;i<N_PULSES;i++){ click(start+i*secPerPulse, i%PULSES_PER_MEAS===0, phraseBus); } }   // metrónomo solo en escucha normal
   // iluminar la flecha/pulso por el que va la música
   lightTimers.forEach(clearTimeout); lightTimers=[]; const baseMs=(start-c.currentTime)*1000;

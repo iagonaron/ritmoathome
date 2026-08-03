@@ -111,7 +111,7 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
     <span class="protlbl">prototipo · fase 4</span>
   </div>
   <div class="fase-head"><span class="fase-step">Fase 4 de 5</span><h2>Escucha y escribe</h2></div>
-  <p class="fase-sub">Escucha el compás y <b>escribe el primer pulso</b> con el editor. El segundo pulso ya está puesto.
+  <p class="fase-sub" id="faseSub">Escucha el compás y <b>escribe el primer pulso</b> con el editor. El segundo pulso ya está puesto.
     Cuando lo tengas, pulsa <b>Corregir</b>.</p>
 
   <div class="bar-row"><div class="bar-wrap"><div class="bar-fill" id="barFill"></div></div><span class="bar-tag" id="barTag"></span></div>
@@ -148,12 +148,15 @@ const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
 
 /* carta: por config (URL) o 1.1 por defecto */
 const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
-const CARD = _CFG ? { bpmComp:_CFG.bpmComp, spq:_CFG.spq, cells:_CFG.cells.map(c=>c.notes) } : { bpmComp:42, cells:[   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
+const CARD = _CFG ? { bpmComp:_CFG.bpmComp, spq:_CFG.spq, cells:_CFG.cells.map(c=>(c.unit?c.unit.toks:c.notes).slice()) } : { bpmComp:42, cells:[   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
   ["16","16","8","8"],["8","16","16","8"],["8","8","16","16"]
 ]};
 const COMPOUND=_CFG?_CFG.compound:true, MEAS=_CFG?_CFG.meas:"6/8", PULSE_Q=_CFG?_CFG.pulseQ:1.5, GIVEN=_CFG?_CFG.given:(COMPOUND?"qd":"q");
 const NVAR=CARD.cells.length; const ROUNDS = NVAR===1 ? 2 : NVAR;   // tantas rondas como variaciones (si solo hay 1 → 2, alternando el pulso dado)
 const HAS_TIES=false;   // 1.1 no usa ligaduras
+/* 3-ago-2026 · quiz-fix: duración REAL por célula (tuplets comprimidos) y su grupo, si lo hay */
+const CELL_BEATS=_CFG?_CFG.cells.map(c=>(c.unit?c.unit.beats:(c.beatsReal||c.notes.map(durQ))).slice()):CARD.cells.map(cs=>cs.map(durQ));
+const CELL_TUP=_CFG?_CFG.cells.map(c=>{const t=c.unit?c.unit.tup:((c.tuplets&&c.tuplets[0])||null); return t?{idx:t.idx.slice(),num:t.num,occ:t.occ}:null;}):CARD.cells.map(()=>null);
 
 /* helpers */
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
@@ -215,7 +218,7 @@ function renderMeasure(written, correct){
     const notes=[]; const writtenNotes=[];
     const buildWritten=()=>{ const start=notes.length;
       written.forEach(t=>{ const sn=mk(t,{color:correct?'#16a86f':'#16132b'}); notes.push(sn); writtenNotes.push(sn); });
-      const rem=Math.max(0, PULSE_Q - sumQ(written));
+      const rem=Math.max(0, CAP_Q - sumQ(written));
       padRests(rem).forEach(d=>{ const sn=mk(d+'r'); sn.setStyle({fillStyle:'rgba(0,0,0,0)',strokeStyle:'rgba(0,0,0,0)'}); notes.push(sn); });
       return {start, len:notes.length-start}; };
     const buildGiven=()=>{ const start=notes.length; givenToks.forEach(t=>notes.push(mk(t,{color:'#16132b'}))); return {start, len:notes.length-start}; };
@@ -226,6 +229,9 @@ function renderMeasure(written, correct){
     const beams=autoBeam(written).map(g=>{ try{ return new VF.Beam(g.map(k=>writtenNotes[k]).filter(Boolean)); }catch(e){ return null; } }).filter(Boolean);
     new VF.Formatter({softmaxFactor:5}).joinVoices([voice]).format([voice],STAVE_W-70);
     voice.draw(ctx,st); beams.forEach(b=>{ try{ b.setContext(ctx).draw(); }catch(e){} });
+    if(givenToks.length>1 && givenRange){ try{ autoBeam(givenToks).forEach(g=>{ const bn=g.map(k=>notes[givenRange.start+k]).filter(Boolean); if(bn.length>1) new VF.Beam(bn).setContext(ctx).draw(); }); }catch(e){} }
+    if(givenTup && givenRange){ try{ const grp=givenTup.idx.map(k=>notes[givenRange.start+k]).filter(Boolean);
+      if(grp.length>1) new VF.Tuplet(grp,{num_notes:givenTup.num,notes_occupied:givenTup.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} }
     const svg=host.querySelector('svg');
     const allEls=[...svg.querySelectorAll('g.vf-stavenote')];
     givenEls = allEls.slice(givenRange.start, givenRange.start+givenRange.len);   // para iluminar el pulso dado al sonar
@@ -258,15 +264,19 @@ function setSounding(on){ const b=document.getElementById('playBtn').querySelect
 function playMeasure(){
   if(playing){ stopPhrase(); return; } const c=ac(); if(!c)return;
   playing=true; setSounding(true); phraseBus=c.createGain(); phraseBus.gain.value=1; phraseBus.connect(master());
-  const t0=c.currentTime+0.15, measSec=2*secPerPulse;   // SIN compás de claqueta: va directo
   const slot0 = writeSlot===0 ? target : givenToks;
   const slot1 = writeSlot===0 ? givenToks : target;
-  let acc=0; slot0.forEach(t=>{ if(!t.endsWith('r')) ritmoSound(t0+acc*spq, durQ(t)*spq,.34,phraseBus); acc+=durQ(t); });
-  acc=PULSE_Q; slot1.forEach(t=>{ if(!t.endsWith('r')) ritmoSound(t0+acc*spq, durQ(t)*spq,.34,phraseBus); acc+=durQ(t); });
-  for(let p=0;p<2;p++) click(t0+p*secPerPulse, p===0, phraseBus);   // metrónomo de los 2 pulsos (referencia)
+  const slot0B= writeSlot===0 ? targetBeats : givenBeats;
+  const slot1B= writeSlot===0 ? givenBeats : targetBeats;
+  const sum0=slot0B.reduce((a,b)=>a+b,0), sum1=slot1B.reduce((a,b)=>a+b,0), totalQ=sum0+sum1;
+  const t0=c.currentTime+0.15, measSec=totalQ*spq;   // SIN compás de claqueta: va directo
+  let acc=0; slot0.forEach((t,k)=>{ if(!t.endsWith('r')) ritmoSound(t0+acc*spq, slot0B[k]*spq,.34,phraseBus); acc+=slot0B[k]; });
+  acc=sum0; slot1.forEach((t,k)=>{ if(!t.endsWith('r')) ritmoSound(t0+acc*spq, slot1B[k]*spq,.34,phraseBus); acc+=slot1B[k]; });
+  const nClicks=Math.max(2,Math.round(totalQ/PULSE_Q));
+  for(let p=0;p<nClicks;p++) click(t0+p*secPerPulse, p===0, phraseBus);   // metrónomo de referencia
   // iluminar el pulso DADO cuando suena (ahí termina lo que el alumno descifra)
   playTimers.forEach(clearTimeout); playTimers=[];
-  const givenStartSec=(writeSlot===0 ? PULSE_Q : 0)*spq;
+  const givenStartSec=(writeSlot===0 ? sum0 : 0)*spq;
   playTimers.push(setTimeout(()=>lightGiven(true), (0.15+givenStartSec)*1000));
   playTimers.push(setTimeout(()=>lightGiven(false), (0.15+measSec)*1000+140));
   setTimeout(()=>{ playing=false; phraseBus=null; setSounding(false); }, (0.15+measSec)*1000+260);
@@ -274,6 +284,7 @@ function playMeasure(){
 
 /* ===== estado ===== */
 let target=[], written=[], roundIdx=0, score=0, failUsedThisRound=false, order=[], writeSlot=0, givenToks=[GIVEN];
+let targetBeats=[], givenBeats=[durQ(GIVEN)], givenTup=null, CAP_Q=PULSE_Q;   // 3-ago: cabida REAL del hueco a escribir
 const PER=100/ROUNDS, HALF=PER/2;
 
 function buildEditor(){
@@ -284,13 +295,13 @@ function buildEditor(){
   document.getElementById('tieBtn').style.display = HAS_TIES?'inline-flex':'none';
 }
 function addFig(d,isRest){ ac(); const tok=d+(isRest?'r':'');
-  if(sumQ(written)+durQ(tok) > PULSE_Q+1e-6){ toast('Te has pasado de las figuras que caben en este pulso','no'); return; }
+  if(sumQ(written)+durQ(tok) > CAP_Q+1e-6){ toast('Te has pasado de las figuras que caben en este hueco','no'); return; }
   written.push(tok); renderMeasure(written,false);
-  document.getElementById('hint').textContent = Math.abs(sumQ(written)-PULSE_Q)<1e-6 ? 'Pulso completo. Pulsa Corregir.' : 'Sigue escribiendo tu pulso.';
+  document.getElementById('hint').textContent = Math.abs(sumQ(written)-CAP_Q)<1e-6 ? 'Completo. Pulsa Corregir.' : 'Sigue escribiendo.';
 }
 function applyDot(){ if(!written.length) return; const last=written[written.length-1]; if(last.endsWith('r')) return; // (silencios con puntillo: simplificado, no)
   if(last.endsWith('d')) return; const base=last; const dotted=base+'d';
-  if(sumQ(written.slice(0,-1))+durQ(dotted) > PULSE_Q+1e-6){ toast('Con puntillo no cabe en el pulso','no'); return; }
+  if(sumQ(written.slice(0,-1))+durQ(dotted) > CAP_Q+1e-6){ toast('Con puntillo no cabe en este hueco','no'); return; }
   written[written.length-1]=dotted; renderMeasure(written,false); }
 function delLast(){ if(written.length){ written.pop(); renderMeasure(written,false); document.getElementById('hint').textContent='Sigue escribiendo tu pulso.'; } }
 
@@ -325,9 +336,14 @@ function burst(){ const host=document.getElementById('confetti'); const cx=inner
 /* ronda */
 function newRound(){ stopPhrase(); failUsedThisRound=false; written=[]; idleLabel='▶ Escuchar'; setSounding(false);
   const spec=order[roundIdx]; const variation=CARD.cells[spec.cell].slice();
-  if(spec.swap){ writeSlot=1; givenToks=variation; target=[GIVEN]; }   // raro: escribe la figura de pulso, dado = la variación
-  else { writeSlot=0; givenToks=[GIVEN]; target=variation; }
-  renderMeasure(written,false); setBar(); document.getElementById('hint').textContent='Escucha y escribe tu pulso.';
+  const vBeats=CELL_BEATS[spec.cell].slice(); const vTup=CELL_TUP[spec.cell];
+  if(spec.swap){ writeSlot=1; givenToks=variation; givenBeats=vBeats; givenTup=vTup; target=[GIVEN]; targetBeats=[durQ(GIVEN)]; CAP_Q=durQ(GIVEN); }   // escribe la figura de pulso; suena la variación (real)
+  else { writeSlot=0; givenToks=[GIVEN]; givenBeats=[durQ(GIVEN)]; givenTup=null; target=variation; targetBeats=vBeats; CAP_Q=vBeats.reduce((a,b)=>a+b,0); }
+  renderMeasure(written,false); setBar(); document.getElementById('hint').textContent='Escucha y escribe.';
+  var _sub=document.getElementById('faseSub');
+  if(_sub) _sub.innerHTML = (writeSlot===1)
+    ? 'Escucha el compás y <b>escribe el pulso que FALTA</b> (el ritmo especial ya está puesto: fíjate en su grupo).'
+    : 'Escucha el compás y <b>escribe el primer pulso</b> con el editor. El segundo pulso ya está puesto.';
 }
 document.getElementById('playBtn').onclick=()=>{ ac(); playMeasure(); };
 document.getElementById('dotBtn').onclick=()=>applyDot();
@@ -337,7 +353,8 @@ document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin')
 
 function startGame(){
   const idxs=CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5);
-  order = (CARD.cells.length===1) ? [{cell:0,swap:false},{cell:0,swap:true}] : idxs.map(i=>({cell:i,swap:false}));
+  const swapFor=i=>!!CELL_TUP[i];   // 3-ago: GVE (tresillo…) no se puede escribir con la paleta → se escribe el pulso dado
+  order = (CARD.cells.length===1) ? [{cell:0,swap:swapFor(0)},{cell:0,swap:true}] : idxs.map(i=>({cell:i,swap:swapFor(i)}));
   buildEditor(); newRound();
 }
 startGame();

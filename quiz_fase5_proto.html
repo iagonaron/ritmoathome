@@ -307,10 +307,14 @@ const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
 
 /* ===== carta: por config (URL) o 1.1 por defecto ===== */
 const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
-const CARD = _CFG ? { kicker:"Carta "+(_CFG.atlasId||''), cells:_CFG.cells.map(c=>c.notes) } : { kicker:"Carta 1.1",
+const CARD = _CFG ? { kicker:"Carta "+(_CFG.atlasId||''), cells:_CFG.cells.map(c=>(c.unit?c.unit.toks:c.notes).slice()) } : { kicker:"Carta 1.1",
   cells:[ ["16","16","8","8"], ["8","16","16","8"], ["8","8","16","16"] ] };   // variaciones (objetivo)
 const COMPOUND=_CFG?_CFG.compound:true, PULSE_Q=_CFG?_CFG.pulseQ:1.5, BPM=_CFG?_CFG.bpm:42, BPM_EXTREME=_CFG?_CFG.bpmExtreme:70;   // BPM = bpm del PULSO
 const FILLERS = _CFG?_CFG.fillers:[ ["qd"], ["8","8","8"], ["q","8"], ["8","q"] ];                 // relleno (más sencillo)
+/* 3-ago-2026 · quiz-fix: duración REAL por variación (tuplets comprimidos), su grupo y su compás */
+const CELL_BEATS=_CFG?_CFG.cells.map(c=>(c.unit?c.unit.beats:(c.beatsReal||c.notes.map(durQ))).slice()):CARD.cells.map(cs=>cs.map(durQ));
+const CELL_TUP=_CFG?_CFG.cells.map(c=>{const t=c.unit?c.unit.tup:((c.tuplets&&c.tuplets[0])||null); return t?{idx:t.idx.slice(),num:t.num,occ:t.occ}:null;}):CARD.cells.map(()=>null);
+const CELL_TS=_CFG?_CFG.cells.map(c=>c.ts||null):CARD.cells.map(()=>null);
 
 /* ===== helpers rítmicos ===== */
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
@@ -427,8 +431,9 @@ const GRACE=0.072, STAR_WIN=0.110, EXTRA_PEN=1.0;                      // crédi
    roja + penalización) aun tocando bien. Ahora el mínimo es el 50% de la
    figura MÁS RÁPIDA que existe de verdad en esta carta (incluidas fusas),
    y el tope de golpes por pulso se calcula de esa misma figura. */
-const MIN_DUR_Q=(function(){ let m=1e9; const scan=t=>{ if(!String(t).endsWith('r')) m=Math.min(m,durQ(t)); };
-  CARD.cells.forEach(cs=>cs.forEach(scan)); FILLERS.forEach(fs=>fs.forEach(scan));
+const MIN_DUR_Q=(function(){ let m=1e9;
+  CARD.cells.forEach((cs,ci)=>cs.forEach((t,k)=>{ if(!String(t).endsWith('r')) m=Math.min(m,(CELL_BEATS[ci]&&CELL_BEATS[ci][k]!=null)?CELL_BEATS[ci][k]:durQ(t)); }));
+  FILLERS.forEach(fs=>fs.forEach(t=>{ if(!String(t).endsWith('r')) m=Math.min(m,durQ(t)); }));
   if(!isFinite(m)||m<=0) m=0.25; return m; })();
 const MAXTAPS_PER_PULSE=Math.ceil(PULSE_Q/MIN_DUR_Q)+3;                // máx. musical real + margen humano
 
@@ -454,12 +459,14 @@ function buildQuiz(){
     const targetPos=new Set(); for(let p=roundStart+PRE; p<=roundStart+len-2; p+=d.N) targetPos.add(p);
     for(let i=roundStart;i<roundStart+len;i++){
       const isT=targetPos.has(i);
-      const toks = isT ? CARD.cells[varRot++ % CARD.cells.length].slice() : FILLERS[fillRot++ % FILLERS.length].slice();
+      const ci = isT ? (varRot++ % CARD.cells.length) : -1;
+      const toks = isT ? CARD.cells[ci].slice() : FILLERS[fillRot++ % FILLERS.length].slice();
+      const bts = isT ? CELL_BEATS[ci] : null;
       const baseIdx=notes.length; let acc=0;
-      toks.forEach(t=>{ const onsetP=i + (acc/PULSE_Q), isRest=t.endsWith('r');   // posición en PULSOS
+      toks.forEach((t,k)=>{ const onsetP=i + (acc/PULSE_Q), isRest=t.endsWith('r');   // posición en PULSOS
         notes.push({onsetP, dur:t, isRest, round:ri});
         if(!isRest) attacks.push({tP:onsetP, isTarget:isT, round:ri, matched:false});
-        acc+=durQ(t); });
+        acc+=(bts&&bts[k]!=null)?bts[k]:durQ(t); });
       autoBeam(toks).forEach(g=> beamGroups.push(g.map(li=>baseIdx+li)));
     }
     roundsMeta.push({ri, aStart, aEnd:attacks.length, start:roundStart, len, boundaryP:roundStart+len, done:false});
@@ -660,15 +667,17 @@ function showExtremeResult(){
 }
 
 /* ===== pantalla de lección de estudio (maqueta) ===== */
-function renderPreview(toks){
+function renderPreview(toks, ts, tup){
   const host=document.createElement('div'); const beams=autoBeam(toks); const W=Math.max(150,70+toks.length*24);
   try{ const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(W,128); const ctx=r.getContext();
-    const st=new VF.Stave(4,40,W-8); st.addClef('treble').addTimeSignature('6/8'); st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw();
+    const st=new VF.Stave(4,40,W-8); st.addClef('treble').addTimeSignature(ts||'6/8'); st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw();
     const vf=toks.map(tok=>{ const isRest=tok.endsWith('r'); const base=tok.replace('d','').replace('r','');
       const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:base+(isRest?'r':'')}); if(tok.replace('r','').endsWith('d'))VF.Dot.buildAndAttach([sn]); return sn; });
     const vbeams=beams.map(g=>{ try{ return new VF.Beam(g.map(i=>vf[i])); }catch(e){return null;} }).filter(Boolean);
-    const voice=new VF.Voice({num_beats:6,beat_value:8}).setStrict(false); voice.addTickables(vf);
+    const [tn2,td2]=String(ts||'6/8').split('/').map(Number);
+    const voice=new VF.Voice({num_beats:tn2||6,beat_value:td2||8}).setStrict(false); voice.addTickables(vf);
     new VF.Formatter().joinVoices([voice]).format([voice],W-70); voice.draw(ctx,st); vbeams.forEach(b=>{try{b.setContext(ctx).draw();}catch(e){}});
+    if(tup){ try{ const grp=tup.idx.map(i=>vf[i]).filter(Boolean); if(grp.length>1) new VF.Tuplet(grp,{num_notes:tup.num,notes_occupied:tup.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} }
     const svg=host.querySelector('svg'); const top=st.getYForLine(0), bot=st.getYForLine(4);
     svg.setAttribute('viewBox',`0 ${(top-22).toFixed(1)} ${W} ${(bot-top+44).toFixed(1)}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height');
     return svg?svg.outerHTML:'';
@@ -677,7 +686,12 @@ function renderPreview(toks){
 function studyScreen(){ extremeMode=false; document.body.classList.remove('fire'); document.getElementById('faseTitle').textContent='Sigue el ritmo';
   ['ovWin','ovExtResult','ovResult','ovExtWarn'].forEach(id=>document.getElementById(id).classList.remove('show'));
   const host=document.getElementById('studyVars'); host.innerHTML='';
-  CARD.cells.forEach((toks,i)=>{ const d=document.createElement('div'); d.className='svar'; d.innerHTML=`<span>Ritmo ${i+1}</span>`+renderPreview(toks.concat(['qd'])); host.appendChild(d); });
+  CARD.cells.forEach((toks,i)=>{ const d=document.createElement('div'); d.className='svar';
+    const ts=CELL_TS[i]; const hasUnit=!!(_CFG&&_CFG.cells[i]&&_CFG.cells[i].unit);
+    const [tn3,td3]=String(ts||'6/8').split('/').map(Number);
+    const cierre = td3===2?'h' : (td3===8&&tn3%3===0)?'qd' : (td3===8)?null : 'q';   // dispar: sin cierre
+    const show = hasUnit ? toks.concat([cierre||'qd']) : toks.slice();   // unidad de pulso + cierre; compás entero tal cual
+    d.innerHTML=`<span>Ritmo ${i+1}</span>`+renderPreview(show, ts, CELL_TUP[i]); host.appendChild(d); });
   // FASE 7.1 · lecciones del libro (capturas subidas por Iago desde el Diario,
   // llegan por _CFG.lecciones): botón protagonista + nota ajustada
   const LECC=(_CFG && Array.isArray(_CFG.lecciones)) ? _CFG.lecciones : [];
