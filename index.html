@@ -5700,7 +5700,40 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       bpmExtreme: Math.round(bpmPulse*(70/42)),
       // FASE 7.1 · capturas del libro del envío del profe (llegan a la fase 5)
       lecciones: (window.__SUITE_QUIZ_LECCIONES||[]),
-      cells: cells.map(ce=>({ts:ce.ts, beat:ce.beat, notes:(ce.notes||[]).slice(), beams:(ce.beams||[]).map(b=>b.slice()), ties:(ce.ties||[]).map(t=>t.slice())}))
+      /* 3-ago-2026 · quiz-fix: tokens normalizados (clave de Do → solo ritmo), tuplets con
+         duración REAL (beatsReal) y 'unit' = pulso característico para las fases interactivas */
+      cells: cells.map(ce=>{
+        const toks=(ce.notes||[]).map(n=>typeof n==='string'?n:((n.d||'q')+(n.rest?'r':'')));
+        const baseQ=t=>{ let x=t; if(x.endsWith('r'))x=x.slice(0,-1); let dot=false; if(x.endsWith('d')){dot=true;x=x.slice(0,-1);} const M={w:4,h:2,q:1,'8':.5,'16':.25,'32':.125,'64':.0625}; let v=M[x]!=null?M[x]:1; return dot?v*1.5:v; };
+        const tup=(ce.tuplets&&ce.tuplets[0])?{idx:ce.tuplets[0].idx.slice(),num:ce.tuplets[0].num,occ:ce.tuplets[0].occ}:null;
+        let beatsReal;
+        if(tup){ const wsum=tup.idx.reduce((a,i)=>a+baseQ(toks[i]),0); const occQ=wsum*(tup.occ/tup.num);
+          beatsReal=toks.map((t,i)=> tup.idx.includes(i) ? baseQ(t)*(occQ/wsum) : baseQ(t)); }
+        else beatsReal=toks.map(baseQ);
+        const scope=(ce.beats!=null&&ce.beat!=null)?'pulse':'bar';
+        const [tn,td]=(ce.ts||'2/4').split('/').map(Number);
+        const pulseLen = td===2 ? 2 : (td===8&&tn%3===0) ? 1.5 : 1;
+        let unit=null;
+        if(scope==='pulse'){ unit={toks:toks.slice(), beats:beatsReal.slice(), tup:tup?{idx:tup.idx.slice(),num:tup.num,occ:tup.occ}:null}; }
+        else { /* extraer un pulso LIMPIO (el del tuplet si lo hay; si no, el primero) */
+          let acc=0; const starts=beatsReal.map(b=>{const s=acc;acc+=b;return s;});
+          const wantIdx = tup ? tup.idx[0] : 0;
+          const pStart = Math.floor((starts[wantIdx]+1e-9)/pulseLen)*pulseLen;
+          const inside=[]; let sum=0;
+          for(let i=0;i<toks.length;i++){ const s=starts[i];
+            if(s>=pStart-1e-6 && s<pStart+pulseLen-1e-6){ inside.push(i); sum+=beatsReal[i]; }
+          }
+          const contiguous = inside.length && inside.every((v,k)=>k===0||v===inside[k-1]+1);
+          if(contiguous && Math.abs(sum-pulseLen)<1e-6 && (!tup || tup.idx.every(i=>inside.includes(i)))){
+            const b0=inside[0];
+            unit={toks:inside.map(i=>toks[i]), beats:inside.map(i=>beatsReal[i]),
+                  tup: tup?{idx:tup.idx.map(i=>i-b0),num:tup.num,occ:tup.occ}:null};
+          }
+        }
+        return {ts:ce.ts, beat:ce.beat, beats:ce.beats, scope:scope, notes:toks,
+                beams:(ce.beams||[]).map(b=>b.slice()), ties:(ce.ties||[]).map(t=>t.slice()),
+                tuplets:tup?[tup]:[], beatsReal:beatsReal, unit:unit, label:ce.label||undefined};
+      })
     };
   }
 
@@ -5888,8 +5921,19 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   }
 
   window.SuiteQuizRitmo={ completar: completar };
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', autoArranque);
-  else autoArranque();
+  /* 3-ago-2026 · quiz-fix H4: ?introCarta=X (botón «Ver explicación interactiva» del portal)
+     abre directamente la INTRO de esa carta. Si la carta no tiene INTRO definida, aviso suave. */
+  function autoIntro(){
+    const IC=qs.get('introCarta'); if(!IC) return;
+    const hit=(function(){ const ms=(typeof GE_WORLDS!=='undefined'&&GE_WORLDS)||[];
+      for(const w of ms) for(const c of (w.cards||[])) if(c.atlasId===IC) return c; return null; })();
+    setTimeout(()=>{ try{
+      if(hit && window.CARD_INTROS && window.CARD_INTROS[IC] && typeof window.launchCardIntro==='function'){ window.launchCardIntro(hit); }
+      else { banner(hit?('ⓘ La carta '+IC+' todavía no tiene explicación interactiva. Pregúntale a Iago en clase.'):('ⓘ No encuentro la carta '+IC+'.'),''); }
+    }catch(e){ console.warn('[suite-quiz] introCarta', e); } }, 350);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>{ autoArranque(); autoIntro(); });
+  else { autoArranque(); autoIntro(); }
 })();
 
 </script>
