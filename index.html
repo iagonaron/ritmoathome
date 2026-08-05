@@ -992,7 +992,7 @@ window.SuiteTiempo=(function(){
 
 <!-- PANTALLA DE ENTRADA -->
 <div class="entry" id="entry">
-  <a class="lmeav-link" href="https://ge.lmathome.es" target="_blank" rel="noopener" title="Ir al portal LM at home"><span style="display:inline-flex;flex-direction:column;vertical-align:middle"><span style="white-space:nowrap"><span class="lm">LM</span> <span class="ho">at home</span></span><span aria-hidden="true" style="display:flex;justify-content:space-between;margin-top:1px;font-size:8px;font-weight:800;line-height:1;letter-spacing:0;color:#7db4ff;font-style:normal"><b>G</b><b>R</b><b>A</b><b>D</b><b>O</b><i style="width:.6em"></i><b>E</b><b>L</b><b>E</b><b>M</b><b>E</b><b>N</b><b>T</b><b>A</b><b>L</b></span></span></a>
+  <a class="lmeav-link" href="https://ge.lmathome.es" target="_blank" rel="noopener" title="Ir al portal LMEAV at home"><span class="lm">LM</span><span class="eav">EAV</span> <span class="ho">at home</span></a>
   <div class="entry-card">
     <h1 class="brand-title brand-center"><span class="bd">RIT</span><span class="lt">MO</span><span class="h">at home</span></h1>
 
@@ -5695,6 +5695,32 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     {file:'quiz_fase5_proto.html',    name:'Sigue el ritmo'},
   ];
   let ov=null, frame=null, stepsEl=null, idx=0, done=[], maxReached=0, cfgB64='';
+  // (6-ago Iago) QUIZ A MEDIAS · si el quiz viene de la campana (?envio&cuenta),
+  // cada fase superada deja un punto de control en ESTE dispositivo; al volver
+  // a entrar se retoma en la fase alcanzada (las anteriores quedan ✓ y se
+  // pueden revisitar con los pasos de arriba). Al terminar la fase 5 se borra.
+  const _QP=new URLSearchParams(location.search);
+  const _QENVIO=_QP.get('envio')||'', _QCUENTA=_QP.get('cuenta')||'';
+  let avKey=null;
+  function avanceLeer(){ if(!avKey) return null;
+    try{ const v=JSON.parse(localStorage.getItem(avKey)||'null');
+      if(v && (v.max|0)>0 && Array.isArray(v.done)) return v; }catch(e){} return null; }
+  function avanceGuardar(){ if(!avKey) return;
+    try{ localStorage.setItem(avKey, JSON.stringify({max:maxReached, done:done.map(x=>!!x), t:Date.now()})); }catch(e){} }
+  function avanceBorrar(){ if(!avKey) return; try{ localStorage.removeItem(avKey); }catch(e){} }
+  function avisoRetomar(n){
+    try{
+      const el=document.createElement('div');
+      el.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:100002;'+
+        'padding:11px 18px;border-radius:14px;font:800 14px/1.45 "Helvetica Neue",Arial,sans-serif;text-align:center;'+
+        'background:rgba(169,116,255,.22);border:1.5px solid rgba(169,116,255,.65);color:#e2d4ff;'+
+        'backdrop-filter:blur(6px);box-shadow:0 14px 40px rgba(0,0,0,.4)';
+      el.id='quizRetomarAviso';
+      el.textContent='⏸ Retomando el quiz donde lo dejaste · fase '+n+' de '+PHASES.length;
+      document.body.appendChild(el);
+      setTimeout(()=>{ try{ el.remove(); }catch(e){} }, 6000);
+    }catch(e){}
+  }
 
   // ---- config por carta (células + compás + parámetros métricos + fillers + tempo del esquema) ----
   function cardQuizConfig(card){
@@ -5794,21 +5820,32 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     const last=(idx===PHASES.length-1)?'&last=1':''; const cfgQ=cfgB64?('&cfg='+cfgB64):''; ov.classList.add('loading');
     frame.src=p.file+'?embed=1'+last+cfgQ; paint(); }
   function onMsg(e){ if(!frame||e.source!==frame.contentWindow) return; const d=e.data||{};
-    if(d.type==='quizPhaseDone'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); paint(); quizTerminadoSiToca(); }
-    else if(d.type==='quizAdvanceNow'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); quizTerminadoSiToca();
+    if(d.type==='quizPhaseDone'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); avanceGuardar(); paint(); quizTerminadoSiToca(); }
+    else if(d.type==='quizAdvanceNow'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); avanceGuardar(); quizTerminadoSiToca();
       if(idx<PHASES.length-1) load(idx+1); else paint(); } }
   // FASE 7 · si la ÚLTIMA fase acaba de completarse y venimos de la campana
   // del portal (?envio&cuenta), se avisa a Iago (una sola vez por envío).
   function quizTerminadoSiToca(){
     if(idx!==PHASES.length-1 || !done[idx]) return;
+    avanceBorrar();   // (6-ago) quiz terminado: fuera el punto de control
     if(window.SuiteQuizRitmo && typeof window.SuiteQuizRitmo.completar==='function') window.SuiteQuizRitmo.completar();
   }
   function open(card,worldId){
     if(!ov) build();
     cfgB64=''; try{ const cfg=cardQuizConfig(card); cfgB64=encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(cfg))))); }catch(e){ console.error('cfg',e); }
     done=PHASES.map(()=>false); idx=0; maxReached=0;
+    // (6-ago) punto de control SOLO para el quiz de tareas (con envío y cuenta):
+    // clave por cuenta+envío+carta, así nunca pisa a otro quiz ni a otro alumno.
+    avKey=(_QENVIO && _QCUENTA && card && card.atlasId) ? ('quiz_avance_'+_QCUENTA+'_'+_QENVIO+'_'+card.atlasId) : null;
+    const av=avanceLeer();
+    if(av){
+      done=PHASES.map((_,i)=>!!av.done[i]);
+      maxReached=Math.max(0, Math.min(av.max|0, PHASES.length-1));
+      idx=maxReached;
+    }
     document.body.style.overflow='hidden';
-    ov.classList.add('show'); load(0);
+    ov.classList.add('show'); load(idx);
+    if(av) avisoRetomar(idx+1);
   }
   function close(){ if(!ov) return; ov.classList.remove('show'); frame.src='about:blank';
     document.body.style.overflow=''; }
