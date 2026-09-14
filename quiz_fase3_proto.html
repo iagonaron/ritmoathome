@@ -43,7 +43,7 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 
 .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .bar-wrap{flex:1;height:16px;border-radius:999px;background:rgba(8,5,22,.5);border:1px solid var(--line);overflow:hidden}
-.bar-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(180deg,#3ee9a6,#22c98a);transition:width .4s cubic-bezier(.2,.9,.3,1)}
+.bar-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(180deg,#3ee9a6,#22c98a);transition:width .9s cubic-bezier(.22,.75,.25,1)}   /* (Iago 14-sep-2026) avance continuo, no a tirones */
 .bar-fill.bad{background:linear-gradient(180deg,#ff6b80,#ff2d6a)!important}
 .bar-tag{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
 
@@ -127,7 +127,7 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 
   <div class="bar-row">
     <div class="bar-wrap"><div class="bar-fill" id="barFill"></div></div>
-    <span class="bar-tag" id="barTag">Resuelve 3 puzzles</span>
+    <span class="bar-tag" id="barTag">Resuelve 2 puzzles</span>
   </div>
 
   <div class="staff-panel"><div id="staffHost"></div><div class="slots" id="slots"></div></div>
@@ -163,6 +163,9 @@ const CARD = _CFG ? { bpmComp:_CFG.bpmComp, bpmSimple:_CFG.bpmSimple, spq:_CFG.s
   {ts:"6/8",beats:3,beat:8,notes:["8","16","16","8"],beams:[[0,1,2,3]]},
   {ts:"6/8",beats:3,beat:8,notes:["8","8","16","16"],beams:[[0,1,2,3]]}
 ]};
+// (Iago 14-sep-2026) Dos puzzles en vez de tres: la frase se queda en 4
+// compases (aquí la frase entera es parte del ejercicio), pero se repite menos.
+const PUZZLES = 2;
 const COMPOUND=_CFG?_CFG.compound:true, MEAS=_CFG?_CFG.meas:"6/8", PULSES_PER_MEAS=_CFG?_CFG.pulsesPerMeas:2, N_MEAS=_CFG?_CFG.nMeas:4, N_PULSES=N_MEAS*PULSES_PER_MEAS, PULSE_Q=_CFG?_CFG.pulseQ:1.5;
 const FILLERS=_CFG?_CFG.fillers:[ ["qd"], ["8","8","8"], ["q","8"], ["8","q"] ];   // rellenos más sencillos
 
@@ -413,15 +416,15 @@ function playPhrase(noClick){
 
 /* ===== comprobar ===== */
 function setBar(){ document.getElementById('barFill').style.width=Math.max(0,Math.min(100,round.score))+'%';
-  document.getElementById('barTag').textContent = round.hits>=3?'¡Completado!':`Puzzles: ${round.hits} de 3`; }
+  document.getElementById('barTag').textContent = round.hits>=PUZZLES?'¡Completado!':`Puzzles: ${round.hits} de ${PUZZLES}`; }
 function flashBad(){ const f=document.getElementById('barFill'); f.classList.add('bad'); setTimeout(()=>f.classList.remove('bad'),650); }
 function check(){
   const ok = placed.every((p,i)=> tokKey(p.toks)===tokKey(solution[i].toks));   // por patrón rítmico de cada pulso
-  if(ok){ round.hits++; round.score=Math.min(100,round.score+33.34); toast('¡Correcto!','ok'); burst(); setBar();
+  if(ok){ round.hits++; round.score=Math.min(100,round.score+(100/PUZZLES)); toast('¡Correcto!','ok'); burst(); setBar();
     document.getElementById('checkBtn').disabled=true;                            // sin reproducir: solo confirma
-    setTimeout(()=>{ if(round.hits>=3){ document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 1300);
+    setTimeout(()=>{ if(round.hits>=PUZZLES){ document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 1300);
   } else {
-    if(!round.firstFailUsed){ round.firstFailUsed=true; round.score=Math.max(0,round.score-16.5); flashBad(); setBar(); }  // medio segmento, solo el 1er fallo
+    if(!round.firstFailUsed){ round.firstFailUsed=true; round.score=Math.max(0,round.score-(100/PUZZLES)/2); flashBad(); setBar(); }  // medio segmento, solo el 1er fallo
     idleLabel='▶ Inténtalo otra vez'; if(!playing) setSounding(false);
     toast('Hay algún error','no'); document.getElementById('hint').textContent='Hay algún error. Vuelve a escucharlo y reestructúrala.';
   }

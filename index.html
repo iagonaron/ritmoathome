@@ -5736,9 +5736,13 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     else if(dispar){ pulsesPerMeas=2; pulseQ=1.5; given='qd'; fillers=[['qd'],['8','8','8'],['q','8']]; bpmPulse=63; spq=60/63; }   // 5/8 (aprox): corchea=126
     else { pulsesPerMeas=N; pulseQ=1; given='q'; fillers=[['q'],['8','8'],['16','16','8'],['8','16','16'],['16','16','16','16']]; bpmPulse=hasFusas?44:50; spq=60/bpmPulse; }
     const nMeas=Math.max(2, Math.round(8/pulsesPerMeas));
+    // (Iago 14-sep-2026) El quiz se le hacía largo a los chavales (9 min yendo
+    // rápido). La fase 2 se acorta a 3 compases; la 3 se queda en 4 porque ahí
+    // la frase completa es parte del ejercicio.
+    const nMeas2=Math.max(2, nMeas-1);
     return {
       atlasId:card.atlasId||'', name:card.name||'', meas, compound, dispar,
-      pulsesPerMeas, pulseQ, given, fillers, nMeas, hasFusas,
+      pulsesPerMeas, pulseQ, given, fillers, nMeas, nMeas2, hasFusas,
       spq,                                   // segundos por NEGRA (motor de tempo)
       bpm:bpmPulse,                          // bpm del PULSO
       bpmComp: compound?bpmPulse:42,         // referencia c/puntillo (para fases que lo usan)

@@ -46,7 +46,7 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:18px}
 .bar-wrap{flex:1;height:18px;border-radius:999px;background:rgba(8,5,22,.5);border:1px solid var(--line);overflow:hidden;position:relative}
 .bar-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(180deg,#3ee9a6,#22c98a);
-  transition:width .4s cubic-bezier(.2,.9,.3,1)}
+  transition:width .9s cubic-bezier(.22,.75,.25,1)}   /* (Iago 14-sep-2026) avance continuo, no a tirones */
 .bar-fill.bad{background:linear-gradient(180deg,#ff6b80,#ff2d6a)!important}
 @keyframes slide{to{background-position:200% 0}}
 .bar-tag{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
@@ -213,7 +213,9 @@ const CARD = _CFG ? { kicker:"Carta "+(_CFG.atlasId||''), bpmSimple:_CFG.bpmSimp
 const COMPOUND = _CFG ? _CFG.compound : (CARD.cells[0].beat===8);
 const MEAS = _CFG ? _CFG.meas : (COMPOUND ? "6/8" : "2/4");
 const PULSES_PER_MEAS = _CFG ? _CFG.pulsesPerMeas : 2;
-const N_MEAS = _CFG ? _CFG.nMeas : 4;
+// (Iago 14-sep-2026) La fase 2 usa una frase MÁS CORTA que el resto del quiz
+// (nMeas2 = nMeas-1): se le estaba haciendo largo a los chavales.
+const N_MEAS = _CFG ? (_CFG.nMeas2 || _CFG.nMeas) : 3;
 const N_PULSES = N_MEAS*PULSES_PER_MEAS;
 const PULSE_Q = _CFG ? _CFG.pulseQ : (COMPOUND ? 1.5 : 1);
 
@@ -349,6 +351,9 @@ function ritmoSound(t0,durSec,gain,dest){
 }
 
 /* ===== estado de ronda ===== */
+// (Iago 14-sep-2026) Antes siempre 3 aciertos. Ahora, tantos como ritmos
+// tenga la carta: con 2 células no tiene sentido pedir 3 vueltas.
+const RONDAS = Math.max(2, Math.min(3, (CARD.cells||[]).length || 3));
 let round=null, score=0, hits=0, answered=false, targetCellIdx=-1, lastTargetPulse=-1;
 const spq = _CFG ? _CFG.spq : (COMPOUND ? (60/CARD.bpmComp)/1.5 : 60/CARD.bpmSimple);   // seg por negra
 const secPerPulse = PULSE_Q*spq;
@@ -466,7 +471,7 @@ function pedirEscucha(){
 }
 
 function setBar(){ const f=document.getElementById('barFill'); f.style.width=Math.max(0,Math.min(100,score))+'%';
-  document.getElementById('barTag').textContent = hits>=3?'¡Completada!':(`Aciertos: ${hits} de 3`); }
+  document.getElementById('barTag').textContent = hits>=RONDAS?'¡Completada!':(`Aciertos: ${hits} de ${RONDAS}`); }
 function flashBarBad(){ const f=document.getElementById('barFill'); f.classList.add('bad'); setTimeout(()=>f.classList.remove('bad'),650); }
 
 function onPick(idx,g){
@@ -476,14 +481,14 @@ function onPick(idx,g){
   document.getElementById('playBtn').classList.add('spent');
   const correctG=pnumByIdx(round.targetPulse);
   const good=(idx===round.targetPulse);
-  if(good){ g.classList.add('ok'); hits++; score=Math.min(100,score+33.34); toast('¡Correcto!','ok'); }
-  else { g.classList.add('bad'); score=Math.max(0,score-16.5); toast('Ese no','no'); flashBarBad(); }
+  if(good){ g.classList.add('ok'); hits++; score=Math.min(100,score+(100/RONDAS)); toast('¡Correcto!','ok'); }
+  else { g.classList.add('bad'); score=Math.max(0,score-(100/RONDAS)/2); toast('Ese no','no'); flashBarBad(); }
   setBar();
   // revelar el pulso correcto + FOCO en la tarjeta y sonar su ritmo (con cabezas iluminándose)
   setTimeout(()=>{ if(correctG) correctG.classList.add('reveal'); showSpotlight(); playOnePulse(round.targetPulse); lightTargetHeads(cellTokens(CARD.cells[targetCellIdx]),cellBeatsQ(CARD.cells[targetCellIdx])); if(good) burst(); }, 430);
   const revealMs = 430 + Math.round(PULSE_Q*spq*1000) + 750;
   setTimeout(()=>{ hideSpotlight();
-    if(hits>=3){ document.getElementById('ovWin').classList.add('show'); burst(); }
+    if(hits>=RONDAS){ document.getElementById('ovWin').classList.add('show'); burst(); }
     else { roundTransition(newRound); }
   }, revealMs);
 }

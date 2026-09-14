@@ -45,7 +45,9 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 /* barra de 3 tramos */
 .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .bar-wrap{flex:1;height:20px;border-radius:999px;background:rgba(8,5,22,.5);border:1px solid var(--line);overflow:hidden;position:relative}
-.bar-fill{height:100%;width:0%;border-radius:999px;background:var(--grad);background-size:200% 100%;transition:width .5s cubic-bezier(.2,.9,.3,1);animation:slide 20s linear infinite}
+/* (Iago 14-sep-2026) SIN transition: aqui la barra la mueve el reloj en cada
+   fotograma, y una transicion de medio segundo la dejaba arrastrandose. */
+.bar-fill{height:100%;width:0%;border-radius:999px;background:var(--grad);background-size:200% 100%;animation:slide 20s linear infinite}
 .bar-fill.bad{background:linear-gradient(120deg,#ff5c72,#ff2d6a)!important;animation:none}
 .bar-seg{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25)}
 /* modo extremo: es UNA sola tirada de corrido → barra CONTINUA, sin las
@@ -193,11 +195,11 @@ body.fire .green-cap{background:#ff4d00;box-shadow:0 0 16px rgba(255,90,0,.9)}
 
   <div class="fase-head"><span class="fase-step" id="faseStep">Fase 5 de 5</span><h2 id="faseTitle">Sigue el ritmo</h2></div>
   <p class="fase-sub">Las figuras llegan por la derecha. <b>Percute cada figura</b> justo cuando cruza la <b>línea verde</b>: con la <b>barra espaciadora</b> (ordenador) o con los <b>pads</b> (tablet).
-    Solo suena la claqueta: tú lees y marcas el pulso. <b>3 rondas</b>, cada vez más apretadas.</p>
+    Solo suena la claqueta: tú lees y marcas el pulso. <b>Una frase</b>, cada vez más apretada.</p>
 
   <div class="bar-row">
-    <div class="bar-wrap"><div class="bar-fill" id="barFill"></div><div class="bar-seg" style="left:33.33%"></div><div class="bar-seg" style="left:66.66%"></div></div>
-    <span class="bar-tag" id="barTag">Ronda 1 de 3</span>
+    <div class="bar-wrap"><div class="bar-fill" id="barFill"></div></div>
+    <span class="bar-tag" id="barTag">Sigue el ritmo</span>
   </div>
 
   <div class="redslot"><div class="redmsg" id="redmsg"></div></div>
@@ -209,7 +211,7 @@ body.fire .green-cap{background:#ff4d00;box-shadow:0 0 16px rgba(255,90,0,.9)}
     <div id="track"></div>
     <div class="run-overlay"><span class="count3" id="count3"></span></div>
     <div class="roundflash" id="roundflash"></div>
-    <div class="slidecart" id="slidecart"><span id="slidecartTx">Siguiente ronda</span></div>
+    <div class="slidecart" id="slidecart"><span id="slidecartTx">¡Vamos!</span></div>
   </div>
 
   <div class="flameline" id="flameline"></div>
@@ -220,19 +222,19 @@ body.fire .green-cap{background:#ff4d00;box-shadow:0 0 16px rgba(255,90,0,.9)}
   </div>
 
   <div class="controls">
-    <button class="startbtn" id="startBtn">Empezar ronda ▶</button>
+    <button class="startbtn" id="startBtn">Empezar ▶</button>
     <div class="seg" id="velSeg"><span class="lbl">Velocidad</span></div>
     <div class="seg" id="subSeg"><span class="lbl">Subdivisión</span></div>
   </div>
-  <p class="hint" id="hint">Pulsa «Empezar ronda» o la barra espaciadora. Te haré una cuenta atrás.</p>
+  <p class="hint" id="hint">Pulsa «Empezar» o la barra espaciadora. Te haré una cuenta atrás.</p>
 </div>
 
 <div class="confetti" id="confetti"></div>
 
 <!-- resultado de ronda -->
 <div class="ov" id="ovResult"><div class="cartel">
-  <div class="badge" id="resBadge">Ronda</div>
-  <h1 id="resTitle">Ronda superada</h1>
+  <div class="badge" id="resBadge">Resultado</div>
+  <h1 id="resTitle">Frase superada</h1>
   <p class="sub" id="resSub"></p>
   <div class="statline">
     <div class="stat" id="resTgt"><b>0%</b>objetivos</div>
@@ -422,7 +424,14 @@ const SUBDIV_OPTS=[ {key:'off',label:'Ninguna',per:1}, {key:'8',label:'Corchea',
 let speedLevel=0, subdivSel='off';
 let lastTap=-1, spamCount=0, roundExtra=0, extraTotal=0, tapTimes=[];
 const GREEN_X=150, PXPERPULSE=118, LEAD_PULSES=3, SCHED_AHEAD=0.12;   // px por pulso · pulsos de entrada · lookahead del scheduler (s)
-const GAPS=[4,3,2], PRE=2, PHRASE=8, ROUND_PHRASES=3, GAPP=6;          // PHRASE=8 pulsos = 4 compases (6/8) · ronda = 3 frases
+// (Iago 14-sep-2026) Antes eran 3 RONDAS de 3 frases cada una — 72 pulsos
+// tocando — y a los chavales se les hacía eterno. Ahora es UNA SOLA FRASE
+// larga, sin cortes ni carteles de «ronda siguiente», y la dificultad crece
+// DENTRO de ella: los ritmos que hay que clavar empiezan separados (cada 4
+// pulsos) y se van juntando (cada 3, luego cada 2). FRASE_UNIDADES es lo
+// único que hay que tocar para alargarla o acortarla.
+const GAPS=[4,3,2], PRE=2, PHRASE=8, FRASE_UNIDADES=2, GAPP=6;          // PHRASE=8 pulsos = 4 compases (6/8)
+const ROUND_PHRASES=FRASE_UNIDADES;
 const TOL=0.14, VIS_DELAY=0.10;                                        // retraso (s) de figura Y de la ventana de precisión
 const GRACE=0.072, STAR_WIN=0.110, EXTRA_PEN=1.0;                      // crédito pleno · estrellita · cada golpe de más = un acierto perdido
 /* ANTI-METRALLETA ADAPTATIVA (Iago 2-jul): antes el hueco mínimo entre
@@ -450,13 +459,29 @@ function curPer(){ return (SUBDIV_OPTS.find(o=>o.key===subdivSel)||{per:1}).per;
 /* ===== construir la prueba en UNIDADES MUSICALES (pulsos), independiente del tempo ===== */
 function buildQuiz(){
   const stdLen=ROUND_PHRASES*PHRASE;
+  // Una sola pasada. En modo normal, la separación entre ritmos objetivo se
+  // aprieta por tramos dentro de la propia frase; en extremo ya va apretada
+  // de principio a fin, que es su gracia.
   const roundDefs = extremeMode ? [{N:2,pulses:stdLen*2}]
-                                : [{N:GAPS[0],pulses:stdLen},{N:GAPS[1],pulses:stdLen},{N:GAPS[2],pulses:stdLen}];
+                                : [{gaps:GAPS, pulses:stdLen}];
   notes=[]; attacks=[]; beamGroups=[]; roundsMeta=[];
   let pulse=0, varRot=0, fillRot=0;
   roundDefs.forEach((d,ri)=>{
     const roundStart=pulse, aStart=attacks.length, len=d.pulses;
-    const targetPos=new Set(); for(let p=roundStart+PRE; p<=roundStart+len-2; p+=d.N) targetPos.add(p);
+    const targetPos=new Set();
+    const finPos=roundStart+len-2;
+    if(d.gaps && d.gaps.length){
+      // dificultad creciente dentro de la frase: se reparte en tantos tramos
+      // como separaciones haya, y cada tramo usa la suya
+      const tramos=d.gaps.length, porTramo=Math.max(1, Math.floor(len/tramos));
+      let p=roundStart+PRE;
+      for(let t=0;t<tramos;t++){
+        const tope=(t===tramos-1)?finPos:Math.min(finPos, roundStart+(t+1)*porTramo-1);
+        for(; p<=tope; p+=d.gaps[t]) targetPos.add(p);
+      }
+    } else {
+      for(let p=roundStart+PRE; p<=finPos; p+=d.N) targetPos.add(p);
+    }
     for(let i=roundStart;i<roundStart+len;i++){
       const isT=targetPos.has(i);
       const ci = isT ? (varRot++ % CARD.cells.length) : -1;
@@ -491,7 +516,7 @@ function layoutTrack(){
 }
 
 /* ===== ciclo de juego ===== */
-function setStartBtn(run){ const b=document.getElementById('startBtn'); b.textContent=run?'Parar ■':'Empezar ronda ▶'; b.classList.toggle('stop',run); }
+function setStartBtn(run){ const b=document.getElementById('startBtn'); b.textContent=run?'Parar \u25a0':'Empezar \u25b6'; b.classList.toggle('stop',run); }
 function lineGood(){ const g=document.getElementById('greenline'); g.classList.remove('bad'); g.classList.add('good'); clearTimeout(g._gt); g._gt=setTimeout(()=>g.classList.remove('good'),150); }
 function lineRed(){ const g=document.getElementById('greenline'); g.classList.remove('good'); g.classList.add('bad'); clearTimeout(g._rt); g._rt=setTimeout(()=>g.classList.remove('bad'),360); }
 const STARCOL=['#ffd678','#5bd0ff','#34d399','#ff5ccd','#a974ff'];
@@ -545,7 +570,7 @@ function musPos(now){ const A=musAnchors; if(!A.length) return -LEAD_PULSES;
 function frame(){ if(!running) return; const now=ac().currentTime, mp=musPos(now), sp=effSecPerPulse();
   document.getElementById('track').style.transform='translateX('+(GREEN_X - mp*PXPERPULSE)+'px)';
   // modo extremo: la barra avanza de forma CONTINUA con la pista (una sola tirada)
-  if(extremeMode){ document.getElementById('barFill').style.width=Math.max(0,Math.min(100,(mp/lastP)*100))+'%'; }
+  barraConReloj(mp);
   for(let i=0;i<attacks.length;i++){ const a=attacks[i]; if(!a.matched && !a.missed){ if(mp > a.tP+VIS_DELAY_P + TOL/sp){ a.missed=true; lineRed(); } } }
   roundsMeta.forEach(m=>{ if(!m.done && mp > m.boundaryP + 0.35){ m.done=true; evalRound(m); } });
   if(mp > lastP + 0.5){ finishQuiz(); return; }
@@ -611,17 +636,21 @@ function evalRound(m){
   if(!extremeMode){ if(m.pass) roundsPassed++; updateBar(); flashRound(m.pass); }
 }
 function flashRound(pass){ const el=document.getElementById('roundflash'); if(!el)return;
-  el.textContent = pass?'¡Ronda superada!':'¡Casi! sigue'; el.className='roundflash '+(pass?'ok':'no'); void el.offsetWidth; el.classList.add('show');
+  el.textContent = pass?'¡Frase superada!':'¡Casi! sigue'; el.className='roundflash '+(pass?'ok':'no'); void el.offsetWidth; el.classList.add('show');
   if(pass) emitStars(4); }
 
 /* ===== barra (3 tramos, se llena por ronda superada) ===== */
-function updateBar(){ document.getElementById('barFill').style.width=Math.max(0,Math.min(100,roundsPassed*(100/3)))+'%';
-  document.getElementById('barTag').textContent = extremeMode?'Modo extremo':(roundsPassed>=3?'¡Completada!':`${roundsPassed}/3 rondas`); }
+/* (Iago 14-sep-2026) La barra ya no da saltos por ronda: avanza con el reloj,
+   pulso a pulso, en modo normal y en extremo. */
+function updateBar(){ const el=document.getElementById('barTag'); if(!el) return;
+  el.textContent = extremeMode?'Modo extremo':(running?'Sigue el ritmo…':(roundsPassed>=1?'¡Completada!':'Listo para empezar')); }
+function barraConReloj(mp){ const f=document.getElementById('barFill'); if(!f||!lastP) return;
+  f.style.width=Math.max(0,Math.min(100,(mp/lastP)*100))+'%'; }
 
 /* ===== final ===== */
 function finishQuiz(){ running=false; if(raf)cancelAnimationFrame(raf); if(schedTimer){clearInterval(schedTimer);schedTimer=null;} setStartBtn(false); killAudio();
   if(extremeMode){ showExtremeResult(); return; }
-  if(roundsPassed>=3) showWin(); else showFinalFail();
+  if(roundsPassed>=1) showWin(); else showFinalFail();
 }
 function showWin(){
   const s=aggScore();
@@ -634,8 +663,8 @@ function showFinalFail(){
   document.getElementById('resTgt').innerHTML=`<b>${s.gp}%</b>de precisión`; document.getElementById('resTgt').className='stat '+(s.gp>=50?'ok':'no');
   document.getElementById('resNon').style.display='none';
   document.getElementById('resBadge').textContent='Casi';
-  document.getElementById('resTitle').textContent=`Superaste ${roundsPassed}/3 rondas`;
-  document.getElementById('resSub').textContent='Te faltó alguna ronda. ¡Vuelve a intentarlo!';
+  document.getElementById('resTitle').textContent='No llegaste al 50% de precisi\u00f3n';
+  document.getElementById('resSub').textContent='Afina un poco más la precisión. ¡Vuelve a intentarlo!';
   const help=document.getElementById('helpbox'); help.style.display='block';
   help.innerHTML='Si se te hace rápido, prueba a <b>bajar la velocidad</b> o <b>marcar una subdivisión</b> (corchea o semicorchea) antes de reintentar.';
   const btns=document.getElementById('resBtns'); btns.innerHTML='';
