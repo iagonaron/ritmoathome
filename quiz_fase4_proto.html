@@ -317,7 +317,8 @@ function check(){
     setTimeout(()=>{ document.getElementById('staffPanel').classList.remove('ok');
       if(roundIdx>=ROUNDS){ document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 2200);
   } else {
-    if(!failUsedThisRound){ failUsedThisRound=true; score=Math.max(0,score-HALF); flashBad(); setBar(); }   // media de un segmento, solo el 1er fallo
+    // (Iago 14-sep-2026) Equivocarse no resta: no suma y se repite.
+    if(!failUsedThisRound){ failUsedThisRound=true; flashBad(); setBar(); }
     idleLabel='▶ Inténtalo otra vez'; if(!playing) setSounding(false);
     toast('No es exacto','no'); document.getElementById('hint').textContent='No es exacto. Vuelve a escucharlo y corrige.';
   }

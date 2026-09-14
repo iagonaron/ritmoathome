@@ -482,7 +482,9 @@ function onPick(idx,g){
   const correctG=pnumByIdx(round.targetPulse);
   const good=(idx===round.targetPulse);
   if(good){ g.classList.add('ok'); hits++; score=Math.min(100,score+(100/RONDAS)); toast('¡Correcto!','ok'); }
-  else { g.classList.add('bad'); score=Math.max(0,score-(100/RONDAS)/2); toast('Ese no','no'); flashBarBad(); }
+  // (Iago 14-sep-2026) Equivocarse no resta: simplemente no suma y hay que
+  // volver a intentarlo. Así la barra llena significa completado de verdad.
+  else { g.classList.add('bad'); toast('Ese no','no'); flashBarBad(); }
   setBar();
   // revelar el pulso correcto + FOCO en la tarjeta y sonar su ritmo (con cabezas iluminándose)
   setTimeout(()=>{ if(correctG) correctG.classList.add('reveal'); showSpotlight(); playOnePulse(round.targetPulse); lightTargetHeads(cellTokens(CARD.cells[targetCellIdx]),cellBeatsQ(CARD.cells[targetCellIdx])); if(good) burst(); }, 430);

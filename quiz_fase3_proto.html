@@ -101,6 +101,11 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
   background:var(--grad);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.85;animation:spin 18s linear infinite}
 @keyframes spin{to{filter:hue-rotate(360deg)}}
 .xcircle{animation:spin 6s linear infinite}
+/* (Iago 14-sep-2026) pulso mal colocado: la X se pone roja y late, para que
+   el alumno vea EXACTAMENTE cuál tiene que quitar y volver a poner */
+.xcircle.xmal{animation:xmalLate 1s ease-in-out infinite}
+@keyframes xmalLate{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.xcircle,.xcircle.xmal{animation:none}}
 /* transición entre rondas (oscurece + "Ronda siguiente" + fusión) */
 .round-ov{position:fixed;inset:0;z-index:85;display:flex;align-items:center;justify-content:center;
   background:rgba(10,7,24,0);opacity:0;pointer-events:none;transition:opacity .35s ease,background .35s ease}
@@ -241,7 +246,10 @@ function stopPhrase(){ const c=ac(); if(phraseBus&&c){ try{ phraseBus.gain.setTa
 function setSounding(on){ const b=document.getElementById('playBtn').querySelector('span'); if(b) b.textContent=on?'⏸ Parar':idleLabel; }
 
 /* ===== estado de ronda ===== */
-let solution=[], pool=[], placed=[], clickCursor=0, round={hits:0,score:0,firstFailUsed:false};
+// (Iago 14-sep-2026) `malos` guarda los pulsos que la última comprobación dio
+// por mal colocados: sus X se pintan en ROJO para que el alumno sepa cuáles
+// tiene que quitar y volver a poner, en vez de un «hay algún error» a ciegas.
+let solution=[], pool=[], placed=[], clickCursor=0, round={hits:0,score:0,firstFailUsed:false,malos:[]};
 
 function cellSlot(cell){
   /* 3-ago-2026 · quiz-fix H1: contenido del hueco = unidad característica si existe (tuplets con
@@ -306,7 +314,8 @@ function renderPhrase(){
   for(let i=0;i<N_MEAS;i++){ const g=measGeom[i], span=g.x1-g.x0;
     for(let p=0;p<PULSES_PER_MEAS;p++){ const idx=i*PULSES_PER_MEAS+p; const cx=g.x0+span*((p+0.5)/PULSES_PER_MEAS);
       if(placed[idx]){ const gx=document.createElementNS(NSv,'g'); gx.style.cursor='pointer';
-        const cc=document.createElementNS(NSv,'circle'); cc.setAttribute('class','xcircle'); cc.setAttribute('cx',cx); cc.setAttribute('cy',staveTop-18); cc.setAttribute('r',9.5); cc.setAttribute('fill','url(#xgrad)'); cc.setAttribute('stroke','#fff'); cc.setAttribute('stroke-width','2');
+        const malColocado=(round.malos||[]).indexOf(idx)>=0;
+        const cc=document.createElementNS(NSv,'circle'); cc.setAttribute('class','xcircle'+(malColocado?' xmal':'')); cc.setAttribute('cx',cx); cc.setAttribute('cy',staveTop-18); cc.setAttribute('r',malColocado?11:9.5); cc.setAttribute('fill',malColocado?'#ff3b5c':'url(#xgrad)'); cc.setAttribute('stroke','#fff'); cc.setAttribute('stroke-width','2');
         const tt=document.createElementNS(NSv,'text'); tt.setAttribute('x',cx); tt.setAttribute('y',staveTop-13.5); tt.setAttribute('text-anchor','middle'); tt.setAttribute('font-size','12'); tt.setAttribute('font-weight','900'); tt.setAttribute('fill','#fff'); tt.textContent='✕';
         gx.appendChild(cc); gx.appendChild(tt); gx.addEventListener('click',(e)=>{ e.stopPropagation(); unplace(idx); }); svg.appendChild(gx);
       } else { const arr=document.createElementNS(NSv,'path'); arr.setAttribute('d',`M ${cx-7} ${pulseY+6} L ${cx} ${pulseY-5} L ${cx+7} ${pulseY+6} Z`); arr.setAttribute('fill','#a9a3d6'); svg.appendChild(arr); arrowEls[idx]=arr;
@@ -384,15 +393,18 @@ function attachDrag(card){
 function placeCard(card, idx){
   placed[idx]={toks:card.ct.toks.slice(),beams:(card.ct.beams||[]).map(b=>b.slice()),beats:(card.ct.beats||card.ct.toks.map(durQ)).slice(),tup:card.ct.tup?{idx:card.ct.tup.idx.slice(),num:card.ct.tup.num,occ:card.ct.tup.occ}:null};
   clickCursor=idx+1;                                   // las clicadas siguientes van a partir de aquí
+  round.malos=(round.malos||[]).filter(i=>i!==idx);
   pool=pool.filter(c=>c!==card); card.el.remove();
   renderPhrase(); updateCheck(); ping();
 }
 function unplace(idx){
-  const ct=placed[idx]; placed[idx]=null; clickCursor=Math.min(clickCursor,idx); renderPhrase(); updateCheck(); makeFloatCard(ct);
+  const ct=placed[idx]; placed[idx]=null; clickCursor=Math.min(clickCursor,idx);
+  round.malos=(round.malos||[]).filter(i=>i!==idx);   // deja de estar señalado en cuanto lo quita
+  renderPhrase(); updateCheck(); makeFloatCard(ct);
 }
 function updateCheck(){ const allFilled=placed.every(p=>p); document.getElementById('checkBtn').disabled=!allFilled;
   document.getElementById('hint').textContent = allFilled?'¡Listo! Pulsa Comprobar.':'Coloca todas las cartas para comprobar.'; }
-function clearAll(){ const back=[]; for(let i=0;i<N_PULSES;i++){ if(placed[i]){ back.push(placed[i]); placed[i]=null; } } clickCursor=0;
+function clearAll(){ const back=[]; for(let i=0;i<N_PULSES;i++){ if(placed[i]){ back.push(placed[i]); placed[i]=null; } } clickCursor=0; round.malos=[];
   renderPhrase(); back.forEach(ct=>makeFloatCard(ct)); updateCheck(); }
 
 /* ===== audio de la frase (ilimitado) ===== */
@@ -419,14 +431,22 @@ function setBar(){ document.getElementById('barFill').style.width=Math.max(0,Mat
   document.getElementById('barTag').textContent = round.hits>=PUZZLES?'¡Completado!':`Puzzles: ${round.hits} de ${PUZZLES}`; }
 function flashBad(){ const f=document.getElementById('barFill'); f.classList.add('bad'); setTimeout(()=>f.classList.remove('bad'),650); }
 function check(){
-  const ok = placed.every((p,i)=> tokKey(p.toks)===tokKey(solution[i].toks));   // por patrón rítmico de cada pulso
-  if(ok){ round.hits++; round.score=Math.min(100,round.score+(100/PUZZLES)); toast('¡Correcto!','ok'); burst(); setBar();
+  const malos = [];
+  placed.forEach((p,i)=>{ if(!p || tokKey(p.toks)!==tokKey(solution[i].toks)) malos.push(i); });
+  const ok = malos.length===0;
+  if(ok){ round.malos=[]; round.hits++; round.score=Math.min(100,round.score+(100/PUZZLES)); toast('¡Correcto!','ok'); burst(); setBar();
     document.getElementById('checkBtn').disabled=true;                            // sin reproducir: solo confirma
     setTimeout(()=>{ if(round.hits>=PUZZLES){ document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 1300);
   } else {
-    if(!round.firstFailUsed){ round.firstFailUsed=true; round.score=Math.max(0,round.score-(100/PUZZLES)/2); flashBad(); setBar(); }  // medio segmento, solo el 1er fallo
+    // (Iago 14-sep-2026) Equivocarse ya NO resta: simplemente no suma y hay que
+    // repetirlo. Así la barra llena significa de verdad que está completo, y no
+    // se puede dar por superado con la barra a medias.
+    round.malos = malos;
+    flashBad(); renderPhrase();
     idleLabel='▶ Inténtalo otra vez'; if(!playing) setSounding(false);
-    toast('Hay algún error','no'); document.getElementById('hint').textContent='Hay algún error. Vuelve a escucharlo y reestructúrala.';
+    const cuantos = malos.length===1 ? 'Hay 1 pulso mal colocado' : ('Hay ' + malos.length + ' pulsos mal colocados');
+    toast(cuantos,'no');
+    document.getElementById('hint').textContent = cuantos + ': míralos en rojo, pulsa su ✕ para quitarlos y vuelve a colocarlos.';
   }
 }
 function roundTransition(cb){ stopPhrase(); const ov=document.getElementById('roundOv'); ov.classList.add('show');
@@ -445,14 +465,14 @@ function ping(){ const c=ac(); if(!c)return; const t0=c.currentTime+0.01; const 
 
 /* ===== ronda ===== */
 function newRound(){
-  stopPhrase(); round.firstFailUsed=false; idleLabel='▶ Escuchar la frase'; setSounding(false); placed=new Array(N_PULSES).fill(null); clickCursor=0;
+  stopPhrase(); round.firstFailUsed=false; round.malos=[]; idleLabel='▶ Escuchar la frase'; setSounding(false); placed=new Array(N_PULSES).fill(null); clickCursor=0;
   solution=buildSolution(); renderPhrase(); spawnPool(); updateCheck(); setBar();
 }
 window.addEventListener('resize', ()=>{ renderPhrase(); });
 document.getElementById('playBtn').onclick=()=>{ ac(); playPhrase(); };
 document.getElementById('clearBtn').onclick=()=>{ clearAll(); };
 document.getElementById('checkBtn').onclick=()=>{ if(!document.getElementById('checkBtn').disabled) check(); };
-document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); round={hits:0,score:0,firstFailUsed:false}; newRound(); };
+document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); round={hits:0,score:0,firstFailUsed:false,malos:[]}; newRound(); };
 
 setBar();
 window.addEventListener('load', ()=>{ newRound(); setTimeout(newRound, 60); });
