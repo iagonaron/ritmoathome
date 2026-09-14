@@ -743,19 +743,6 @@ function studyScreen(){ extremeMode=false; document.body.classList.remove('fire'
   // llegan por _CFG.lecciones): botón protagonista + nota ajustada
   const LECC=(_CFG && Array.isArray(_CFG.lecciones)) ? _CFG.lecciones : [];
   const bk=document.getElementById('studyBookBtn'), note=document.querySelector('#ovStudy .booknote');
-  // (Iago 14-sep-2026) Si entró desde la campana de tareas, lo que toca al
-  // acabar NO es el generador de ejercicios sino sus lecciones: se le enseñan
-  // aquí mismo y el botón grande le devuelve al portal, donde cada lección se
-  // marca sola al abrirla. Si entró libre desde RITMO at home, todo sigue igual.
-  if(DE_TAREAS){
-    const gb=document.getElementById('studyGoBtn'); if(gb) gb.style.display='none';
-    const tb=document.getElementById('studyTareasBtn'); if(tb) tb.style.display='';
-    const lb=document.getElementById('leccionesTareasBtn'); if(lb) lb.style.display='';
-    const h1=document.querySelector('#ovStudy h1'); if(h1) h1.textContent='Ahora, tus lecciones';
-    const sub=document.querySelector('#ovStudy .sub');
-    if(sub) sub.innerHTML='Has terminado el quiz. Lo que queda de las tareas de esta semana son <b>las lecciones del libro</b>.';
-    if(LECC.length) setTimeout(mostrarLecciones, 60);   // directo a las capturas
-  }
   if(LECC.length){
     bk.style.display='';
     bk.textContent='📖 Ver lecciones pendientes ('+LECC.length+')';
@@ -763,6 +750,20 @@ function studyScreen(){ extremeMode=false; document.body.classList.remove('fire'
   } else {
     bk.style.display='none';
     if(note) note.innerHTML='📖 <b>Recuerda:</b> tienes pendiente la lección del <b>libro</b> que te puso el profe. Jugar está genial, pero <b>esto es el trabajo de verdad</b> — no te lo saltes.';
+  }
+  // (Iago 14-sep-2026) Si entró desde la campana de tareas, aquí no toca ni el
+  // generador de ejercicios ni repetir las lecciones: eso ya está en el portal,
+  // y allí además verá la ficha de teoría y lo que haya. Una despedida y fuera.
+  if(DE_TAREAS){
+    const badge=document.querySelector('#ovStudy .badge'); if(badge) badge.textContent='Quiz completado';
+    const h1=document.querySelector('#ovStudy h1'); if(h1) h1.textContent='¡Enhorabuena, has acabado el quiz!';
+    const sub=document.querySelector('#ovStudy .sub');
+    if(sub) sub.textContent='No te olvides de hacer el resto de tareas que tienes pendientes.';
+    const vars=document.getElementById('studyVars'); if(vars) vars.style.display='none';
+    if(note) note.style.display='none';
+    if(bk) bk.style.display='none';
+    const gb=document.getElementById('studyGoBtn'); if(gb) gb.style.display='none';
+    const tb=document.getElementById('studyTareasBtn'); if(tb){ tb.style.display=''; tb.textContent='Entendido'; }
   }
   document.getElementById('ovStudy').classList.add('show');
 }
