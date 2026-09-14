@@ -5750,6 +5750,11 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       bpmExtreme: Math.round(bpmPulse*(70/42)),
       // FASE 7.1 · capturas del libro del envío del profe (llegan a la fase 5)
       lecciones: (window.__SUITE_QUIZ_LECCIONES||[]),
+      // (Iago 14-sep-2026) ¿entró desde la campana de tareas o por su cuenta?
+      // Si vino de tareas, al acabar el quiz le toca volver a SUS lecciones,
+      // no al generador de ejercicios.
+      deTareas: (function(){ try{ const q=new URLSearchParams(location.search);
+        return !!(q.get('envio') && q.get('cuenta')); }catch(e){ return false; } })(),
       /* 3-ago-2026 · quiz-fix: tokens normalizados (clave de Do → solo ritmo), tuplets con
          duración REAL (beatsReal) y 'unit' = pulso característico para las fases interactivas */
       cells: cells.map(ce=>{

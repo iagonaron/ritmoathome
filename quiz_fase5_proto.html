@@ -292,7 +292,7 @@ body.fire .green-cap{background:#ff4d00;box-shadow:0 0 16px rgba(255,90,0,.9)}
   <div class="studyvars" id="studyVars"></div>
   <div class="booknote">📖 <b>Recuerda:</b> tienes pendiente la lección del <b>libro</b> que te puso el profe. Jugar está genial, pero <b>esto es el trabajo de verdad</b> — no te lo saltes.
     <span class="soon">(este aviso solo aparecerá a los alumnos vinculados a un usuario · pendiente de enlazar con tus tablas de clase)</span></div>
-  <div class="cbtns" id="studyBtns"><button class="cbtn" id="studyBookBtn" style="display:none">📖 Ver lecciones pendientes</button><button class="cbtn ghost" id="studyGoBtn">Generar ejercicio con estas dificultades ▶</button></div>
+  <div class="cbtns" id="studyBtns"><button class="cbtn" id="studyBookBtn" style="display:none">📖 Ver lecciones pendientes</button><button class="cbtn" id="studyTareasBtn" style="display:none">📚 Ir a mis lecciones de tareas →</button><button class="cbtn ghost" id="studyGoBtn">Generar ejercicio con estas dificultades ▶</button></div>
 </div></div>
 
 <!-- FASE 7.1 · galería de lecciones del libro (capturas subidas por el profe desde el Diario) -->
@@ -301,7 +301,7 @@ body.fire .green-cap{background:#ff4d00;box-shadow:0 0 16px rgba(255,90,0,.9)}
   <h1 style="margin-bottom:6px">Tus lecciones pendientes</h1>
   <p class="sub" style="margin-top:0">Esto es lo que el profe quiere que trabajes esta semana.</p>
   <div id="leccionesHost" style="flex:1 1 auto;overflow:auto;display:flex;flex-direction:column;gap:14px;padding:4px 2px 10px;-webkit-overflow-scrolling:touch"></div>
-  <div class="cbtns" style="margin-top:12px"><button class="cbtn ghost" id="leccionesBackBtn">← Volver</button></div>
+  <div class="cbtns" style="margin-top:12px"><button class="cbtn" id="leccionesTareasBtn" style="display:none">📚 Marcarlas en mis tareas →</button><button class="cbtn ghost" id="leccionesBackBtn">← Volver</button></div>
 </div></div>
 
 <script>
@@ -432,6 +432,8 @@ const GREEN_X=150, PXPERPULSE=118, LEAD_PULSES=3, SCHED_AHEAD=0.12;   // px por 
 // único que hay que tocar para alargarla o acortarla.
 const GAPS=[4,3,2], PRE=2, PHRASE=8, FRASE_UNIDADES=6, GAPP=6;          // PHRASE=8 pulsos = 4 compases (6/8)
 const ROUND_PHRASES=FRASE_UNIDADES;
+const DE_TAREAS = !!(_CFG && _CFG.deTareas);
+const URL_PORTAL = 'https://ge.lmathome.es/#tareas';
 const TOL=0.14, VIS_DELAY=0.10;                                        // retraso (s) de figura Y de la ventana de precisión
 const GRACE=0.072, STAR_WIN=0.110, EXTRA_PEN=1.0;                      // crédito pleno · estrellita · cada golpe de más = un acierto perdido
 /* ANTI-METRALLETA ADAPTATIVA (Iago 2-jul): antes el hueco mínimo entre
@@ -449,7 +451,22 @@ const MAXTAPS_PER_PULSE=Math.ceil(PULSE_Q/MIN_DUR_Q)+3;                // máx. 
 /* ===== estado ===== */
 let roundsPassed=0;
 let running=false, attacks=[], notes=[], beamGroups=[], roundsMeta=[], raf=null;
-let extremeMode=false, VIS_DELAY_P=0;
+// (Iago 14-sep-2026, 2ª vuelta) Antes había UN solo desfase para dos cosas que
+// no son la misma. VIS_DELAY_P sigue moviendo la VENTANA DE PRECISIÓN — eso
+// está bien calibrado, él lo confirma de oído — pero movía TAMBIÉN el dibujo,
+// y ahí sobra: la figura cruzaba la línea verde 100 ms DESPUÉS de sonar el
+// ritmo, que es el «pelín de retardo» que él veía. El dibujo se desfasa solo
+// lo que de verdad tarda el aparato en sacar el sonido (outputLatency), que en
+// un iPad son unos pocos milisegundos, no 100.
+let extremeMode=false, VIS_DELAY_P=0, DRAW_DELAY_P=0;
+function latenciaSalida(){
+  try { const c=ac();
+    let l=(typeof c.outputLatency==='number' && isFinite(c.outputLatency)) ? c.outputLatency : 0;
+    if(!l && typeof c.baseLatency==='number' && isFinite(c.baseLatency)) l=c.baseLatency;
+    if(!isFinite(l) || l<0) l=0;
+    return Math.min(l, 0.12);   // tope de seguridad
+  } catch(e){ return 0; }
+}
 let musAnchors=[], schedP=0, schedT=0, schedTimer=null, lastP=0;      // reloj musical + scheduler de audio
 
 function curBpm(){ return extremeMode?BPM_EXTREME:BPM; }
@@ -506,12 +523,12 @@ function accentAt(p){ for(const m of roundsMeta){ if(p>=m.start && p<m.start+m.l
 function layoutTrack(){
   const track=document.getElementById('track'); track.style.transform='translateX(0px)';
   const game=document.getElementById('game'); const H=game.clientHeight, midY=STAFF_MID;
-  const xs=notes.map(n=> (n.onsetP+VIS_DELAY_P)*PXPERPULSE);
+  const xs=notes.map(n=> (n.onsetP+DRAW_DELAY_P)*PXPERPULSE);
   const inBeam=new Set(); beamGroups.forEach(g=>g.forEach(i=>inBeam.add(i)));
   let body='';
   notes.forEach((n,i)=>{ body+=noteSVG(xs[i], midY, n.dur, n.isRest, inBeam.has(i)); });
   beamGroups.forEach(g=>{ body+=beamsSVG(g.map(i=>xs[i]), g.map(i=>lvlOf(notes[i].dur)), midY); });
-  const totalW=(lastP+VIS_DELAY_P)*PXPERPULSE + 320;
+  const totalW=(lastP+DRAW_DELAY_P)*PXPERPULSE + 320;
   track.innerHTML=`<svg width="${totalW}" height="${H}" viewBox="0 0 ${totalW} ${H}" style="position:absolute;left:0;top:0;overflow:visible">${body}</svg>`;
 }
 
@@ -531,7 +548,8 @@ function emitStars(n){ const game=document.getElementById('game'); const COL=doc
 function startQuiz(){
   if(running){ stopRun(); return; }
   ac(); drawStaff(); roundsPassed=0; lastTap=-1; spamCount=0; roundExtra=0; extraTotal=0; tapTimes=[];
-  VIS_DELAY_P = VIS_DELAY/effSecPerPulse();
+  VIS_DELAY_P  = VIS_DELAY/effSecPerPulse();          // ventana de precisión (sin tocar)
+  DRAW_DELAY_P = latenciaSalida()/effSecPerPulse();   // dibujo: solo la latencia real
   buildQuiz(); layoutTrack(); updateBar();
   running=true; setStartBtn(true); document.getElementById('hint').textContent='¡Percute cada figura al cruzar la línea verde!';
   beginPlayback();
@@ -725,6 +743,19 @@ function studyScreen(){ extremeMode=false; document.body.classList.remove('fire'
   // llegan por _CFG.lecciones): botón protagonista + nota ajustada
   const LECC=(_CFG && Array.isArray(_CFG.lecciones)) ? _CFG.lecciones : [];
   const bk=document.getElementById('studyBookBtn'), note=document.querySelector('#ovStudy .booknote');
+  // (Iago 14-sep-2026) Si entró desde la campana de tareas, lo que toca al
+  // acabar NO es el generador de ejercicios sino sus lecciones: se le enseñan
+  // aquí mismo y el botón grande le devuelve al portal, donde cada lección se
+  // marca sola al abrirla. Si entró libre desde RITMO at home, todo sigue igual.
+  if(DE_TAREAS){
+    const gb=document.getElementById('studyGoBtn'); if(gb) gb.style.display='none';
+    const tb=document.getElementById('studyTareasBtn'); if(tb) tb.style.display='';
+    const lb=document.getElementById('leccionesTareasBtn'); if(lb) lb.style.display='';
+    const h1=document.querySelector('#ovStudy h1'); if(h1) h1.textContent='Ahora, tus lecciones';
+    const sub=document.querySelector('#ovStudy .sub');
+    if(sub) sub.innerHTML='Has terminado el quiz. Lo que queda de las tareas de esta semana son <b>las lecciones del libro</b>.';
+    if(LECC.length) setTimeout(mostrarLecciones, 60);   // directo a las capturas
+  }
   if(LECC.length){
     bk.style.display='';
     bk.textContent='📖 Ver lecciones pendientes ('+LECC.length+')';
@@ -782,6 +813,9 @@ document.getElementById('extDoneBtn').onclick=()=>studyScreen();
 document.getElementById('studyGoBtn').onclick=()=>{ const b=document.getElementById('studyGoBtn'); b.textContent='Generando ejercicio…'; setTimeout(()=>{ b.textContent='(En la app real: Ritmo aislado · Lectura · Entonación)'; },700); };
 // FASE 7.1 · galería de lecciones del libro
 document.getElementById('studyBookBtn').onclick=()=>mostrarLecciones();
+function irAMisTareas(){ try{ (window.top||window).location.href=URL_PORTAL; }catch(e){ location.href=URL_PORTAL; } }
+document.getElementById('studyTareasBtn').onclick=irAMisTareas;
+document.getElementById('leccionesTareasBtn').onclick=irAMisTareas;
 document.getElementById('leccionesBackBtn').onclick=()=>{ document.getElementById('ovLecciones').classList.remove('show'); document.getElementById('ovStudy').classList.add('show'); };
 window.addEventListener('resize',()=>{ drawStaff(); if(!running) document.getElementById('track').innerHTML=''; });
 
