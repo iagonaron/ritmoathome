@@ -430,7 +430,7 @@ const GREEN_X=150, PXPERPULSE=118, LEAD_PULSES=3, SCHED_AHEAD=0.12;   // px por 
 // DENTRO de ella: los ritmos que hay que clavar empiezan separados (cada 4
 // pulsos) y se van juntando (cada 3, luego cada 2). FRASE_UNIDADES es lo
 // único que hay que tocar para alargarla o acortarla.
-const GAPS=[4,3,2], PRE=2, PHRASE=8, FRASE_UNIDADES=2, GAPP=6;          // PHRASE=8 pulsos = 4 compases (6/8)
+const GAPS=[4,3,2], PRE=2, PHRASE=8, FRASE_UNIDADES=6, GAPP=6;          // PHRASE=8 pulsos = 4 compases (6/8)
 const ROUND_PHRASES=FRASE_UNIDADES;
 const TOL=0.14, VIS_DELAY=0.10;                                        // retraso (s) de figura Y de la ventana de precisión
 const GRACE=0.072, STAR_WIN=0.110, EXTRA_PEN=1.0;                      // crédito pleno · estrellita · cada golpe de más = un acierto perdido
@@ -462,7 +462,7 @@ function buildQuiz(){
   // Una sola pasada. En modo normal, la separación entre ritmos objetivo se
   // aprieta por tramos dentro de la propia frase; en extremo ya va apretada
   // de principio a fin, que es su gracia.
-  const roundDefs = extremeMode ? [{N:2,pulses:stdLen*2}]
+  const roundDefs = extremeMode ? [{N:2,pulses:stdLen}]
                                 : [{gaps:GAPS, pulses:stdLen}];
   notes=[]; attacks=[]; beamGroups=[]; roundsMeta=[];
   let pulse=0, varRot=0, fillRot=0;
