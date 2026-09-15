@@ -562,7 +562,10 @@ function startQuiz(){
   if(running){ stopRun(); return; }
   ac(); drawStaff(); roundsPassed=0; lastTap=-1; spamCount=0; roundExtra=0; extraTotal=0; tapTimes=[];
   VIS_DELAY_P  = VIS_DELAY/effSecPerPulse();          // ventana de precisión (sin tocar)
-  DRAW_DELAY_P = latenciaSalida()/effSecPerPulse();   // dibujo: solo la latencia real
+  // (Iago 15-sep-2026) Punto medio: ayer se quitó del dibujo TODO el retardo de
+  // 100 ms (quedaba solo la latencia del aparato) y ahora las figuras van un pelín
+  // ADELANTADAS. Se deja la mitad: latencia real + 50 ms.
+  DRAW_DELAY_P = (latenciaSalida() + VIS_DELAY*0.5)/effSecPerPulse();
   buildQuiz(); layoutTrack(); updateBar();
   running=true; setStartBtn(true); document.getElementById('hint').textContent='¡Percute cada figura al cruzar la línea verde!';
   beginPlayback();
