@@ -5836,8 +5836,13 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   // del portal (?envio&cuenta), se avisa a Iago (una sola vez por envío).
   function quizTerminadoSiToca(){
     if(idx!==PHASES.length-1 || !done[idx]) return;
-    avanceBorrar();   // (6-ago) quiz terminado: fuera el punto de control
-    if(window.SuiteQuizRitmo && typeof window.SuiteQuizRitmo.completar==='function') window.SuiteQuizRitmo.completar();
+    // (Iago 15-sep-2026) Antes se borraba el punto de control ANTES de avisar a
+    // Iago: si el aviso fallaba y el alumno cerraba, volvía a la fase 1 y el
+    // quiz no constaba. Ahora el punto de control solo se borra cuando el
+    // aviso ha llegado; si no hay aviso que dar (quiz libre), se borra igual.
+    if(window.SuiteQuizRitmo && typeof window.SuiteQuizRitmo.completar==='function'){
+      Promise.resolve(window.SuiteQuizRitmo.completar()).then(function(ok){ if(ok) avanceBorrar(); }).catch(function(){});
+    } else avanceBorrar();
   }
   function open(card,worldId){
     if(!ov) build();
@@ -5935,19 +5940,25 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     if(tipo==='ok'){ el._t=setTimeout(()=>{ el.remove(); }, 6000); }
   }
 
+  const PEND_KEY=(ENVIO && CUENTA)?('suite_quiz_pendiente_'+CUENTA+'_'+ENVIO):null;
   async function completar(){
-    if(!ENVIO || !CUENTA || _enviado || _enviando) return;
+    if(!ENVIO || !CUENTA) return true;          // quiz libre: nada que avisar
+    if(_enviado) return true;
+    if(_enviando) return false;
     _enviando=true;
+    try{ if(PEND_KEY) localStorage.setItem(PEND_KEY, String(Date.now())); }catch(e){}   // (15-sep) queda pendiente hasta que llegue
     try{ if(window.SuiteTiempo) window.SuiteTiempo.flush(); }catch(e){}   // tiempo al día antes de avisar
     banner('Avisando a Iago de que has terminado…');
     const c=await sb();
-    if(!c){ _enviando=false; banner('⚠ No se pudo avisar (sin conexión). <button id="suiteQuizRetry" style="margin-left:8px;border:0;border-radius:8px;padding:5px 12px;font-weight:800;cursor:pointer;background:#ff5c80;color:#2b0812">↻ Reintentar</button>','err'); return; }
+    if(!c){ _enviando=false; banner('⚠ No se pudo avisar (sin conexión). <button id="suiteQuizRetry" style="margin-left:8px;border:0;border-radius:8px;padding:5px 12px;font-weight:800;cursor:pointer;background:#ff5c80;color:#2b0812">↻ Reintentar</button>','err'); return false; }
     try{
       const { data, error } = await c.rpc('suite_quiz_completar', { p_cuenta_id:CUENTA, p_envio_id:ENVIO });
       if(error) throw error;
       if(!data || data.ok!==true) throw new Error((data && data.error) || 'error');
       _enviado=true;
       try{ localStorage.setItem('suite_quiz_hecho_'+CUENTA+'_'+ENVIO, String(Date.now())); }catch(e){}
+      try{ if(PEND_KEY) localStorage.removeItem(PEND_KEY); }catch(e){}
+      try{ if(CARTA) localStorage.removeItem('quiz_avance_'+CUENTA+'_'+ENVIO+'_'+CARTA); }catch(e){}   // aviso entregado: fuera el punto de control
       banner(data.ya_hecho ? 'ⓘ Este quiz ya lo habías completado antes. ¡Buen repaso!' : '✓ ¡Quiz completado! Iago ya sabe que lo has terminado. 🥁','ok');
     }catch(e){
       console.warn('[suite-quiz] completar', e);
@@ -5957,14 +5968,25 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       banner((fijo?('ⓘ '+mapa[cod]):('⚠ NO se pudo avisar a Iago ('+cod+').'))+
         (fijo?'':' <button id="suiteQuizRetry" style="margin-left:8px;border:0;border-radius:8px;padding:5px 12px;font-weight:800;cursor:pointer;background:#ff5c80;color:#2b0812">↻ Reintentar</button>'),
         fijo?'':'err');
-      if(cod==='ya_hecho'){ _enviado=true; }
+      if(cod==='ya_hecho'){ _enviado=true; try{ if(PEND_KEY) localStorage.removeItem(PEND_KEY); }catch(e2){} }
+      if(fijo){ try{ if(PEND_KEY) localStorage.removeItem(PEND_KEY); }catch(e2){} }   // error fijo: reintentar no cambia nada
     }finally{ _enviando=false; }
+    return _enviado;
   }
 
   async function autoArranque(){
     if(!CARTA) return;
+    // (15-sep) aviso que quedó pendiente en una visita anterior (sin red al acabar): se reintenta ahora
+    try{ if(PEND_KEY && localStorage.getItem(PEND_KEY)){
+      const ok=await Promise.race([ completar(), new Promise(r=>setTimeout(()=>r(false),5000)) ]);
+      if(ok){ try{ localStorage.removeItem('quiz_avance_'+CUENTA+'_'+ENVIO+'_'+CARTA); }catch(e){} }
+    } }catch(e){}
     const hit=buscarCarta(CARTA);
-    if(!hit){ console.warn('[suite-quiz] carta no encontrada:', CARTA); return; }
+    if(!hit){ console.warn('[suite-quiz] carta no encontrada:', CARTA);
+      try{ banner('ⓘ No encuentro la carta «'+String(CARTA).replace(/</g,'&lt;')+'» de este quiz. Vuelve al portal y abre el quiz desde la campana; si sigue pasando, avisa a Iago.','err'); }catch(e){}
+      return; }
+    // (15-sep) enlace incompleto (sin envío o sin cuenta): el quiz se puede hacer, pero NO se registra
+    if(!ENVIO || !CUENTA){ try{ banner('ⓘ Este enlace no lleva tu cuenta: el quiz se puede hacer, pero <b>no quedará registrado</b>. Para que cuente, ábrelo desde la campana del portal.','err'); }catch(e){} }
     // FASE 7.1 · traer las capturas del libro del envío ANTES de lanzar
     // (van dentro del cfg que viaja a las fases; máx. 2,5 s de espera)
     if(ENVIO && CUENTA){
