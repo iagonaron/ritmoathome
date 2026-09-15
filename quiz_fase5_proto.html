@@ -499,9 +499,22 @@ function buildQuiz(){
     } else {
       for(let p=roundStart+PRE; p<=finPos; p+=d.N) targetPos.add(p);
     }
+    // (Iago 15-sep-2026) Hay cartas cuyo ritmo objetivo es un compás ENTERO
+    // (síncopas de 2.1, 2.2, 2.3, 1.4, 6.4…): no cabe en un pulso. Antes se
+    // metía igual y el relleno del pulso siguiente se le montaba encima:
+    // figuras solapadas, golpes «de más» y un jugador perfecto sacaba un 29 %
+    // en la 2.3. Ahora el ritmo largo RESERVA los pulsos que ocupa (sin
+    // relleno debajo) y, si no cabe antes del final de la frase, va relleno.
+    let ocupadoHasta=-1;
     for(let i=roundStart;i<roundStart+len;i++){
-      const isT=targetPos.has(i);
-      const ci = isT ? (varRot++ % CARD.cells.length) : -1;
+      if(i<ocupadoHasta) continue;                        // pulso cubierto por un ritmo objetivo largo
+      let isT=targetPos.has(i);
+      let ci = isT ? (varRot % CARD.cells.length) : -1;
+      if(isT){
+        const spanP=(CELL_BEATS[ci]||CARD.cells[ci].map(durQ)).reduce((s,b)=>s+b,0)/PULSE_Q;
+        if(spanP>1+1e-6 && i+Math.ceil(spanP-1e-6) > roundStart+len){ isT=false; ci=-1; }   // no cabe: relleno
+        else { varRot++; if(spanP>1+1e-6) ocupadoHasta=i+Math.ceil(spanP-1e-6); }
+      }
       const toks = isT ? CARD.cells[ci].slice() : FILLERS[fillRot++ % FILLERS.length].slice();
       const bts = isT ? CELL_BEATS[ci] : null;
       const baseIdx=notes.length; let acc=0;
