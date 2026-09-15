@@ -565,7 +565,8 @@ function startQuiz(){
   // (Iago 15-sep-2026) Punto medio: ayer se quitó del dibujo TODO el retardo de
   // 100 ms (quedaba solo la latencia del aparato) y ahora las figuras van un pelín
   // ADELANTADAS. Se deja la mitad: latencia real + 50 ms.
-  DRAW_DELAY_P = (latenciaSalida() + VIS_DELAY*0.5)/effSecPerPulse();
+  // (15-sep, 2ª vuelta) «un nadita más tarde»: latencia real + 70 ms.
+  DRAW_DELAY_P = (latenciaSalida() + VIS_DELAY*0.7)/effSecPerPulse();
   buildQuiz(); layoutTrack(); updateBar();
   running=true; setStartBtn(true); document.getElementById('hint').textContent='¡Percute cada figura al cruzar la línea verde!';
   beginPlayback();
