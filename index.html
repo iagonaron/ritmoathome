@@ -5733,7 +5733,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     let pulsesPerMeas,pulseQ,given,fillers,bpmPulse,spq;
     if(compound){ pulsesPerMeas=N/3; pulseQ=1.5; given='qd'; fillers=[['qd'],['8','8','8'],['q','8'],['8','q']]; bpmPulse=42; spq=(60/42)/1.5; }
     else if(D===2){ pulsesPerMeas=N; pulseQ=2; given='h'; fillers=[['h'],['q','q'],['q','8','8'],['8','8','q']]; bpmPulse=50; spq=(60/50)/2; }
-    else if(dispar){ pulsesPerMeas=2; pulseQ=1.5; given='qd'; fillers=[['qd'],['8','8','8'],['q','8']]; bpmPulse=63; spq=60/63; }   // 5/8 (aprox): corchea=126
+    else if(dispar){ pulsesPerMeas=2; pulseQ=1.5; given='qd'; fillers=[['qd'],['8','8','8'],['q','8']]; bpmPulse=42; spq=60/63; }   // 5/8 (aprox): corchea=126 · (15-sep) bpmPulse es el PULSO (negra con puntillo = 42), no la negra: la fase 5 iba a corchea 189
     else { pulsesPerMeas=N; pulseQ=1; given='q'; fillers=[['q'],['8','8'],['16','16','8'],['8','16','16'],['16','16','16','16']]; bpmPulse=hasFusas?44:50; spq=60/bpmPulse; }
     const nMeas=Math.max(2, Math.round(8/pulsesPerMeas));
     // (Iago 14-sep-2026) El quiz se le hacía largo a los chavales (9 min yendo

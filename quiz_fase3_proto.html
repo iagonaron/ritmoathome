@@ -214,7 +214,8 @@ function renderMini(m, H, noTS){
       if(grp.length>1) new VF.Tuplet(grp,{num_notes:t.num,notes_occupied:t.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} });
     const svg=host.querySelector('svg');
     if(svg){ const top=st.getYForLine(0),bot=st.getYForLine(4); const lastX=(st.getX()+st.getWidth())+4;
-      const vbX=Math.max(0,PAD_L-4),vbY=Math.max(0,top-26),vbW=Math.min(CW-vbX,(lastX-vbX)+10),vbH=(bot+28)-vbY;
+      const hayTup=!!(m.tuplets&&m.tuplets.length);   // (15-sep) el corchete y el número del grupo van por encima de las plicas: sin este margen el recorte se los comía
+      const vbX=Math.max(0,PAD_L-4),vbY=Math.max(0,top-(hayTup?48:26)),vbW=Math.min(CW-vbX,(lastX-vbX)+10),vbH=(bot+28)-vbY;
       svg.setAttribute('viewBox',`${vbX.toFixed(1)} ${vbY.toFixed(1)} ${vbW.toFixed(1)} ${vbH.toFixed(1)}`);
       svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height');
       svg.style.height=H+'px'; svg.style.width='auto'; }
@@ -267,10 +268,18 @@ function buildSolution(){
   const orden=CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5);
   const iA=orden[0], iB=(n>1)?orden[1]:orden[0];
   const tA=CARD.cells[iA], tB=CARD.cells[iB];
-  const posA=Math.floor(Math.random()*N_PULSES); let posB; do{ posB=Math.floor(Math.random()*N_PULSES); }while(posB===posA);
+  // (Iago 15-sep-2026) Un ritmo objetivo de compás entero (síncopas) ocupa varios
+  // pulsos: se le RESERVAN (huecos «cubiertos», sin carta ni relleno) para que
+  // nada se le monte encima, y se coloca donde quepa dentro de la frase.
+  const sA=cellSlot(tA), sB=cellSlot(tB);
+  const spanDe=sl=>Math.max(1, Math.ceil((sl.beats||[]).reduce((a,b)=>a+b,0)/PULSE_Q - 1e-6));
+  const spA=Math.min(N_PULSES, spanDe(sA)), spB=Math.min(N_PULSES, spanDe(sB));
   const sol=new Array(N_PULSES).fill(null);
-  sol[posA]=cellSlot(tA);
-  sol[posB]=cellSlot(tB);
+  const cabe=(pos,sp)=>{ if(pos+sp>N_PULSES) return false; for(let k=0;k<sp;k++){ if(sol[pos+k]) return false; } return true; };
+  const pon=(sl,sp)=>{ const libres=[]; for(let p=0;p<N_PULSES;p++){ if(cabe(p,sp)) libres.push(p); }
+    if(!libres.length) return false; const pos=libres[Math.floor(Math.random()*libres.length)];
+    sol[pos]=sl; for(let k=1;k<sp;k++) sol[pos+k]={cubierto:true,toks:[],beams:[],beats:[],tup:null}; return true; };
+  pon(sA,spA); pon(sB,spB);
   for(let i=0;i<N_PULSES;i++){ if(sol[i])continue; const f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; sol[i]={toks:f.slice(),beams:autoBeam(f),beats:f.map(durQ),tup:null}; }
   return sol;
 }
@@ -313,7 +322,8 @@ function renderPhrase(){
   const svg=host.querySelector('svg'); const pulseY=staveBot+30; ensureXGrad(svg);
   for(let i=0;i<N_MEAS;i++){ const g=measGeom[i], span=g.x1-g.x0;
     for(let p=0;p<PULSES_PER_MEAS;p++){ const idx=i*PULSES_PER_MEAS+p; const cx=g.x0+span*((p+0.5)/PULSES_PER_MEAS);
-      if(placed[idx]){ const gx=document.createElementNS(NSv,'g'); gx.style.cursor='pointer';
+      if(placed[idx] && placed[idx].cubierto){ /* pulso cubierto por un ritmo largo: ni X ni flecha */ }
+      else if(placed[idx]){ const gx=document.createElementNS(NSv,'g'); gx.style.cursor='pointer';
         const malColocado=(round.malos||[]).indexOf(idx)>=0;
         const cc=document.createElementNS(NSv,'circle'); cc.setAttribute('class','xcircle'+(malColocado?' xmal':'')); cc.setAttribute('cx',cx); cc.setAttribute('cy',staveTop-18); cc.setAttribute('r',malColocado?11:9.5); cc.setAttribute('fill',malColocado?'#ff3b5c':'url(#xgrad)'); cc.setAttribute('stroke','#fff'); cc.setAttribute('stroke-width','2');
         const tt=document.createElementNS(NSv,'text'); tt.setAttribute('x',cx); tt.setAttribute('y',staveTop-13.5); tt.setAttribute('text-anchor','middle'); tt.setAttribute('font-size','12'); tt.setAttribute('font-weight','900'); tt.setAttribute('fill','#fff'); tt.textContent='✕';
@@ -358,7 +368,10 @@ function makeFloatCard(ct){
 }
 function spawnPool(){
   const layer=document.getElementById('floatLayer'); layer.innerHTML=''; pool=[];
-  const contents=solution.map(s=>({toks:s.toks.slice(),beams:(s.beams||[]).map(b=>b.slice())}));
+  // (Iago 15-sep-2026) las cartas del mazo copiaban solo toks y beams: el grupo de valoración
+  // especial (tup) y sus duraciones reales (beats) se perdían, así que un tresillo salía sin
+  // corchete ni «3» y, una vez colocado, sonaba como corcheas normales.
+  const contents=solution.filter(s=>!s.cubierto).map(s=>({toks:s.toks.slice(),beams:(s.beams||[]).map(b=>b.slice()),beats:(s.beats||[]).slice(),tup:s.tup?{idx:s.tup.idx.slice(),num:s.tup.num,occ:s.tup.occ}:null}));
   contents.sort(()=>Math.random()-.5);
   contents.forEach(ct=>makeFloatCard(ct));
   if(raf) cancelAnimationFrame(raf); let last=performance.now();
@@ -398,13 +411,14 @@ function placeCard(card, idx){
   renderPhrase(); updateCheck(); ping();
 }
 function unplace(idx){
+  if(placed[idx] && placed[idx].cubierto) return;
   const ct=placed[idx]; placed[idx]=null; clickCursor=Math.min(clickCursor,idx);
   round.malos=(round.malos||[]).filter(i=>i!==idx);   // deja de estar señalado en cuanto lo quita
   renderPhrase(); updateCheck(); makeFloatCard(ct);
 }
 function updateCheck(){ const allFilled=placed.every(p=>p); document.getElementById('checkBtn').disabled=!allFilled;
   document.getElementById('hint').textContent = allFilled?'¡Listo! Pulsa Comprobar.':'Coloca todas las cartas para comprobar.'; }
-function clearAll(){ const back=[]; for(let i=0;i<N_PULSES;i++){ if(placed[i]){ back.push(placed[i]); placed[i]=null; } } clickCursor=0; round.malos=[];
+function clearAll(){ const back=[]; for(let i=0;i<N_PULSES;i++){ if(placed[i] && !placed[i].cubierto){ back.push(placed[i]); placed[i]=null; } } clickCursor=0; round.malos=[];
   renderPhrase(); back.forEach(ct=>makeFloatCard(ct)); updateCheck(); }
 
 /* ===== audio de la frase (ilimitado) ===== */
@@ -432,7 +446,7 @@ function setBar(){ document.getElementById('barFill').style.width=Math.max(0,Mat
 function flashBad(){ const f=document.getElementById('barFill'); f.classList.add('bad'); setTimeout(()=>f.classList.remove('bad'),650); }
 function check(){
   const malos = [];
-  placed.forEach((p,i)=>{ if(!p || tokKey(p.toks)!==tokKey(solution[i].toks)) malos.push(i); });
+  placed.forEach((p,i)=>{ if(solution[i] && solution[i].cubierto) return; if(!p || tokKey(p.toks)!==tokKey(solution[i].toks)) malos.push(i); });
   const ok = malos.length===0;
   if(ok){ round.malos=[]; round.hits++; round.score=Math.min(100,round.score+(100/PUZZLES)); toast('¡Correcto!','ok'); burst(); setBar();
     document.getElementById('checkBtn').disabled=true;                            // sin reproducir: solo confirma
@@ -466,7 +480,7 @@ function ping(){ const c=ac(); if(!c)return; const t0=c.currentTime+0.01; const 
 /* ===== ronda ===== */
 function newRound(){
   stopPhrase(); round.firstFailUsed=false; round.malos=[]; idleLabel='▶ Escuchar la frase'; setSounding(false); placed=new Array(N_PULSES).fill(null); clickCursor=0;
-  solution=buildSolution(); renderPhrase(); spawnPool(); updateCheck(); setBar();
+  solution=buildSolution(); solution.forEach((sl,i)=>{ if(sl.cubierto) placed[i]={cubierto:true,toks:[],beams:[],beats:[],tup:null}; }); renderPhrase(); spawnPool(); updateCheck(); setBar();
 }
 window.addEventListener('resize', ()=>{ renderPhrase(); });
 document.getElementById('playBtn').onclick=()=>{ ac(); playPhrase(); };

@@ -369,11 +369,18 @@ function newRound(){
   // construir pulsos: uno es el objetivo, el resto relleno (que NO clone al objetivo)
   const targetTokens=cellTokens(target);
   const tgtKey=targetTokens.join(',');
-  let targetPulse; do{ targetPulse=Math.floor(Math.random()*N_PULSES); }while(N_PULSES>1 && targetPulse===lastTargetPulse);
+  // (Iago 15-sep-2026) Un ritmo objetivo de compás entero (síncopas de 1.4, 2.1, 2.2,
+  // 2.3, 6.4…) ocupa varios pulsos: se le reservan (en silencio) para que el relleno
+  // no se le monte encima, y se coloca donde quepa antes del final de la frase.
+  const tgtQ=cellBeatsQ(CARD.cells[targetCellIdx]);
+  const spanP=Math.max(1, Math.ceil(tgtQ.reduce((a,b)=>a+b,0)/PULSE_Q - 1e-6));
+  const maxStart=Math.max(1, N_PULSES-spanP+1);
+  let targetPulse; do{ targetPulse=Math.floor(Math.random()*maxStart); }while(maxStart>1 && targetPulse===lastTargetPulse);
   lastTargetPulse=targetPulse;
   const pulses=[];
   for(let i=0;i<N_PULSES;i++){
-    if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:cellBeatsQ(CARD.cells[targetCellIdx]), target:true}); }
+    if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:tgtQ.slice(), target:true}); }
+    else if(i>targetPulse && i<targetPulse+spanP){ pulses.push({tokens:[], q:[], target:false, cubierto:true}); }
     else { let f; do{ f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; }while(f.join(',')===tgtKey); pulses.push({tokens:f.slice(), q:patternQ(f), target:false}); }
   }
   round={pulses, targetPulse};

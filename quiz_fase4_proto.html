@@ -339,12 +339,18 @@ function newRound(){ stopPhrase(); failUsedThisRound=false; written=[]; idleLabe
   const spec=order[roundIdx]; const variation=CARD.cells[spec.cell].slice();
   const vBeats=CELL_BEATS[spec.cell].slice(); const vTup=CELL_TUP[spec.cell];
   if(spec.swap){ writeSlot=1; givenToks=variation; givenBeats=vBeats; givenTup=vTup; target=[GIVEN]; targetBeats=[durQ(GIVEN)]; CAP_Q=durQ(GIVEN); }   // escribe la figura de pulso; suena la variación (real)
-  else { writeSlot=0; givenToks=[GIVEN]; givenBeats=[durQ(GIVEN)]; givenTup=null; target=variation; targetBeats=vBeats; CAP_Q=vBeats.reduce((a,b)=>a+b,0); }
+  else { writeSlot=0; givenToks=[GIVEN]; givenBeats=[durQ(GIVEN)]; givenTup=null; target=variation; targetBeats=vBeats; CAP_Q=vBeats.reduce((a,b)=>a+b,0);
+    // (Iago 15-sep-2026) si el ritmo objetivo ya llena el compás entero (síncopas de compás),
+    // no se le añade el pulso dado: el compás sonaba y se escribía con un pulso de más.
+    const _ppm=(_CFG&&_CFG.pulsesPerMeas)||2;
+    if(CAP_Q >= _ppm*PULSE_Q - 1e-6){ givenToks=[]; givenBeats=[]; }
+  }
   renderMeasure(written,false); setBar(); document.getElementById('hint').textContent='Escucha y escribe.';
   var _sub=document.getElementById('faseSub');
   if(_sub) _sub.innerHTML = (writeSlot===1)
     ? 'Escucha el compás y <b>escribe el pulso que FALTA</b> (el ritmo especial ya está puesto: fíjate en su grupo).'
-    : 'Escucha el compás y <b>escribe el primer pulso</b> con el editor. El segundo pulso ya está puesto.';
+    : (givenToks.length ? 'Escucha el compás y <b>escribe el primer pulso</b> con el editor. El segundo pulso ya está puesto.'
+                        : 'Escucha el compás y <b>escríbelo entero</b> con el editor.');
 }
 document.getElementById('playBtn').onclick=()=>{ ac(); playMeasure(); };
 document.getElementById('dotBtn').onclick=()=>applyDot();
