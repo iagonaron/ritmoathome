@@ -983,7 +983,19 @@ window.SuiteTiempo=(function(){
     last=Date.now();
   }
   function total(){ return Math.round(previo+enviado+acc); }
-  return { start:start, total:total, flush:flush, activo:function(){return on;} };
+  // (Iago 15-sep-2026) Empezar de cero: el contador del servidor vuelve a 0 para que el
+  // Diario enseñe el tiempo del ÚLTIMO intento, no la suma de todos.
+  function reset(){
+    if(!on) return;
+    previo=0; enviado=0; acc=0;
+    try{
+      fetch(SB+'/rest/v1/rpc/suite_tiempo_reset',{method:'POST',
+        headers:{'Content-Type':'application/json','apikey':AN,'Authorization':'Bearer '+AN},
+        body:JSON.stringify({p_cuenta_id:cuenta, p_tipo:tipo, p_ref:ref})
+      }).catch(function(){});
+    }catch(e){}
+  }
+  return { start:start, total:total, flush:flush, reset:reset, activo:function(){return on;} };
 })();
 </script>
 </head>
@@ -5981,6 +5993,11 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       const ok=await Promise.race([ completar(), new Promise(r=>setTimeout(()=>r(false),5000)) ]);
       if(ok){ try{ localStorage.removeItem('quiz_avance_'+CUENTA+'_'+ENVIO+'_'+CARTA); }catch(e){} }
     } }catch(e){}
+    // (15-sep) si arranca DESDE CERO (sin punto de control ni aviso pendiente), el tiempo
+    // de actividad vuelve a 0: el Diario enseña el tiempo de este intento, no la suma.
+    try{ if(ENVIO && CUENTA && CARTA && window.SuiteTiempo && window.SuiteTiempo.reset
+          && !localStorage.getItem('quiz_avance_'+CUENTA+'_'+ENVIO+'_'+CARTA)
+          && !(PEND_KEY && localStorage.getItem(PEND_KEY))) window.SuiteTiempo.reset(); }catch(e){}
     const hit=buscarCarta(CARTA);
     if(!hit){ console.warn('[suite-quiz] carta no encontrada:', CARTA);
       try{ banner('ⓘ No encuentro la carta «'+String(CARTA).replace(/</g,'&lt;')+'» de este quiz. Vuelve al portal y abre el quiz desde la campana; si sigue pasando, avisa a Iago.','err'); }catch(e){}
