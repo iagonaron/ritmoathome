@@ -658,6 +658,12 @@ footer .lock{color:var(--gold1);}
 
 .ipaper{background:var(--paper);border-radius:14px;padding:10px 14px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(0,0,0,.35);}
 .ipaper svg{display:block;}
+/* (18-sep-2026, Iago) los ritmos de las intros se pulsan y suenan */
+.ipaper-play{cursor:pointer;transition:box-shadow .14s,transform .12s;}
+.ipaper-play:hover{transform:translateY(-1px);}
+.ipaper-play.on{box-shadow:0 0 0 2px var(--gold1) inset,0 0 18px rgba(212,175,55,.35);}
+.itnode .ipaper-play,.igen-stage .ipaper-play{cursor:inherit;}
+.itnode .ipaper-play:hover,.igen-stage .ipaper-play:hover{transform:none;}
 .ipaper.float{animation:ifloat 4.2s ease-in-out infinite;}
 .ipaper.float:nth-child(2n){animation-delay:-1.6s;}
 .ipaper.float:nth-child(3n){animation-delay:-2.8s;}
@@ -4021,12 +4027,18 @@ function cardExampleSVG(world, card, variant){
 function renderMiniMeasure(m, clef){
   clef = clef || m.clef || 'treble';
   const time=m.time;
-  const PAD_L=6, PAD_R=14, STAVE_W=Math.max(190, 72 + m.notes.length*28);
+  // (18-sep-2026, Iago) MISMO TAMAÑO EN TODOS LOS MUNDOS. Antes el
+  // pentagrama se ensanchaba segun cuantas figuras hubiera y el viewBox se
+  // recortaba al contenido: con width:100% cada miniatura salia a una escala
+  // distinta y no encajaba con el pentagrama. Ahora el compas mide SIEMPRE lo
+  // mismo y el viewBox es fijo, asi que todas salen iguales. Y sin clave: ahi
+  // no aporta nada y se comia el ancho.
+  const PAD_L=6, PAD_R=14, STAVE_W=320;
   const CANVAS_W=PAD_L+STAVE_W+PAD_R, CANVAS_H=140, STAVE_Y=48;
   const host=document.createElement('div');
   try{
     const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(CANVAS_W,CANVAS_H); const ctx=r.getContext();
-    const st=new VF.Stave(PAD_L,STAVE_Y,STAVE_W); st.addClef(clef).addTimeSignature(time);
+    const st=new VF.Stave(PAD_L,STAVE_Y,STAVE_W); st.addTimeSignature(time);
     st.setEndBarType(VF.Barline.type.END); st.setContext(ctx); st.draw();
     const key = clef==='bass'?'d/3' : clef==='tenor'?'a/3' : clef==='alto'?'c/4' : 'b/4';
     const vf=m.notes.map(n=>{
@@ -4043,19 +4055,18 @@ function renderMiniMeasure(m, clef){
     const tups=(m.tuplets||[]).map(t=>new VF.Tuplet(t.idx.map(i=>vf[i]),{num_notes:t.group.ratioNum,notes_occupied:t.group.ratioDen,ratioed:false}));
     const{num,den}=meterInfo(time);
     const voice=new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); voice.addTickables(vf);
-    new VF.Formatter().joinVoices([voice]).format([voice], STAVE_W-92); voice.draw(ctx,st);
+    new VF.Formatter().joinVoices([voice]).format([voice], STAVE_W-58); voice.draw(ctx,st);
     beams.forEach(b=>b.setContext(ctx).draw()); tups.forEach(t=>t.setContext(ctx).draw());
     (m.ties||[]).forEach(pair=>{ const a=pair[0],b=pair[1];
       if(vf[a]&&vf[b]){ try{ new VF.StaveTie({first_note:vf[a], last_note:vf[b], first_indices:[0], last_indices:[0]}).setContext(ctx).draw(); }catch(e){} } });
     const svg=host.querySelector('svg');
     if(svg){
       const staveTop=st.getYForLine(0), staveBot=st.getYForLine(4);
-      const xs=vf.map(n=>{ try{return n.getAbsoluteX();}catch(e){return PAD_L;} });
-      const lastX = (st.getX()+st.getWidth())+4;
-      const hasTuplet=tups.length>0;
-      const topRoom = hasTuplet?34:22, botRoom = 26;
-      const vbX=Math.max(0, PAD_L-4), vbY=Math.max(0, staveTop-topRoom);
-      const vbW=Math.min(CANVAS_W-vbX, (lastX-vbX)+8);
+      // viewBox FIJO: ni el numero de figuras ni los tresillos lo cambian,
+      // para que la escala sea la misma en todas las miniaturas.
+      const topRoom = 36, botRoom = 28;
+      const vbX=0, vbY=Math.max(0, staveTop-topRoom);
+      const vbW=CANVAS_W;
       const vbH=(staveBot+botRoom)-vbY;
       svg.setAttribute('viewBox',`${vbX.toFixed(1)} ${vbY.toFixed(1)} ${vbW.toFixed(1)} ${vbH.toFixed(1)}`);
       svg.setAttribute('preserveAspectRatio','xMidYMid meet');
@@ -6317,8 +6328,35 @@ window.launchCardIntro=function(card){
 };
 
 /* ---------- piezas de UI reutilizables ---------- */
+/* (18-sep-2026, Iago) TODO LO QUE SE VEA MUSICAL EN UNA INTRO, SUENA AL
+   PULSARLO — con los mismos timbres y las mismas notas que luego tendra en el
+   arbol genealogico. Se pulsa otra vez y se calla. Los que ya tenian su propio
+   manejador (los nodos del arbol y la tarjeta de la genesis) se quedan como
+   estaban: alli el clic lo recoge el padre. */
+let _chipN=0;
+const CHIP_TONES=[392,440,494,523,587,659,698,784];
+function chipSuena(w,spec){
+  if(!spec) return;
+  w.classList.add('ipaper-play');
+  w.addEventListener('click',function(ev){
+    try{
+      if(w.closest('.itnode')||w.closest('.igen-stage')) return;   // ya suenan solos
+      ev.stopPropagation();
+      const id=w.__playId||(w.__playId='chip_'+(++_chipN));
+      if(Loop.has(id)){ Loop.remove(id); w.classList.remove('on'); return; }
+      const k=w.__playK!=null?w.__playK:(w.__playK=_chipN);
+      const timbre=spec.timbre||LEAF_TIMBRES[k%LEAF_TIMBRES.length];
+      Loop.add(specLayer(id,spec,w.__drawn,timbre,
+        {loopBeats:spec.loopBeats,gain:.95,accent:spec.accent||null,
+         raw:{sustain:true,freq:CHIP_TONES[k%CHIP_TONES.length]}}));
+      w.classList.add('on');
+    }catch(e){}
+  });
+}
 function paperChip(spec,o){ const w=document.createElement('div'); w.className='ipaper'+(o&&o.cls?' '+o.cls:'');
-  const d=iDraw(w,spec,o||{}); w.__drawn=d; w.__spec=spec; return w; }
+  const d=iDraw(w,spec,o||{}); w.__drawn=d; w.__spec=spec;
+  if(!(o&&o.noPlay)) { try{ chipSuena(w,spec); }catch(e){} }
+  return w; }
 function el(tag,cls,html){ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; }
 function stagger(nodes,base,step){ nodes.forEach((n,i)=>{ n.style.animationDelay=((base||0)+i*(step||130))+'ms'; n.classList.add('ipop'); }); }
 
