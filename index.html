@@ -397,14 +397,15 @@ footer .lock{color:var(--gold1);}
 .gp1-world .w-name{font-size:15.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;line-height:1.2;color:var(--ink);}
 .gp1-world.on .w-name{color:var(--gold-soft);}
 /* cinta de ritmos */
-.gp1-world .w-tape{position:relative;margin-top:auto;height:118px;background:var(--paper);border-radius:12px;overflow:hidden;}
+.gp1-world .w-tape{position:relative;margin-top:auto;height:180px;background:var(--paper);border-radius:12px;overflow:hidden;}
 .gp1-world .w-tape-scroll{position:absolute;inset:0;display:flex;align-items:center;}
 .gp1-world .w-tape-inner{display:flex;align-items:center;width:max-content;will-change:transform;animation:tapescroll var(--tdur,18s) linear infinite;}
-.gp1-world .w-tape-inner svg{height:108px;display:block;flex:0 0 auto;}
+.gp1-world .w-tape-inner svg{height:168px;width:auto;display:block;flex:0 0 auto;}
 .gp1-world:hover .w-tape-inner{animation-play-state:paused;}
 
-.gp1-world .w-tape-head{position:absolute;left:0;top:0;bottom:0;width:50px;background:var(--paper);display:flex;align-items:center;overflow:hidden;z-index:2;box-shadow:7px 0 9px -4px var(--paper);}
-.gp1-world .w-tape-head svg{height:108px;display:block;flex:0 0 auto;}
+/* (18-sep-2026, Iago) La clave de sol fija se va: aqui no dice nada y
+   descuadraba el tamaño con el resto de la cinta. */
+.gp1-world .w-tape-head{display:none;}
 @keyframes tapescroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
 .gp1-world .edge{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:16px 0 0 16px;background:linear-gradient(var(--gold1),var(--gold2));opacity:.45;transition:opacity .14s;z-index:3;}
 .gp1-world.on .edge{opacity:1;}
@@ -4071,6 +4072,7 @@ function renderMiniMeasure(m, clef){
       svg.setAttribute('viewBox',`${vbX.toFixed(1)} ${vbY.toFixed(1)} ${vbW.toFixed(1)} ${vbH.toFixed(1)}`);
       svg.setAttribute('preserveAspectRatio','xMidYMid meet');
       svg.removeAttribute('width'); svg.removeAttribute('height');
+      svg.style.width=''; svg.style.height='';   // idem: que mande el CSS
     }
     return svg?svg.outerHTML:'';
   }catch(e){ return ''; }
@@ -4085,17 +4087,26 @@ function cardAlbum(world, card){
 }
 
 /* ===== CINTA DE RITMOS (selector de mundos): cabeza fija (clave + compás) + tira que se desliza ===== */
-const TAPE_Y=44, TAPE_H=140, TAPE_TOPROOM=42, TAPE_BOTROOM=26;
+/* (18-sep-2026, Iago) La cinta se recortaba con mucho aire arriba y abajo,
+   asi que el pentagrama salia pequenito dentro de su caja. Menos margen =
+   mismo alto de caja pero el ritmo a tamano de lectura. */
+const TAPE_Y=44, TAPE_H=140, TAPE_TOPROOM=34, TAPE_BOTROOM=24;
 function tapeCrop(svg, st, fromX, toX){
   const staveTop=st.getYForLine(0), staveBot=st.getYForLine(4);
   const vbY=Math.max(0, staveTop-TAPE_TOPROOM), vbH=(staveBot+TAPE_BOTROOM)-vbY;
   svg.setAttribute('viewBox',`${fromX.toFixed(1)} ${vbY.toFixed(1)} ${(toX-fromX).toFixed(1)} ${vbH.toFixed(1)}`);
-  svg.removeAttribute('width'); svg.setAttribute('height', String(Math.round(vbH))); svg.setAttribute('preserveAspectRatio','xMinYMid meet');
+  // (18-sep-2026) VexFlow deja width/height EN LÍNEA al hacer resize, y eso le
+  // ganaba al CSS: la cinta se dibujaba a tamaño 1:1 y con franjas en blanco
+  // arriba y abajo. Se limpian y se deja que mande la hoja de estilos.
+  svg.removeAttribute('width');   // sin ancho fijo: lo saca del viewBox y del alto del CSS
+  svg.setAttribute('height', String(Math.round(vbH)));
+  svg.style.width=''; svg.style.height='';
+  svg.setAttribute('preserveAspectRatio','xMinYMid meet');
   return vbH;
 }
 // tira larga: varios compases en una línea (cabeza de nota en b/4), SIN clave; el compás solo se dibuja al cambiar.
 function renderTapeStrip(measures){
-  const PAD=4; const segW=measures.map(m=>Math.max(86, 36 + m.notes.length*30));
+  const PAD=4; const segW=measures.map(m=>Math.max(120, 44 + m.notes.length*36));
   const totalW=PAD+segW.reduce((a,b)=>a+b,0)+PAD;
   const host=document.createElement('div');
   try{
@@ -4387,9 +4398,9 @@ function renderSetupWorlds(){
     const wnum = GP1_WORLDS.findIndex(w=>w.id===Wd.id)+1;
     // cinta de ritmos: clave de sol fija + tira que se desliza en bucle (la métrica viaja en la cinta)
     const measures = worldTapeMeasures(Wd);
-    const head = measures.length ? renderTapeHead() : '';
+    const head = '';                      // sin clave de sol (18-sep-2026)
     const strip = measures.length ? renderTapeStrip(measures) : {svg:'',width:0};
-    const dur = strip.width ? Math.max(10, Math.min(72, strip.width/32)) : 18;   // velocidad ~constante en todas las tarjetas
+    const dur = strip.width ? Math.max(10, Math.min(90, strip.width/19)) : 18;   // la cinta es 1,7x mas grande: misma velocidad aparente   // velocidad ~constante en todas las tarjetas
     b.innerHTML=`<span class="edge"></span>${badge?`<span class="w-badge">${badge}</span>`:''}`+
       `<div class="w-head"><span class="w-num">${wnum}</span><span class="w-name">${Wd.name}</span></div>`+
       `<div class="w-tape">`+
@@ -6320,6 +6331,7 @@ window.launchCardIntro=function(card){
   const def=window.CARD_INTROS&&window.CARD_INTROS[card.atlasId];
   if(!def) return;
   buildOv(); slides=def.slides(card); sIdx=0;
+  _voces = vocesDelArbol(slides);     // los timbres del arbol, listos desde la portada
   Loop.spq=def.spq||0.8; Loop.baseSpq=def.spq||0.8;
   headTitle.textContent='· '+(card.atlasId||'')+' '+(card.name||'');
   OV.classList.add('show');
@@ -6335,6 +6347,58 @@ window.launchCardIntro=function(card){
    estaban: alli el clic lo recoge el padre. */
 let _chipN=0;
 const CHIP_TONES=[392,440,494,523,587,659,698,784];
+/* (18-sep-2026, Iago) «no estas cogiendo exactamente el sonido que tiene el
+   arbol genealogico»: aqui se lee el arbol de ESTA carta y se guarda, por
+   figura, el timbre y la nota que le tocara alli. Asi la negra con puntillo
+   suena grave desde la primera diapositiva, las tres corcheas con lo suyo, y
+   cada ritmo caracteristico con el suyo. */
+let _voces = null;
+function firmaSpec(sp){
+  try{
+    if(!sp || !sp.notes || !sp.notes.length) return null;
+    return JSON.stringify({
+      t: sp.time || '',
+      n: sp.notes.map(n=>String(n.dur)+(n.rest?'r':'')),
+      u: (sp.tuplets||[]).map(t=>(t.idx||[]).join('-')),
+      l: (sp.ties||[]).map(p=>p.join('-'))
+    });
+  }catch(e){ return null; }
+}
+function vocesDelArbol(lista){
+  const idx = {};
+  try{
+    (lista || []).forEach(function(sl){
+      if(sl.type !== 'tree') return;
+      const cols = sl.cols ? sl.cols.map(c=>c.rows||[]) : [sl.rows||[]];
+      let leafT = 0;
+      cols.forEach(function(rows){
+        rows.forEach(function(row, ri){
+          const lvl = (row.lvl!=null) ? row.lvl : ri;
+          (row.nodes||[]).forEach(function(nd, ni){
+            const isLeaf = (lvl>=2);
+            const timbre = nd.timbre || (lvl===0 ? 'drum'
+              : (lvl===1 ? ['wood','shaker','marimba'][ni%3]
+                         : LEAF_TIMBRES[leafT%LEAF_TIMBRES.length]));
+            const freq = isLeaf ? CHIP_TONES[leafT%CHIP_TONES.length] : null;
+            if(isLeaf) leafT++;
+            const voz = { timbre: timbre, freq: freq,
+                          gain: nd.gain || (lvl===0?1:0.9),
+                          loopBeats: nd.loopBeats || sl.loopBeats,
+                          accent: nd.accent || null };
+            const f = firmaSpec(nd); if(f && !idx[f]) idx[f] = voz;
+            if(nd.twin){ const f2 = firmaSpec(nd.twin); if(f2 && !idx[f2]) idx[f2] = voz; }
+          });
+        });
+      });
+    });
+  }catch(e){}
+  return idx;
+}
+function paraChip(w, id){
+  try{ Loop.remove(id); }catch(e){}
+  clearTimeout(w.__playT);
+  w.classList.remove('on');
+}
 function chipSuena(w,spec){
   if(!spec) return;
   w.classList.add('ipaper-play');
@@ -6343,13 +6407,26 @@ function chipSuena(w,spec){
       if(w.closest('.itnode')||w.closest('.igen-stage')) return;   // ya suenan solos
       ev.stopPropagation();
       const id=w.__playId||(w.__playId='chip_'+(++_chipN));
-      if(Loop.has(id)){ Loop.remove(id); w.classList.remove('on'); return; }
+      if(Loop.has(id)){ paraChip(w, id); return; }
       const k=w.__playK!=null?w.__playK:(w.__playK=_chipN);
-      const timbre=spec.timbre||LEAF_TIMBRES[k%LEAF_TIMBRES.length];
+      /* el timbre y la nota que este ritmo tendra en el arbol */
+      const voz = (_voces && _voces[firmaSpec(spec)]) || null;
+      const timbre = spec.timbre || (voz && voz.timbre) || LEAF_TIMBRES[k%LEAF_TIMBRES.length];
+      const freq   = (voz && voz.freq!=null) ? voz.freq : CHIP_TONES[k%CHIP_TONES.length];
+      const lb     = spec.loopBeats || (voz && voz.loopBeats) || undefined;
       Loop.add(specLayer(id,spec,w.__drawn,timbre,
-        {loopBeats:spec.loopBeats,gain:.95,accent:spec.accent||null,
-         raw:{sustain:true,freq:CHIP_TONES[k%CHIP_TONES.length]}}));
+        {loopBeats:lb, gain:(voz&&voz.gain)||.95, accent:spec.accent||(voz&&voz.accent)||null,
+         raw:{sustain:true, freq:freq}}));
       w.classList.add('on');
+      /* (18-sep-2026) En las dos primeras diapositivas suena UNA VEZ: alli
+         estoy presentando la figura, no montando capas. De la tercera en
+         adelante, en bucle como hasta ahora. */
+      if(sIdx <= 1){
+        const capa = Loop.layers.get(id);
+        const ms = ((capa && capa.loopBeats) || 4) * Loop.spq * 1000 + 160;
+        clearTimeout(w.__playT);
+        w.__playT = setTimeout(function(){ paraChip(w, id); }, ms);
+      }
     }catch(e){}
   });
 }
