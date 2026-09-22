@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+<!-- (22-sep-2026) FASE 4 de 4 · Sigue el ritmo. Antes era la fase 5 (quiz_fase5_proto.html), que redirige aquí.
+     Cambios de esta vuelta (Iago):
+       · ~20 % más corta, ajustada a compases y frases enteras (ver OBJETIVO_PULSOS / LEN_P).
+       · cada golpe del alumno SUENA con el sonido de ritmo del quiz (tapSound: ataque + cuerpo grave en la 2).
+       · base musical: los acordes de siempre + una percusión muy discreta que respeta el compás de la carta.
+       · una sola pasada del tirón, sin carteles intermedios.
+       · pantalla final según el porcentaje: >70 / 50–70 / <50, con «Suficiente por hoy». -->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz · Fase 4 — Sigue el ritmo</title>
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<style>
+:root{
+  --text:#f6f3ff; --muted:#cfc7f2; --paper:#f7f6ff; --ink:#16132b;
+  --c1:#34d399; --c2:#5bd0ff; --c3:#ff9a3c; --c4:#a974ff; --c5:#ff5ccd;
+  --line:rgba(255,255,255,.16); --panel:rgba(22,16,48,.5); --radius:18px;
+  --grad:linear-gradient(120deg,#34d399,#5bd0ff 30%,#ff9a3c 58%,#ff5ccd 78%,#a974ff);
+  --font:"Helvetica Neue",Arial,system-ui,sans-serif;
+}
+*{box-sizing:border-box} html,body{margin:0;padding:0}
+body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.45;min-height:100vh;position:relative;overflow-x:hidden;
+  background:linear-gradient(160deg,#241a52 0%,#180f3c 38%,#0e0a2c 72%,#080518 100%);background-attachment:fixed;}
+.sky{position:fixed;inset:-12% -8%;z-index:-1;filter:blur(40px) saturate(1.15);opacity:.92;pointer-events:none}
+.sky b{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:.55}
+.b1{width:46vw;height:42vw;left:-6%;top:-10%;background:#34d399;animation:drift1 19s ease-in-out infinite}
+.b2{width:44vw;height:40vw;right:-8%;top:-6%;background:#5bd0ff;animation:drift2 23s ease-in-out infinite}
+.b3{width:50vw;height:46vw;right:6%;bottom:-16%;background:#a974ff;animation:drift3 21s ease-in-out infinite}
+.b4{width:42vw;height:40vw;left:-4%;bottom:-14%;background:#ff9a3c;animation:drift4 25s ease-in-out infinite}
+.b5{width:34vw;height:32vw;left:32%;top:42%;background:#ff5ccd;animation:drift5 27s ease-in-out infinite;opacity:.4}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(7vw,5vh) scale(1.12)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-6vw,6vh) scale(1.1)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,-6vh) scale(1.14)}}
+@keyframes drift4{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,-5vh) scale(1.12)}}
+@keyframes drift5{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-8vw,-4vh) scale(1.2)}}
+.wrap{max-width:1120px;margin:0 auto;padding:22px 20px 50px;position:relative}
+
+.topbar{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.brand{font-size:24px;font-weight:900;letter-spacing:-.4px}
+.brand .a{color:var(--text)} .brand .h{color:var(--muted);font-weight:300}
+.brand .home{color:var(--muted);font-weight:300;font-style:normal}
+.protlbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 11px;margin-left:auto}
+
+.fase-head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:2px}
+.fase-step{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:900;color:var(--muted)}
+.fase-head h2{margin:0;font-size:26px;font-weight:900;letter-spacing:-.5px}
+.fase-sub{color:var(--muted);font-size:13.5px;margin:4px 0 14px;max-width:720px}
+.fase-sub b{color:var(--text);font-weight:700}
+
+/* barra de 3 tramos */
+.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.bar-wrap{flex:1;height:20px;border-radius:999px;background:rgba(8,5,22,.5);border:1px solid var(--line);overflow:hidden;position:relative}
+/* (Iago 14-sep-2026) SIN transition: aqui la barra la mueve el reloj en cada
+   fotograma, y una transicion de medio segundo la dejaba arrastrandose. */
+.bar-fill{height:100%;width:0%;border-radius:999px;background:var(--grad);background-size:200% 100%;animation:slide 20s linear infinite}
+.bar-fill.bad{background:linear-gradient(120deg,#ff5c72,#ff2d6a)!important;animation:none}
+.bar-seg{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25)}
+/* modo extremo: es UNA sola tirada de corrido → barra CONTINUA, sin las
+   marcas de 3 rondas (que hacían pensar en "tres fases" y agobiaban) */
+body.fire .bar-seg{display:none}
+@keyframes slide{to{background-position:200% 0}}
+.bar-tag{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
+
+/* zona de juego */
+.game{position:relative;height:172px;border-radius:16px;overflow:hidden;background:var(--paper);box-shadow:0 16px 44px rgba(0,0,0,.4)}
+.stafflines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.clef{position:absolute;left:8px;top:50%;transform:translateY(-58%);font-size:118px;line-height:1;color:#1c1830;pointer-events:none;z-index:3;font-family:"Bravura","Noto Music",serif}
+.greenline{position:absolute;left:147.5px;top:6px;bottom:6px;width:5px;border-radius:3px;background:linear-gradient(180deg,#2fe39b,#16a86f);box-shadow:0 0 14px rgba(47,227,155,.85);z-index:4}
+.greenline.good{background:linear-gradient(180deg,#6bf3c0,#2fe39b);box-shadow:0 0 26px rgba(47,227,155,1)}
+.greenline.bad{background:linear-gradient(180deg,#ff7a8c,#ff2d6a);box-shadow:0 0 24px rgba(255,45,106,.95);animation:lineshake .34s ease}
+@keyframes lineshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-3px)}45%{transform:translateX(3px)}70%{transform:translateX(-2px)}}
+.starfx{position:absolute;z-index:5;pointer-events:none;width:15px;height:15px;opacity:0}
+.starfx svg{width:100%;height:100%;display:block;filter:drop-shadow(0 0 5px currentColor)}
+@keyframes starfly{0%{opacity:0;transform:translate(0,0) scale(.35) rotate(0)}22%{opacity:.95}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(1) rotate(var(--sr))}}
+.green-cap{position:absolute;left:139.5px;width:21px;height:21px;border-radius:50%;background:#16a86f;box-shadow:0 0 12px rgba(47,227,155,.8);z-index:4}
+.green-cap.top{top:-2px} .green-cap.bot{bottom:-2px}
+#track{position:absolute;left:0;top:0;height:100%;z-index:2;will-change:transform}
+.pz{position:absolute;display:block}
+.pz svg{display:block}
+.pz.tgt::after{content:"";position:absolute;left:50%;top:6px;width:7px;height:7px;border-radius:50%;background:#a974ff;box-shadow:0 0 8px #a974ff;transform:translateX(-50%);opacity:.0}
+.run-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;pointer-events:none}
+.count3{font-size:84px;font-weight:900;color:#1c1830;opacity:0;text-shadow:0 4px 20px rgba(0,0,0,.2)}
+.count3.show{animation:cpop .9s ease forwards}
+@keyframes cpop{0%{opacity:0;transform:scale(.5)}30%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:scale(1.3)}}
+.slidecart{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:6;background:rgba(247,246,255,.0);pointer-events:none}
+.slidecart span{font-size:30px;font-weight:900;color:#1c1830;background:rgba(247,246,255,.0);opacity:0}
+.slidecart.show span{animation:scfade 1.4s ease forwards}
+@keyframes scfade{0%{opacity:0;transform:translateY(10px)}25%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+
+/* controles */
+.controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:16px 0 8px}
+.tapbtn{display:none}
+/* pads grandes (solo en tablet/táctil) */
+.pads{display:none;gap:16px;margin:16px 0 6px}
+body.touch .pads{display:flex}
+.pad{flex:1;min-height:170px;border-radius:24px;border:none;cursor:pointer;font:inherit;color:#16132b;
+  background:var(--grad);background-size:200% 100%;box-shadow:0 16px 42px rgba(169,116,255,.5);animation:slide 20s linear infinite;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .05s,filter .1s}
+.pad:active{transform:scale(.97);filter:brightness(1.12)}
+.pad .pad-ic{font-size:44px;font-weight:900;line-height:1}
+.pad .pad-tx{font-size:18px;font-weight:900;letter-spacing:.04em}
+body.fire .pad{background:linear-gradient(120deg,#ff8c1a,#ff3b1f 45%,#ff0040);box-shadow:0 16px 42px rgba(255,60,0,.6);animation:none}
+/* destello no bloqueante de ronda */
+.roundflash{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:5;pointer-events:none;font-size:24px;font-weight:900;letter-spacing:-.3px;opacity:0;
+  padding:7px 18px;border-radius:999px;background:rgba(20,14,44,.72);backdrop-filter:blur(3px);color:#fff}
+.roundflash.ok{color:#7af0c0;box-shadow:0 0 24px rgba(52,211,153,.4)}
+.roundflash.no{color:#ffd0a0}
+.roundflash.show{animation:rflash 1.5s ease forwards}
+@keyframes rflash{0%{opacity:0;transform:translateX(-50%) translateY(8px) scale(.92)}18%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}78%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-6px)}}
+.redslot{height:30px;display:flex;align-items:center;justify-content:center;margin:0 0 5px}
+.redmsg{pointer-events:none;font-size:19px;font-weight:900;letter-spacing:-.2px;opacity:0;white-space:nowrap;
+  padding:5px 18px;border-radius:999px;background:rgba(70,8,18,.86);backdrop-filter:blur(3px);color:#ff8a9c;box-shadow:0 0 24px rgba(255,45,106,.5)}
+.redmsg.show{animation:rflash3 3s ease forwards}
+@keyframes rflash3{0%{opacity:0;transform:translateY(6px) scale(.94)}7%{opacity:1;transform:translateY(0) scale(1)}90%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}
+/* línea de llama (sustituye a los controles en modo extremo) */
+.flameline{display:none;height:12px;border-radius:7px;margin:16px 0 6px;background:linear-gradient(90deg,#7a0010,#ff0040,#ff8c1a,#ffe066,#ff8c1a,#ff0040,#7a0010);background-size:220% 100%;animation:flamerun 1.05s linear infinite;box-shadow:0 0 20px rgba(255,90,0,.75)}
+@keyframes flamerun{to{background-position:220% 0}}
+body.fire .controls{display:none}
+body.fire .flameline{display:block}
+.startbtn{font:inherit;font-size:15px;font-weight:900;color:#16132b;cursor:pointer;border:none;padding:12px 22px;border-radius:14px;
+  background:linear-gradient(120deg,#34d399,#5bd0ff);box-shadow:0 10px 26px rgba(52,211,153,.4)}
+.startbtn.stop{background:linear-gradient(120deg,#ff9a3c,#ff5c72)}
+.seg{display:inline-flex;gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
+.seg .lbl{font-size:11px;font-weight:800;color:var(--muted);align-self:center;padding:0 6px;text-transform:uppercase;letter-spacing:.08em}
+.seg button{font:inherit;font-size:12.5px;font-weight:800;color:var(--muted);background:transparent;border:none;padding:8px 12px;border-radius:9px;cursor:pointer;transition:.14s}
+.seg button:hover{color:var(--text)}
+.seg button.on{color:#16132b;background:linear-gradient(120deg,var(--c2),var(--c4))}
+.seg button{display:inline-flex;align-items:center;justify-content:center;min-height:38px}
+/* velocidad como línea: nodos normal · lento(punto) · muy lento(tortuga) */
+.speedline{position:relative;display:flex;align-items:center;gap:16px;padding:4px 10px}
+.speedline::before{content:'';position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);height:3px;background:rgba(255,255,255,.16);border-radius:2px;z-index:0}
+.snode{position:relative;z-index:1;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:rgba(12,8,28,.75);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;transition:.14s;overflow:hidden}
+.snode.on{background:var(--grad);color:#16132b;border-color:transparent;box-shadow:0 4px 14px rgba(169,116,255,.4)}
+body.fire .snode.on{background:linear-gradient(120deg,#ff8c1a,#ff3b1f 45%,#ff0040)}
+.hint{font-size:13px;color:var(--muted)}
+
+/* overlays */
+.ov{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(8,5,22,.55);backdrop-filter:blur(4px)}
+.ov.show{display:flex;animation:ovfade .25s ease}
+@keyframes ovfade{from{opacity:0}to{opacity:1}}
+.cartel{position:relative;text-align:center;padding:30px 34px 28px;border-radius:26px;max-width:480px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(40,28,92,.94),rgba(14,10,42,.96));border:1px solid var(--line);box-shadow:0 28px 80px rgba(169,116,255,.45);
+  transform:scale(.9);animation:pop .44s cubic-bezier(.2,1.35,.4,1) forwards}
+@keyframes pop{to{transform:scale(1)}}
+.cartel::before{content:"";position:absolute;inset:-2px;border-radius:28px;padding:2px;pointer-events:none;
+  background:var(--grad);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.85;animation:spin 18s linear infinite}
+@keyframes spin{to{filter:hue-rotate(360deg)}}
+.cartel .badge{font-size:12px;letter-spacing:.26em;text-transform:uppercase;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.cartel h1{font-size:28px;margin:8px 0 4px;font-weight:900;letter-spacing:-.5px}
+.cartel .sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+.statline{display:flex;gap:18px;justify-content:center;margin:6px 0 16px}
+.stat{font-size:13px;color:var(--muted)} .stat b{display:block;font-size:22px;color:var(--text);font-weight:900}
+.stat.ok b{color:#5bd0ff} .stat.no b{color:#ff7a8c}
+.cbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.cbtn{font:inherit;font-size:16px;font-weight:900;color:#16132b;cursor:pointer;border:none;padding:12px 28px;border-radius:14px;
+  background:var(--grad);background-size:200% 100%;box-shadow:0 12px 32px rgba(169,116,255,.5);animation:slide 20s linear infinite}
+.cbtn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);box-shadow:none;animation:none}
+.helpbox{margin:4px 0 16px;padding:12px 14px;border-radius:12px;background:rgba(91,208,255,.1);border:1px solid rgba(91,208,255,.3);font-size:13px;color:var(--text);text-align:left}
+.helpbox b{color:#5bd0ff}
+
+.confetti{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;width:9px;height:14px;border-radius:2px;opacity:0;will-change:transform}
+@keyframes conf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot))}}
+.proto-foot{margin-top:22px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+
+/* ===== MODO EXTREMO (fuego) ===== */
+.cbtn.ext{background:linear-gradient(120deg,#ff8c1a,#ff3b1f 45%,#ff0040);box-shadow:0 12px 32px rgba(255,60,0,.6);animation:none}
+.cartel.fire{--grad:linear-gradient(120deg,#ff8c1a,#ff3b1f 35%,#ff0040 70%,#b30000);background:linear-gradient(180deg,rgba(74,12,6,.96),rgba(26,4,4,.97))}
+.booknote{margin:2px 0 16px;padding:12px 14px;border-radius:12px;background:rgba(255,154,60,.12);border:1px solid rgba(255,154,60,.35);font-size:13px;color:var(--text);text-align:left}
+.booknote b{color:#ffb86b} .booknote .soon{display:block;margin-top:6px;font-size:11px;color:var(--muted)}
+.studyvars{display:flex;gap:12px;justify-content:center;flex-wrap:nowrap;margin:8px 0 14px}
+.svar{flex:1 1 0;min-width:0;background:var(--paper);border-radius:10px;padding:6px 8px 4px}
+.svar span{display:block;font-size:10px;font-weight:800;color:#6a63a0;margin-bottom:1px;text-transform:uppercase;letter-spacing:.06em}
+.svar svg{display:block;max-width:100%;height:auto}
+.cartel.wide{max-width:820px}
+@media (max-width:680px){ .studyvars{flex-wrap:wrap} .svar{flex:1 1 46%} }
+
+body.fire{background:linear-gradient(160deg,#3a0a0a 0%,#250606 40%,#160303 72%,#0a0101 100%)!important;
+  --grad:linear-gradient(120deg,#ff8c1a,#ff3b1f 35%,#ff0040 70%,#b30000)}
+body.fire .sky{filter:blur(36px) saturate(1.4) brightness(1.08)}
+body.fire .sky b{animation-duration:6s!important}
+body.fire .b1{background:#ff5a1f} body.fire .b2{background:#ff2d2d} body.fire .b3{background:#b30000} body.fire .b4{background:#ff8c1a} body.fire .b5{background:#ff0040}
+body.fire .protlbl{color:#ffb86b;border-color:rgba(255,120,40,.45)}
+body.fire .fase-head h2,body.fire .fase-step,body.fire .fase-sub b,body.fire .bar-tag{color:#ffd0a0}
+body.fire .greenline{background:linear-gradient(180deg,#ffe066,#ff7a00 42%,#ff1e00)!important;box-shadow:0 0 30px rgba(255,80,0,.95)!important;animation:flame .42s ease-in-out infinite alternate}
+body.fire .greenline.good{box-shadow:0 0 40px rgba(255,170,0,1)!important}
+body.fire .greenline.bad{background:linear-gradient(180deg,#fff,#ffd24a)!important;animation:lineshake .34s ease}
+body.fire .green-cap{background:#ff4d00;box-shadow:0 0 16px rgba(255,90,0,.9)}
+@keyframes flame{from{filter:hue-rotate(-10deg) brightness(1) saturate(1.1)}to{filter:hue-rotate(10deg) brightness(1.32) saturate(1.35)}}
+</style>
+</head>
+<body>
+<div class="sky"><b class="b1"></b><b class="b2"></b><b class="b3"></b><b class="b4"></b><b class="b5"></b></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <span class="brand"><span class="a">RITMO</span> <span class="h">at home · 4º GE</span></span>
+    <span class="protlbl">fase 4 de 4</span>
+  </div>
+
+  <div class="fase-head"><span class="fase-step" id="faseStep">Fase 4 de 4</span><h2 id="faseTitle">Sigue el ritmo</h2></div>
+  <p class="fase-sub">Las figuras llegan por la derecha. <b>Percute cada figura</b> justo cuando cruza la <b>línea verde</b>: con la <b>barra espaciadora</b> (ordenador) o con los <b>pads</b> (tablet).
+    Cada golpe tuyo suena sobre la base. <b>Una sola pasada</b>, del tirón, cada vez más apretada.</p>
+
+  <div class="bar-row">
+    <div class="bar-wrap"><div class="bar-fill" id="barFill"></div></div>
+    <span class="bar-tag" id="barTag">Sigue el ritmo</span>
+  </div>
+
+  <div class="redslot"><div class="redmsg" id="redmsg"></div></div>
+  <div class="game" id="game">
+    <svg class="stafflines" id="stafflines" preserveAspectRatio="none"></svg>
+    <span class="clef">𝄞</span>
+    <div class="green-cap top"></div><div class="green-cap bot"></div>
+    <div class="greenline" id="greenline"></div>
+    <div id="track"></div>
+    <div class="run-overlay"><span class="count3" id="count3"></span></div>
+    <div class="roundflash" id="roundflash"></div>
+    <div class="slidecart" id="slidecart"><span id="slidecartTx">¡Vamos!</span></div>
+  </div>
+
+  <div class="flameline" id="flameline"></div>
+
+  <div class="pads" id="pads">
+    <button class="pad" id="padL"><span class="pad-ic">⟂</span><span class="pad-tx">PERCUTIR</span></button>
+    <button class="pad" id="padR"><span class="pad-ic">⟂</span><span class="pad-tx">PERCUTIR</span></button>
+  </div>
+
+  <div class="controls">
+    <button class="startbtn" id="startBtn">Empezar ▶</button>
+    <div class="seg" id="velSeg"><span class="lbl">Velocidad</span></div>
+    <div class="seg" id="subSeg"><span class="lbl">Subdivisión</span></div>
+  </div>
+  <p class="hint" id="hint">Pulsa «Empezar» o la barra espaciadora. Te haré una cuenta atrás.</p>
+</div>
+
+<div class="confetti" id="confetti"></div>
+
+<!-- resultado por debajo del 50 % (el quiz NO queda completado) -->
+<div class="ov" id="ovResult"><div class="cartel">
+  <div class="badge" id="resBadge">Casi</div>
+  <h1 id="resTitle">No llegaste al 50 % de precisión</h1>
+  <p class="sub" id="resSub"></p>
+  <div class="statline">
+    <div class="stat" id="resTgt"><b>0%</b>de precisión</div>
+    <div class="stat" id="resNon" style="display:none"></div>
+  </div>
+  <div class="helpbox" id="helpbox" style="display:none"></div>
+  <div class="cbtns" id="resBtns"></div>
+</div></div>
+
+<!-- final del quiz (50 % o más: el quiz queda completado; el puente avisa al padre al abrirse) -->
+<div class="ov" id="ovWin"><div class="cartel" style="max-width:560px">
+  <div class="badge" id="winBadge">¡Quiz superado!</div>
+  <h1 id="winTitle">¡Lo has clavado!</h1>
+  <p class="sub">Tu puntuación:</p>
+  <div class="statline">
+    <div class="stat ok" id="winTgt"><b>0%</b>de precisión</div>
+    <div class="stat ok" id="winNon" style="display:none"></div>
+  </div>
+  <p class="sub" id="winMsg"></p>
+  <div class="cbtns" id="winBtns"></div>
+</div></div>
+
+<!-- «Suficiente por hoy» (solo por debajo del 50 %): salida tranquila, el punto de control se queda -->
+<div class="ov" id="ovBasta"><div class="cartel">
+  <div class="badge">Hasta aquí por hoy</div>
+  <h1>Muy bien, lo dejamos aquí</h1>
+  <p class="sub" id="bastaTxt" style="text-align:left;line-height:1.55;font-size:14.5px;color:var(--text)"></p>
+  <div class="cbtns"><button class="cbtn" id="bastaBtn">Volver al portal →</button></div>
+</div></div>
+
+<!-- aviso del reto extremo -->
+<div class="ov" id="ovExtWarn"><div class="cartel fire">
+  <div class="badge">🔥 Reto OPCIONAL</div>
+  <h1>MODO EXTREMO</h1>
+  <p class="sub">La misma prueba, pero bastante más rápido. Un solo intento.<br>Es opcional y no cuenta para nada: el quiz ya está completado. Solo por llevarte al límite.</p>
+  <div class="cbtns">
+    <button class="cbtn ext" id="extGoBtn">¡Vamos! 🔥</button>
+    <button class="cbtn ghost" id="extNoBtn">Mejor no</button>
+  </div>
+</div></div>
+
+<!-- resultado del reto extremo -->
+<div class="ov" id="ovExtResult"><div class="cartel fire">
+  <div class="badge">🔥 Modo extremo</div>
+  <h1 id="extResTitle">¡Has sobrevivido!</h1>
+  <p class="sub">Tu marca en el reto:</p>
+  <div class="statline">
+    <div class="stat ok" id="extTgt"><b>0%</b>objetivos</div>
+    <div class="stat ok" id="extNon"><b>0%</b>relleno</div>
+  </div>
+  <p class="sub" id="extResMsg"></p>
+  <div class="cbtns"><button class="cbtn" id="extDoneBtn">Terminar · estudiar la lección</button></div>
+</div></div>
+
+<!-- lección de estudio (maqueta) -->
+<div class="ov" id="ovStudy"><div class="cartel wide">
+  <div class="badge">A trabajar</div>
+  <h1>Tu lección de estudio</h1>
+  <p class="sub">Se abre una lección generada solo con <b>la carta 1.1</b> y sus variaciones: Ritmo aislado · Lectura · Entonación.</p>
+  <div class="studyvars" id="studyVars"></div>
+  <div class="booknote">📖 <b>Recuerda:</b> tienes pendiente la lección del <b>libro</b> que te puso el profe. Jugar está genial, pero <b>esto es el trabajo de verdad</b> — no te lo saltes.
+    <span class="soon">(este aviso solo aparecerá a los alumnos vinculados a un usuario · pendiente de enlazar con tus tablas de clase)</span></div>
+  <div class="cbtns" id="studyBtns"><button class="cbtn" id="studyBookBtn" style="display:none">📖 Ver lecciones pendientes</button><button class="cbtn" id="studyTareasBtn" style="display:none">📚 Ir a mis lecciones de tareas →</button><button class="cbtn ghost" id="studyGoBtn">Generar ejercicio con estas dificultades ▶</button></div>
+</div></div>
+
+<!-- FASE 7.1 · galería de lecciones del libro (capturas subidas por el profe desde el Diario) -->
+<div class="ov" id="ovLecciones"><div class="cartel wide" style="max-height:88vh;display:flex;flex-direction:column">
+  <div class="badge">Del libro</div>
+  <h1 style="margin-bottom:6px">Tus lecciones pendientes</h1>
+  <p class="sub" style="margin-top:0">Esto es lo que el profe quiere que trabajes esta semana.</p>
+  <div id="leccionesHost" style="flex:1 1 auto;overflow:auto;display:flex;flex-direction:column;gap:14px;padding:4px 2px 10px;-webkit-overflow-scrolling:touch"></div>
+  <div class="cbtns" style="margin-top:12px"><button class="cbtn" id="leccionesTareasBtn" style="display:none">📚 Marcarlas en mis tareas →</button><button class="cbtn ghost" id="leccionesBackBtn">← Volver</button></div>
+</div></div>
+
+<script>
+const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
+
+/* ===== carta: por config (URL) o 1.1 por defecto ===== */
+const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
+const CARD = _CFG ? { kicker:"Carta "+(_CFG.atlasId||''), cells:_CFG.cells.map(c=>(c.unit?c.unit.toks:c.notes).slice()) } : { kicker:"Carta 1.1",
+  cells:[ ["16","16","8","8"], ["8","16","16","8"], ["8","8","16","16"] ] };   // variaciones (objetivo)
+const COMPOUND=_CFG?_CFG.compound:true, PULSE_Q=_CFG?_CFG.pulseQ:1.5, BPM=_CFG?_CFG.bpm:42, BPM_EXTREME=_CFG?_CFG.bpmExtreme:70;   // BPM = bpm del PULSO
+const FILLERS = _CFG?_CFG.fillers:[ ["qd"], ["8","8","8"], ["q","8"], ["8","q"] ];                 // relleno (más sencillo)
+/* 3-ago-2026 · quiz-fix: duración REAL por variación (tuplets comprimidos), su grupo y su compás */
+const CELL_BEATS=_CFG?_CFG.cells.map(c=>(c.unit?c.unit.beats:(c.beatsReal||c.notes.map(durQ))).slice()):CARD.cells.map(cs=>cs.map(durQ));
+const CELL_TUP=_CFG?_CFG.cells.map(c=>{const t=c.unit?c.unit.tup:((c.tuplets&&c.tuplets[0])||null); return t?{idx:t.idx.slice(),num:t.num,occ:t.occ}:null;}):CARD.cells.map(()=>null);
+const CELL_TS=_CFG?_CFG.cells.map(c=>c.ts||null):CARD.cells.map(()=>null);
+
+/* ===== helpers rítmicos ===== */
+function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
+  const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
+function sumQ(toks){ return toks.reduce((s,t)=>s+durQ(t),0); }
+function autoBeam(toks){ const groups=[]; let run=[]; const beamable=t=>['8','16','32'].includes(t.replace('d','').replace('r','')) && !t.endsWith('r');
+  toks.forEach((t,i)=>{ if(beamable(t)) run.push(i); else { if(run.length>1)groups.push(run); run=[]; } }); if(run.length>1)groups.push(run); return groups; }
+
+/* ===== dibujo de figuras posicionadas POR TIEMPO (sin barras de compás) ===== */
+const HEAD_RX=6.2, HEAD_RY=4.6, STEM=34, BEAMGAP=6, BEAMTH=4.2, INK='#16132b';
+function lvlOf(dur){ const b=dur.replace('d','').replace('r',''); return b==='8'?1:b==='16'?2:b==='32'?3:0; }
+function noteSVG(x,midY,dur,isRest,beamed){
+  if(isRest){ return `<rect x="${(x-5).toFixed(1)}" y="${(midY-3).toFixed(1)}" width="10" height="6" rx="1.5" fill="${INK}" opacity="0.85"/>`; }
+  const base=dur.replace('d','').replace('r',''); const dotted=dur.replace('r','').endsWith('d');
+  const sx=x+HEAD_RX*0.92, topY=midY-STEM; let s='';
+  if(base==='w'){ s+=`<ellipse cx="${x}" cy="${midY}" rx="9" ry="6" transform="rotate(-12 ${x} ${midY})" fill="none" stroke="${INK}" stroke-width="3"/>`; }
+  else if(base==='h'){ s+=`<ellipse cx="${x}" cy="${midY}" rx="${HEAD_RX}" ry="${HEAD_RY}" transform="rotate(-20 ${x} ${midY})" fill="none" stroke="${INK}" stroke-width="2.2"/><line x1="${sx}" y1="${midY-1}" x2="${sx}" y2="${topY}" stroke="${INK}" stroke-width="1.9"/>`; }
+  else { s+=`<ellipse cx="${x}" cy="${midY}" rx="${HEAD_RX}" ry="${HEAD_RY}" transform="rotate(-20 ${x} ${midY})" fill="${INK}"/><line x1="${sx}" y1="${midY-1}" x2="${sx}" y2="${topY}" stroke="${INK}" stroke-width="1.9"/>`;
+    if(!beamed){ const n=lvlOf(base); for(let i=0;i<n;i++){ const fy=topY+i*7.5; s+=`<path d="M${sx} ${fy} C ${sx+9} ${fy+3}, ${sx+10} ${fy+10}, ${sx+5} ${fy+15}" fill="none" stroke="${INK}" stroke-width="2.1" stroke-linecap="round"/>`; } } }
+  if(dotted) s+=`<circle cx="${(x+HEAD_RX+5.5).toFixed(1)}" cy="${(midY-2).toFixed(1)}" r="1.9" fill="${INK}"/>`;
+  return s;
+}
+function beamsSVG(gx,lv,midY){ const topY=midY-STEM, sx=i=>gx[i]+HEAD_RX*0.92; let s='';
+  s+=`<rect x="${sx(0).toFixed(1)}" y="${topY.toFixed(1)}" width="${(sx(gx.length-1)-sx(0)).toFixed(1)}" height="${BEAMTH}" fill="${INK}"/>`;
+  for(let L=2;L<=3;L++){ let i=0; while(i<gx.length){ if(lv[i]>=L){ let j=i; while(j+1<gx.length&&lv[j+1]>=L)j++; const y=topY+(L-1)*BEAMGAP;
+      if(j>i) s+=`<rect x="${sx(i).toFixed(1)}" y="${y.toFixed(1)}" width="${(sx(j)-sx(i)).toFixed(1)}" height="${BEAMTH}" fill="${INK}"/>`;
+      else { const dir=i>0?-1:1, len=9, x0=dir<0?sx(i)-len:sx(i); s+=`<rect x="${x0.toFixed(1)}" y="${y.toFixed(1)}" width="${len}" height="${BEAMTH}" fill="${INK}"/>`; }
+      i=j+1; } else i++; } }
+  return s; }
+
+/* ===== audio (solo claqueta) ===== */
+let AC=null,MASTER=null,BUS=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function master(){ const c=ac(); if(!c)return null; if(!MASTER){ MASTER=c.createGain(); MASTER.gain.value=.9; MASTER.connect(c.destination);} return MASTER; }
+function click(t0,accent,soft){ const c=ac(); if(!c)return; const m=BUS||master(); const o=c.createOscillator(),g=c.createGain();
+  o.frequency.value=accent?1500:(soft?820:1050); g.gain.value=.0001; o.connect(g); g.connect(m);
+  const pk=accent?.58:(soft?.16:.36); g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(pk,t0+.004); g.gain.exponentialRampToValueAtTime(.0001,t0+.085);
+  o.start(t0); o.stop(t0+.1); }
+/* percusión del MODO EXTREMO (kick/snare/hihat) */
+function kick(t){ const c=ac(); if(!c)return; const m=BUS||master(); const o=c.createOscillator(),g=c.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(165,t); o.frequency.exponentialRampToValueAtTime(46,t+.12);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.55,t+.005); g.gain.exponentialRampToValueAtTime(.0001,t+.24);
+  o.connect(g); g.connect(m); o.start(t); o.stop(t+.26); }
+function snare(t){ const c=ac(); if(!c)return; const m=BUS||master();
+  const len=Math.floor(c.sampleRate*0.18); const b=c.createBuffer(1,len,c.sampleRate); const d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.4);
+  const s=c.createBufferSource(); s.buffer=b; const f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=1300;
+  const g=c.createGain(); g.gain.setValueAtTime(.32,t); g.gain.exponentialRampToValueAtTime(.0001,t+.18);
+  s.connect(f); f.connect(g); g.connect(m); s.start(t); s.stop(t+.2);
+  const o=c.createOscillator(),g2=c.createGain(); o.type='triangle'; o.frequency.value=185; g2.gain.setValueAtTime(.2,t); g2.gain.exponentialRampToValueAtTime(.0001,t+.12); o.connect(g2); g2.connect(m); o.start(t); o.stop(t+.13); }
+function hat(t,open){ const c=ac(); if(!c)return; const m=BUS||master(); const dur=open?0.09:0.032;
+  const len=Math.floor(c.sampleRate*dur); const b=c.createBuffer(1,len,c.sampleRate); const d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.1);
+  const s=c.createBufferSource(); s.buffer=b; const f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=7200;
+  const g=c.createGain(); g.gain.setValueAtTime(open?.13:.11,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur+.02);
+  s.connect(f); f.connect(g); g.connect(m); s.start(t); s.stop(t+dur+.05); }
+function drumPulse(t,q,j){ const pr=((j%PPM)+PPM)%PPM, ult=(pr===PPM-1);   // (22-sep) caja según el compás de la carta
+  const caja = PPM===2 ? pr===1 : PPM===3 ? pr===2 : (pr===1||pr===3);
+  kick(t); for(let s=0;s<3;s++) hat(t+s*0.5*q, s===2 && ult); if(caja) snare(t); }
+/* (22-sep-2026) PERCUSIÓN DISCRETA DEL MODO NORMAL: bombo suave en el 1, un
+   toque grave más flojo en los demás pulsos (algo más marcado en el 3 del 4/4)
+   y un charles muy leve en cada pulso. Va CLARAMENTE por debajo de los acordes
+   y del golpe del alumno. DRUM_VOL es el único mando: 0 la apaga. */
+const DRUM_VOL=1.0;
+function kickSoft(t,gain,dur){ const c=ac(); if(!c)return; const m=BUS||master(); const o=c.createOscillator(),g=c.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(48,t+Math.min(.1,dur*.6));
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(gain,t+.005); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g); g.connect(m); o.start(t); o.stop(t+dur+.02); }
+function hatSoft(t,gain){ const c=ac(); if(!c)return; const m=BUS||master(); const dur=0.028;
+  const len=Math.floor(c.sampleRate*dur); const b=c.createBuffer(1,len,c.sampleRate); const d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.2);
+  const s=c.createBufferSource(); s.buffer=b; const f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=8000;
+  const g=c.createGain(); g.gain.setValueAtTime(gain,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur+.015);
+  s.connect(f); f.connect(g); g.connect(m); s.start(t); s.stop(t+dur+.04); }
+function drumSoft(t,pRel){ if(DRUM_VOL<=0) return; const pr=((pRel%PPM)+PPM)%PPM;
+  if(pr===0){ kickSoft(t,.14*DRUM_VOL,.20); hatSoft(t,.040*DRUM_VOL); }                     // 1: fuerte
+  else if(PPM===4 && pr===2){ kickSoft(t,.08*DRUM_VOL,.16); hatSoft(t,.034*DRUM_VOL); }    // 3 del 4/4: medio
+  else { kickSoft(t,.045*DRUM_VOL,.11); hatSoft(t,.030*DRUM_VOL); } }                      // resto: suave
+/* (22-sep-2026) SONIDO DEL GOLPE DEL ALUMNO: el mismo «sonido de ritmo» que usa
+   todo el quiz para representar las figuras (ataque percusivo filtrado + cuerpo
+   grave en la nota de referencia, octava 2), en versión corta. Suena AL INSTANTE
+   (t = ahora, el AudioContext ya está desbloqueado por el gesto de empezar) y va
+   directo al master, no al bus de la base, para que se oiga por encima. */
+let REF_FREQ=110, TAPBUS=null;
+function tapSound(){ const c=ac(); if(!c)return; if(!TAPBUS){ TAPBUS=c.createGain(); TAPBUS.gain.value=1; TAPBUS.connect(master()); }
+  const out=TAPBUS, t0=c.currentTime, peak=0.5, sustain=0.13;
+  const aLen=Math.floor(c.sampleRate*0.012); const ab=c.createBuffer(1,aLen,c.sampleRate); const ad=ab.getChannelData(0);
+  for(let i=0;i<aLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/aLen,2.0);
+  const as=c.createBufferSource(); as.buffer=ab; const af=c.createBiquadFilter(); af.type='bandpass'; af.frequency.value=850; af.Q.value=.6;
+  const ag=c.createGain(); ag.gain.value=peak; as.connect(af); af.connect(ag); ag.connect(out); as.start(t0); as.stop(t0+0.03);
+  const o=c.createOscillator(); o.type='sine'; o.frequency.value=REF_FREQ; const g=c.createGain(); o.connect(g); g.connect(out);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.008);
+  g.gain.setValueAtTime(peak*0.42,t0+sustain*0.5); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
+  o.start(t0); o.stop(t0+sustain+0.03); }
+/* groove suave del MODO NORMAL (bajo + acorde cálido tenue, muy por debajo del extremo) */
+function softNote(t,freq,dur,vol,type){ const c=ac(); if(!c)return; const m=BUS||master(); const o=c.createOscillator(),g=c.createGain();
+  o.type=type||'sine'; o.frequency.value=freq; o.connect(g); g.connect(m);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+.05); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.start(t); o.stop(t+dur+.05); }
+/* Iago 2-jul: la base del modo normal era un la menor estático (repetitivo).
+   Ahora hay PROGRESIÓN ARMÓNICA en la menor que va resolviendo: bajo de
+   lamento descendente (la–sol–fa–mi) con dominante y cadencia auténtica
+   V7→i cada vuelta de 8 compases. Un acorde por compás (2 pulsos):
+     Am · G · F · E7 · Am · F · E7 · Am
+   Mismos timbres y volúmenes tenues que antes (bajo seno + voces triangle). */
+const SOFT_PROG=[
+  { b:110.00, up:[220.00,261.63,329.63], q: 82.41 },   // Am  (A2 · A3 C4 E4 · 5ª E2)
+  { b: 98.00, up:[246.94,293.66,392.00], q:146.83 },   // G   (G2 · B3 D4 G4 · 5ª D3)
+  { b: 87.31, up:[220.00,261.63,349.23], q:130.81 },   // F   (F2 · A3 C4 F4 · 5ª C3)
+  { b: 82.41, up:[207.65,246.94,293.66], q:123.47 },   // E7  (E2 · G#3 B3 D4 · 5ª B2)
+  { b:110.00, up:[220.00,261.63,329.63], q: 82.41 },   // Am
+  { b: 87.31, up:[220.00,261.63,349.23], q:130.81 },   // F
+  { b: 82.41, up:[207.65,246.94,293.66], q:123.47 },   // E7  → resuelve…
+  { b:110.00, up:[220.00,261.63,329.63], q: 82.41 }    // Am  (cadencia auténtica)
+];
+/* (22-sep-2026) La progresión ya no supone «compás = 2 pulsos»: cada acorde dura
+   CHORD_P pulsos (un compás en 2/4, 3/4, 6/8; medio compás en 4/4, que a este
+   tempo es larguísimo). Se lee en dos mitades de 4 acordes: A = Am G F E7
+   (semicadencia) y B = Am F E7 Am (cadencia auténtica); la pasada termina
+   SIEMPRE con B, así que acaba resuelta sea cual sea su longitud. */
+function chordAt(p){ const slot=Math.floor(Math.max(0,p)/CHORD_P), half=Math.floor(slot/4), nH=Math.max(1,Math.round(LEN_P/(4*CHORD_P)));
+  const esB = (half>=nH-1) || (nH>=5 && half===1);
+  return SOFT_PROG[(esB?4:0)+(slot%4)]; }
+function softGroove(t,accent,p){ const sp=effSecPerPulse();
+  const ch=chordAt(p||0); const pr=(((p||0)%CHORD_P)+CHORD_P)%CHORD_P;
+  if(pr===0){                                   // arranque del acorde: fundamental + acorde cálido
+    const k=accent?1:0.8;                       //   (en 4/4 el 3.er pulso entra un poco más suave que el 1.º)
+    softNote(t,ch.b,sp*1.7,.075*k,'sine');
+    ch.up.forEach(function(f,i){ softNote(t,f,sp*1.3,(i===0?.026:.020)*k,'triangle'); });
+  } else {                                      // resto de pulsos: la 5.ª del acorde, más tenue
+    softNote(t,ch.q,sp*1.3,.050,'sine');
+    softNote(t,ch.up[0],sp*1.0,.018,'triangle');
+  }
+}
+
+/* ===== geometría del pentagrama ===== */
+let STAFF_MID=0, LINE_GAP=12;
+function drawStaff(){
+  const game=document.getElementById('game'); const W=game.clientWidth, H=game.clientHeight;
+  STAFF_MID=Math.round(H*0.5); LINE_GAP=12;
+  const top=STAFF_MID-2*LINE_GAP; let lines='';
+  for(let i=0;i<5;i++){ const y=top+i*LINE_GAP; lines+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#cfc8ea" stroke-width="1.4"/>`; }
+  const sv=document.getElementById('stafflines'); sv.setAttribute('viewBox',`0 0 ${W} ${H}`); sv.innerHTML=lines;
+}
+
+/* ===== parámetros de juego ===== */
+const SPEEDS=[{n:'Normal',mult:1.0},{n:'Lento',mult:1.16},{n:'Muy lento',mult:1.34}];
+// subdivisiones disponibles según la carta (compuesto 6/8): pulso = negra c/puntillo
+const SUBDIV_OPTS=[ {key:'off',label:'Ninguna',per:1}, {key:'8',label:'Corchea',per:3}, {key:'16',label:'Semicorchea',per:6} ];
+let speedLevel=0, subdivSel='off';
+let lastTap=-1, spamCount=0, roundExtra=0, extraTotal=0, tapTimes=[];
+const GREEN_X=150, PXPERPULSE=118, LEAD_PULSES=3, SCHED_AHEAD=0.12;   // px por pulso · pulsos de entrada · lookahead del scheduler (s)
+// (Iago 14-sep-2026) Antes eran 3 RONDAS de 3 frases cada una — 72 pulsos
+// tocando — y a los chavales se les hacía eterno. Ahora es UNA SOLA FRASE
+// larga, sin cortes ni carteles de «ronda siguiente», y la dificultad crece
+// DENTRO de ella: los ritmos que hay que clavar empiezan separados (cada 4
+// pulsos) y se van juntando (cada 3, luego cada 2).
+const GAPS=[4,3,2], PRE=2, GAPP=6;
+// (Iago 22-sep-2026) ~20 % MÁS CORTA, pero cuadrando compases y frases. Antes:
+// FRASE_UNIDADES(6)×PHRASE(8) = 48 pulsos fijos (24 compases en 2/4 y 6/8 ·
+// 16 en 3/4 · 12 en 4/4), o sea 68,6 s a negra con puntillo = 42 (6/8) y 57,6 s
+// a negra = 50 (2/4, 3/4, 4/4), más 3 pulsos de cuenta atrás.
+// Ahora la longitud se calcula por carta: el objetivo son OBJETIVO_PULSOS, pero
+// se redondea HACIA ABAJO al múltiplo de 4 acordes (una mitad de la progresión),
+// para que la base termine con la cadencia:
+//   · 2/4, 6/8 (2 pulsos/compás) → 40 pulsos = 20 compases = 5 frases de 4 · 57,1 s (6/8) / 48 s (2/4)   −17 %
+//   · 3/4     (3 pulsos/compás) → 36 pulsos = 12 compases = 3 frases de 4 · 43,2 s                   −25 %
+//   · 4/4     (4 pulsos/compás) → 40 pulsos = 10 compases (acorde cada medio compás) · 48 s          −17 %
+// OBJETIVO_PULSOS es lo único que hay que tocar para alargarla o acortarla.
+const PPM = (_CFG && _CFG.pulsesPerMeas) ? _CFG.pulsesPerMeas : 2;     // pulsos por compás de la carta
+const CHORD_P = PPM>=4 ? PPM/2 : PPM;                                  // pulsos por acorde
+const OBJETIVO_PULSOS = 40;
+const LEN_P = Math.max(4*CHORD_P, Math.floor(OBJETIVO_PULSOS/(4*CHORD_P))*(4*CHORD_P));
+const DE_TAREAS = !!(_CFG && _CFG.deTareas);
+const URL_PORTAL = 'https://ge.lmathome.es/#tareas';
+const TOL=0.14, VIS_DELAY=0.10;                                        // retraso (s) de figura Y de la ventana de precisión
+const GRACE=0.072, STAR_WIN=0.110, EXTRA_PEN=1.0;                      // crédito pleno · estrellita · cada golpe de más = un acierto perdido
+/* ANTI-METRALLETA ADAPTATIVA (Iago 2-jul): antes el hueco mínimo entre
+   golpes era 0.9 de una semicorchea FIJA (sp/6) → en compuesto, unas
+   semicorcheas humanas ligeramente apretadas se marcaban como spam (línea
+   roja + penalización) aun tocando bien. Ahora el mínimo es el 50% de la
+   figura MÁS RÁPIDA que existe de verdad en esta carta (incluidas fusas),
+   y el tope de golpes por pulso se calcula de esa misma figura. */
+const MIN_DUR_Q=(function(){ let m=1e9;
+  CARD.cells.forEach((cs,ci)=>cs.forEach((t,k)=>{ if(!String(t).endsWith('r')) m=Math.min(m,(CELL_BEATS[ci]&&CELL_BEATS[ci][k]!=null)?CELL_BEATS[ci][k]:durQ(t)); }));
+  FILLERS.forEach(fs=>fs.forEach(t=>{ if(!String(t).endsWith('r')) m=Math.min(m,durQ(t)); }));
+  if(!isFinite(m)||m<=0) m=0.25; return m; })();
+const MAXTAPS_PER_PULSE=Math.ceil(PULSE_Q/MIN_DUR_Q)+3;                // máx. musical real + margen humano
+
+/* ===== estado ===== */
+let roundsPassed=0;
+let running=false, attacks=[], notes=[], beamGroups=[], roundsMeta=[], raf=null;
+// (Iago 14-sep-2026, 2ª vuelta) Antes había UN solo desfase para dos cosas que
+// no son la misma. VIS_DELAY_P sigue moviendo la VENTANA DE PRECISIÓN — eso
+// está bien calibrado, él lo confirma de oído — pero movía TAMBIÉN el dibujo,
+// y ahí sobra: la figura cruzaba la línea verde 100 ms DESPUÉS de sonar el
+// ritmo, que es el «pelín de retardo» que él veía. El dibujo se desfasa solo
+// lo que de verdad tarda el aparato en sacar el sonido (outputLatency), que en
+// un iPad son unos pocos milisegundos, no 100.
+let extremeMode=false, VIS_DELAY_P=0, DRAW_DELAY_P=0;
+function latenciaSalida(){
+  try { const c=ac();
+    let l=(typeof c.outputLatency==='number' && isFinite(c.outputLatency)) ? c.outputLatency : 0;
+    if(!l && typeof c.baseLatency==='number' && isFinite(c.baseLatency)) l=c.baseLatency;
+    if(!isFinite(l) || l<0) l=0;
+    return Math.min(l, 0.12);   // tope de seguridad
+  } catch(e){ return 0; }
+}
+let musAnchors=[], schedP=0, schedT=0, schedTimer=null, lastP=0;      // reloj musical + scheduler de audio
+
+function curBpm(){ return extremeMode?BPM_EXTREME:BPM; }
+function effSecPerPulse(){ const spqBase=(60/curBpm())/PULSE_Q; const mult=extremeMode?1:SPEEDS[speedLevel].mult; return PULSE_Q*spqBase*mult; }   // lee speedLevel EN VIVO
+function curPer(){ return (SUBDIV_OPTS.find(o=>o.key===subdivSel)||{per:1}).per; }                                                              // subdivisión EN VIVO
+
+/* ===== construir la prueba en UNIDADES MUSICALES (pulsos), independiente del tempo ===== */
+function buildQuiz(){
+  const stdLen=LEN_P;
+  // Una sola pasada. En modo normal, la separación entre ritmos objetivo se
+  // aprieta por tramos dentro de la propia frase; en extremo ya va apretada
+  // de principio a fin, que es su gracia.
+  const roundDefs = extremeMode ? [{N:2,pulses:stdLen}]
+                                : [{gaps:GAPS, pulses:stdLen}];
+  notes=[]; attacks=[]; beamGroups=[]; roundsMeta=[];
+  let pulse=0, varRot=0, fillRot=0;
+  roundDefs.forEach((d,ri)=>{
+    const roundStart=pulse, aStart=attacks.length, len=d.pulses;
+    const targetPos=new Set();
+    const finPos=roundStart+len-2;
+    if(d.gaps && d.gaps.length){
+      // dificultad creciente dentro de la frase: se reparte en tantos tramos
+      // como separaciones haya, y cada tramo usa la suya
+      const tramos=d.gaps.length, porTramo=Math.max(1, Math.floor(len/tramos));
+      let p=roundStart+PRE;
+      for(let t=0;t<tramos;t++){
+        const tope=(t===tramos-1)?finPos:Math.min(finPos, roundStart+(t+1)*porTramo-1);
+        for(; p<=tope; p+=d.gaps[t]) targetPos.add(p);
+      }
+    } else {
+      for(let p=roundStart+PRE; p<=finPos; p+=d.N) targetPos.add(p);
+    }
+    // (Iago 15-sep-2026) Hay cartas cuyo ritmo objetivo es un compás ENTERO
+    // (síncopas de 2.1, 2.2, 2.3, 1.4, 6.4…): no cabe en un pulso. Antes se
+    // metía igual y el relleno del pulso siguiente se le montaba encima:
+    // figuras solapadas, golpes «de más» y un jugador perfecto sacaba un 29 %
+    // en la 2.3. Ahora el ritmo largo RESERVA los pulsos que ocupa (sin
+    // relleno debajo) y, si no cabe antes del final de la frase, va relleno.
+    let ocupadoHasta=-1;
+    for(let i=roundStart;i<roundStart+len;i++){
+      if(i<ocupadoHasta) continue;                        // pulso cubierto por un ritmo objetivo largo
+      let isT=targetPos.has(i);
+      let ci = isT ? (varRot % CARD.cells.length) : -1;
+      if(isT){
+        const spanP=(CELL_BEATS[ci]||CARD.cells[ci].map(durQ)).reduce((s,b)=>s+b,0)/PULSE_Q;
+        if(spanP>1+1e-6 && i+Math.ceil(spanP-1e-6) > roundStart+len){ isT=false; ci=-1; }   // no cabe: relleno
+        else { varRot++; if(spanP>1+1e-6) ocupadoHasta=i+Math.ceil(spanP-1e-6); }
+      }
+      const toks = isT ? CARD.cells[ci].slice() : FILLERS[fillRot++ % FILLERS.length].slice();
+      const bts = isT ? CELL_BEATS[ci] : null;
+      const baseIdx=notes.length; let acc=0;
+      toks.forEach((t,k)=>{ const onsetP=i + (acc/PULSE_Q), isRest=t.endsWith('r');   // posición en PULSOS
+        notes.push({onsetP, dur:t, isRest, round:ri});
+        if(!isRest) attacks.push({tP:onsetP, isTarget:isT, round:ri, matched:false});
+        acc+=(bts&&bts[k]!=null)?bts[k]:durQ(t); });
+      autoBeam(toks).forEach(g=> beamGroups.push(g.map(li=>baseIdx+li)));
+    }
+    roundsMeta.push({ri, aStart, aEnd:attacks.length, start:roundStart, len, boundaryP:roundStart+len, done:false});
+    pulse = roundStart + len + (ri===roundDefs.length-1 ? 0 : (extremeMode?2:GAPP));   // SIN hueco tras la última ronda
+  });
+  lastP=pulse;
+}
+// acento (agudo) en el 1.er pulso de cada compás (PPM pulsos: 2 en 2/4 y 6/8, 3 en 3/4, 4 en 4/4)
+function accentAt(p){ for(const m of roundsMeta){ if(p>=m.start && p<m.start+m.len) return ((p-m.start)%PPM)===0; } return ((p%PPM)+PPM)%PPM===0; }
+
+/* ===== pintar la pista: cada nota en su X = su pulso (px por pulso) ===== */
+function layoutTrack(){
+  const track=document.getElementById('track'); track.style.transform='translateX(0px)';
+  const game=document.getElementById('game'); const H=game.clientHeight, midY=STAFF_MID;
+  const xs=notes.map(n=> (n.onsetP+DRAW_DELAY_P)*PXPERPULSE);
+  const inBeam=new Set(); beamGroups.forEach(g=>g.forEach(i=>inBeam.add(i)));
+  let body='';
+  notes.forEach((n,i)=>{ body+=noteSVG(xs[i], midY, n.dur, n.isRest, inBeam.has(i)); });
+  beamGroups.forEach(g=>{ body+=beamsSVG(g.map(i=>xs[i]), g.map(i=>lvlOf(notes[i].dur)), midY); });
+  const totalW=(lastP+DRAW_DELAY_P)*PXPERPULSE + 320;
+  track.innerHTML=`<svg width="${totalW}" height="${H}" viewBox="0 0 ${totalW} ${H}" style="position:absolute;left:0;top:0;overflow:visible">${body}</svg>`;
+}
+
+/* ===== ciclo de juego ===== */
+function setStartBtn(run){ const b=document.getElementById('startBtn'); b.textContent=run?'Parar \u25a0':'Empezar \u25b6'; b.classList.toggle('stop',run); }
+function lineGood(){ const g=document.getElementById('greenline'); g.classList.remove('bad'); g.classList.add('good'); clearTimeout(g._gt); g._gt=setTimeout(()=>g.classList.remove('good'),150); }
+function lineRed(){ const g=document.getElementById('greenline'); g.classList.remove('good'); g.classList.add('bad'); clearTimeout(g._rt); g._rt=setTimeout(()=>g.classList.remove('bad'),360); }
+const STARCOL=['#ffd678','#5bd0ff','#34d399','#ff5ccd','#a974ff'];
+const STARFIRE=['#ffe066','#ff8c1a','#ff3b1f','#ff5a1f','#ffb347'];
+function emitStars(n){ const game=document.getElementById('game'); const COL=document.body.classList.contains('fire')?STARFIRE:STARCOL;
+  for(let i=0;i<n;i++){ const s=document.createElement('div'); s.className='starfx'; s.style.color=COL[(Math.random()*COL.length)|0];
+  s.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 2l2.6 6.5L21 9.2l-5 4.3 1.7 6.5L12 16.6 6.3 20l1.7-6.5-5-4.3 6.4-.7z" fill="currentColor"/></svg>';
+  s.style.left=(GREEN_X-7+(Math.random()*16-8))+'px'; s.style.top=(STAFF_MID-7+(Math.random()*30-15))+'px';
+  s.style.setProperty('--sx',(Math.random()*44-22)+'px'); s.style.setProperty('--sy',(-24-Math.random()*30)+'px'); s.style.setProperty('--sr',(Math.random()*200-100)+'deg');
+  s.style.animation='starfly '+(680+Math.random()*420)+'ms ease-out forwards'; game.appendChild(s); setTimeout(()=>s.remove(),1200); } }
+
+function startQuiz(){
+  if(running){ stopRun(); return; }
+  ac(); drawStaff(); roundsPassed=0; lastTap=-1; spamCount=0; roundExtra=0; extraTotal=0; tapTimes=[]; if(!extremeMode) intentos++;
+  VIS_DELAY_P  = VIS_DELAY/effSecPerPulse();          // ventana de precisión (sin tocar)
+  // (Iago 15-sep-2026) Punto medio: ayer se quitó del dibujo TODO el retardo de
+  // 100 ms (quedaba solo la latencia del aparato) y ahora las figuras van un pelín
+  // ADELANTADAS. Se deja la mitad: latencia real + 50 ms.
+  // (15-sep, 3ª vuelta) latencia real + 80 ms.
+  DRAW_DELAY_P = (latenciaSalida() + VIS_DELAY*0.8)/effSecPerPulse();
+  buildQuiz(); layoutTrack(); updateBar();
+  running=true; setStartBtn(true); updateBar(); document.getElementById('hint').textContent='¡Percute cada figura al cruzar la línea verde!';
+  beginPlayback();
+}
+function beginPlayback(){
+  const c=ac();
+  if(BUS){ try{BUS.disconnect();}catch(e){} } BUS=c.createGain(); BUS.gain.value=1; BUS.connect(master());   // bus silenciable
+  musAnchors=[]; schedP=-LEAD_PULSES; schedT=c.currentTime+0.18;
+  const sp0=effSecPerPulse();
+  for(let k=0;k<LEAD_PULSES;k++){ const tk=schedT+k*sp0; const ms=(tk-c.currentTime)*1000;
+    setTimeout(()=>{ if(!running)return; const c3=document.getElementById('count3'); c3.textContent=String(LEAD_PULSES-k); c3.classList.remove('show'); void c3.offsetWidth; c3.classList.add('show'); }, Math.max(0,ms)); }
+  if(schedTimer) clearInterval(schedTimer);
+  schedTimer=setInterval(schedTick,25); schedTick();
+  raf=requestAnimationFrame(frame);
+}
+// scheduler con lookahead: programa los próximos clics leyendo tempo/subdivisión EN VIVO → cambios desde el siguiente pulso
+function schedTick(){
+  if(!running) return; const aNow=ac().currentTime, ahead=aNow+SCHED_AHEAD;
+  while(schedT < ahead){
+    musAnchors.push({p:schedP, t:schedT});
+    click(schedT, accentAt(schedP), false);
+    const per=curPer(), sp=effSecPerPulse();
+    if(per>1){ for(let k=1;k<per;k++) click(schedT + k*sp/per, false, true); }
+    if(extremeMode) drumPulse(schedT, sp/PULSE_Q, schedP);
+    else { softGroove(schedT, accentAt(schedP), schedP); if(schedP>=0) drumSoft(schedT, schedP); }   // (22-sep) percusión discreta, solo desde el pulso 0 (la cuenta atrás va a claqueta sola)
+    schedT += effSecPerPulse(); schedP++;
+  }
+  while(musAnchors.length>3 && musAnchors[1].t < aNow) musAnchors.shift();
+}
+// posición musical (en pulsos) interpolada entre anclas del scheduler
+function musPos(now){ const A=musAnchors; if(!A.length) return -LEAD_PULSES;
+  let i=0; while(i+1<A.length && A[i+1].t<=now) i++;
+  const a=A[i], b=A[i+1];
+  if(b) return a.p + (now-a.t)/(b.t-a.t);
+  return a.p + (now-a.t)/effSecPerPulse(); }
+function frame(){ if(!running) return; const now=ac().currentTime, mp=musPos(now), sp=effSecPerPulse();
+  document.getElementById('track').style.transform='translateX('+(GREEN_X - mp*PXPERPULSE)+'px)';
+  // modo extremo: la barra avanza de forma CONTINUA con la pista (una sola tirada)
+  barraConReloj(mp);
+  for(let i=0;i<attacks.length;i++){ const a=attacks[i]; if(!a.matched && !a.missed){ if(mp > a.tP+VIS_DELAY_P + TOL/sp){ a.missed=true; lineRed(); } } }
+  roundsMeta.forEach(m=>{ if(!m.done && mp > m.boundaryP + 0.35){ m.done=true; evalRound(m); } });
+  if(mp > lastP + 0.5){ finishQuiz(); return; }
+  raf=requestAnimationFrame(frame);
+}
+let intentos=0;   // (22-sep) pasadas del modo normal en esta visita (va en el punto de control del padre)
+function onTap(){
+  if(!running) return; tapSound(); const now=ac().currentTime; const sp=effSecPerPulse();
+  tapTimes.push(now); while(tapTimes.length && now-tapTimes[0] > sp) tapTimes.shift();   // golpes dentro del último pulso
+  const minGap = MIN_DUR_Q*(sp/PULSE_Q)*0.5;       // 50% de la figura más rápida REAL de la carta, relativo al tempo
+  const tooClose = (lastTap>=0 && now-lastTap < minGap);
+  const burst = tapTimes.length > MAXTAPS_PER_PULSE;
+  if(tooClose || burst){ spamCount++; lastTap=now; roundExtra++; extraTotal++; lineRed();
+    if(spamCount>=2 || burst) showRedMsg('No hagas la metralleta que no cuela, crack.'); return; }
+  spamCount=0; lastTap=now;
+  const mp=musPos(now);
+  /* EMPAREJAMIENTO CRONOLÓGICO (Iago 2-jul): antes cada golpe se casaba con
+     la figura MÁS CERCANA de toda la pista. Con semicorcheas, las ventanas de
+     ±TOL se solapan y un golpe apenas adelantado se "comía" la figura
+     siguiente → todo lo demás quedaba desfasado en cadena (rojos acumulados
+     tocando bien). Ahora el golpe se casa con la PRIMERA figura sin
+     emparejar cuya ventana contiene este instante: se consumen en orden,
+     como se tocan. */
+  let bi=-1;
+  for(let i=0;i<attacks.length;i++){
+    const a=attacks[i]; if(a.matched) continue;
+    const d=(mp-(a.tP+VIS_DELAY_P))*sp;            // + = golpe tarde · − = golpe pronto
+    if(d>TOL) continue;                            // esa figura ya pasó de ventana
+    if(d<-TOL) break;                              // aún no llegó (las siguientes, menos)
+    bi=i; break;                                   // primera en ventana → esa es
+  }
+  const bd=(bi>=0)?Math.abs(mp-(attacks[bi].tP+VIS_DELAY_P))*sp:1e9;
+  if(bi>=0 && bd<=TOL){
+    const credit = bd<=GRACE ? 1.0 : 1.0 - 0.5*((bd-GRACE)/(TOL-GRACE));   // impreciso → descuenta
+    attacks[bi].matched=true; attacks[bi].credit=credit;
+    if(bd<=STAR_WIN){ lineGood(); emitStars(2+(Math.random()<.45?1:0)); }   // estrellita (ventana generosa)
+    else { lineGood(); }
+  } else { roundExtra++; extraTotal++; lineRed(); }   // figura de más
+}
+function showRedMsg(t){ const el=document.getElementById('redmsg'); if(!el)return; el.textContent=t; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+function killAudio(){ if(!BUS)return; const now=ac().currentTime; try{ BUS.gain.cancelScheduledValues(now); BUS.gain.setValueAtTime(BUS.gain.value,now); BUS.gain.linearRampToValueAtTime(0, now+0.03);}catch(e){} }
+function stopRun(){ running=false; if(raf)cancelAnimationFrame(raf); if(schedTimer){clearInterval(schedTimer);schedTimer=null;} killAudio();
+  setStartBtn(false); document.getElementById('track').style.transform='translateX(0px)'; document.getElementById('hint').textContent='Detenido. Pulsa «Empezar» o Espacio para empezar de nuevo.'; }
+
+/* puntuación con créditos graduados (impreciso descuenta) y castigo por golpes de más.
+   Iago 2-jul: la nota que cuenta es GLOBAL (todas las figuras juntas, sin
+   separar ritmo nuevo/relleno) y la ronda se supera con el 50%. */
+function roundScore(aStart,aEnd,extra){
+  let tC=0,tT=0,nC=0,nT=0;
+  for(let i=aStart;i<aEnd;i++){ const a=attacks[i], c=a.matched?(a.credit||0):0; if(a.isTarget){tT++;tC+=c;} else {nT++;nC+=c;} }
+  const total=(tT+nT)||1; const pen=extra*EXTRA_PEN;                  // cada golpe de más = un acierto perdido
+  const tAcc=tT?Math.max(0,Math.min(1,(tC - pen*(tT/total))/tT)):1;
+  const nAcc=nT?Math.max(0,Math.min(1,(nC - pen*(nT/total))/nT)):1;
+  const gAcc=Math.max(0,Math.min(1,(tC + nC - pen)/total));           // GLOBAL: todo junto
+  return {tAcc,nAcc,gAcc,tp:Math.round(tAcc*100),np:Math.round(nAcc*100),gp:Math.round(gAcc*100)};
+}
+function aggScore(){ return roundScore(0,attacks.length,extraTotal); }
+const PASS_MIN=0.50;   // umbral de ronda (antes 0.70 por categoría)
+
+/* evaluación de cada ronda al vuelo (sin cartel: solo un destello no bloqueante) */
+/* (22-sep-2026) Ya no hay destello de «¡Frase superada!» al cerrar la pasada:
+   es una sola ejecución del tirón y el resultado se ve en la pantalla final. */
+function evalRound(m){
+  const s=roundScore(m.aStart,m.aEnd,roundExtra); roundExtra=0;
+  m.pass=(s.gAcc>=PASS_MIN);
+  if(!extremeMode){ if(m.pass) roundsPassed++; updateBar(); }
+}
+
+/* ===== barra (3 tramos, se llena por ronda superada) ===== */
+/* (Iago 14-sep-2026) La barra ya no da saltos por ronda: avanza con el reloj,
+   pulso a pulso, en modo normal y en extremo. */
+function updateBar(){ const el=document.getElementById('barTag'); if(!el) return;
+  el.textContent = extremeMode?'Modo extremo':(running?'Sigue el ritmo…':(roundsPassed>=1?'¡Completada!':'Listo para empezar')); }
+function barraConReloj(mp){ const f=document.getElementById('barFill'); if(!f||!lastP) return;
+  f.style.width=Math.max(0,Math.min(100,(mp/lastP)*100))+'%'; }
+
+/* ===== final ===== */
+/* (Iago 22-sep-2026) Pantalla final según el porcentaje de precisión (aggScore().gp):
+     > 70 %  → «Finalizar quiz» + «Modo extremo» (opcional, bien dicho)
+     50–70 % → «Fin del quiz» + «Otra vez» (opcional)
+     < 50 %  → «Otra vez» + «Suficiente por hoy» (salida tranquila; el quiz NO queda completado)
+   Los dos primeros tramos abren ovWin, que es lo que el puente de embebido vigila
+   para dar la fase por hecha (y el padre avisa a Iago). El tercero abre ovResult. */
+const URL_PORTAL_BTN='Volver al portal →';
+function informarProgreso(s){
+  // punto de control con porcentaje: lo guarda el padre (index.html) por cuenta+envío
+  try{ if(window.top!==window.self) parent.postMessage({type:'quizPhaseProgress', fase:4, pct:s.gp, superado:(s.gp>=50), intentos:intentos, t:Date.now()},'*'); }catch(e){}
+}
+function finishQuiz(){ running=false; if(raf)cancelAnimationFrame(raf); if(schedTimer){clearInterval(schedTimer);schedTimer=null;} setStartBtn(false); killAudio();
+  if(extremeMode){ showExtremeResult(); return; }
+  const s=aggScore(); informarProgreso(s);
+  if(s.gp>70) showWin(s,'alto'); else if(s.gp>=50) showWin(s,'medio'); else showLow(s);
+}
+function mkBtn(txt,cls,fn){ const b=document.createElement('button'); b.className='cbtn'+(cls?' '+cls:''); b.innerHTML=txt; b.onclick=fn; return b; }
+function showWin(s,tramo){
+  const ov=document.getElementById('ovWin');
+  document.getElementById('winTgt').innerHTML=`<b>${s.gp}%</b>de precisión`; document.getElementById('winTgt').className='stat ok';
+  const btns=document.getElementById('winBtns'); btns.innerHTML='';
+  if(tramo==='alto'){
+    document.getElementById('winBadge').textContent='¡Quiz superado!';
+    document.getElementById('winTitle').textContent='¡Lo has clavado!';
+    document.getElementById('winMsg').innerHTML='El quiz ya está completado. Si te apetece, hay un último reto: <b>es opcional</b> y no cuenta para nada.';
+    btns.appendChild(mkBtn('Finalizar quiz ▶','',()=>studyScreen()));
+    btns.appendChild(mkBtn('Modo extremo 🔥 <span style="font-weight:600;opacity:.85">(opcional)</span>','ext',()=>{ document.getElementById('ovExtWarn').classList.add('show'); }));
+  } else {
+    document.getElementById('winBadge').textContent='¡Quiz superado!';
+    document.getElementById('winTitle').textContent='¡Bien hecho!';
+    document.getElementById('winMsg').innerHTML='Has completado el quiz. Si quieres afinar un poco más puedes repetir la pasada, pero <b>es opcional</b>.';
+    btns.appendChild(mkBtn('Fin del quiz ▶','',()=>studyScreen()));
+    btns.appendChild(mkBtn('Otra vez ↻ <span style="font-weight:600;opacity:.85">(opcional)</span>','ghost',()=>{ ov.classList.remove('show'); startQuiz(); }));
+  }
+  ov.classList.add('show'); burst();
+}
+function showLow(s){
+  const ov=document.getElementById('ovResult');
+  document.getElementById('resTgt').innerHTML=`<b>${s.gp}%</b>de precisión`; document.getElementById('resTgt').className='stat no';
+  document.getElementById('resBadge').textContent='Casi';
+  document.getElementById('resTitle').textContent='No llegaste al 50 % de precisi\u00f3n';
+  document.getElementById('resSub').textContent='Con calma: otra pasada y seguro que va mejor.';
+  const help=document.getElementById('helpbox'); help.style.display='block';
+  help.innerHTML='Si se te hace rápido, prueba a <b>bajar la velocidad</b> o <b>marcar una subdivisión</b> (corchea o semicorchea) antes de darle otra vez.';
+  const btns=document.getElementById('resBtns'); btns.innerHTML='';
+  btns.appendChild(mkBtn('Otra vez ↻','',()=>{ ov.classList.remove('show'); startQuiz(); }));
+  btns.appendChild(mkBtn('Suficiente por hoy','ghost',()=>{ ov.classList.remove('show'); showBasta(); }));
+  ov.classList.add('show');
+}
+/* «Suficiente por hoy»: ventana tranquilizadora. El punto de control (fase 4 +
+   porcentaje) ya lo ha guardado el padre al recibir quizPhaseProgress, así que
+   al volver a abrir el quiz desde la campana saltará directamente a esta fase. */
+function showBasta(){
+  const tx=document.getElementById('bastaTxt'), b=document.getElementById('bastaBtn');
+  if(DE_TAREAS){
+    tx.innerHTML='Tranquilo, no pasa nada. <b>Tu progreso queda guardado</b>: cuando vuelvas a abrir el quiz desde la campana del portal, seguirás desde esta misma fase. '+
+      'Iago ya tiene constancia de que has llegado hasta aquí. Este quiz <b>no cuenta para nota</b>: es trabajo complementario para practicar y mejorar, así que no te preocupes por el resultado.';
+    b.textContent=URL_PORTAL_BTN; b.onclick=irAMisTareas;
+  } else {
+    tx.innerHTML='Tranquilo, no pasa nada. Puedes volver a este quiz cuando quieras. <b>No cuenta para nada</b>: es solo para practicar y mejorar, así que no te preocupes por el resultado.';
+    b.textContent='Cerrar'; b.onclick=()=>{ document.getElementById('ovBasta').classList.remove('show');
+      try{ if(window.top!==window.self) parent.postMessage({type:'quizClose'},'*'); }catch(e){} };
+  }
+  document.getElementById('ovBasta').classList.add('show');
+}
+
+/* ===== util ===== */
+const PAL=['#34d399','#5bd0ff','#ff9a3c','#ff5ccd','#a974ff','#ffd678'];
+function burst(){ const host=document.getElementById('confetti'); const cx=innerWidth/2, cy=innerHeight*0.3;
+  for(let i=0;i<30;i++){ const p=document.createElement('i'); const a=Math.random()*Math.PI*2,d=120+Math.random()*250;
+    p.style.left=cx+'px'; p.style.top=cy+'px'; p.style.background=PAL[i%PAL.length];
+    p.style.setProperty('--dx',Math.cos(a)*d+'px'); p.style.setProperty('--dy',(Math.sin(a)*d+Math.random()*120)+'px'); p.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+    p.style.animation='conf '+(900+Math.random()*700)+'ms cubic-bezier(.15,.7,.3,1) forwards'; host.appendChild(p); setTimeout(()=>p.remove(),1700); } }
+
+/* ===== MODO EXTREMO (una sola ronda larga) ===== */
+function startExtreme(){ extremeMode=true; document.body.classList.add('fire');
+  document.getElementById('faseTitle').textContent='MODO EXTREMO 🔥';
+  document.getElementById('ovExtWarn').classList.remove('show'); document.getElementById('ovWin').classList.remove('show');
+  startQuiz(); }
+function showExtremeResult(){
+  const s=aggScore(), overall=s.gp;
+  document.getElementById('extTgt').innerHTML=`<b>${s.gp}%</b>de precisión`;
+  document.getElementById('extNon').style.display='none';
+  document.getElementById('extResTitle').textContent = overall>=80?'¡Bestial!' : overall>=55?'¡Has sobrevivido!' : '¡Casi te achicharras!';
+  document.getElementById('extResMsg').textContent = 'Salga lo que salga, da igual: esto no cuenta, era solo por llevarte al límite. 🔥';
+  document.getElementById('ovExtResult').classList.add('show'); burst();
+}
+
+/* ===== pantalla de lección de estudio (maqueta) ===== */
+function renderPreview(toks, ts, tup){
+  const host=document.createElement('div'); const beams=autoBeam(toks); const W=Math.max(150,70+toks.length*24);
+  try{ const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(W,128); const ctx=r.getContext();
+    const st=new VF.Stave(4,40,W-8); st.addClef('treble').addTimeSignature(ts||'6/8'); st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw();
+    const vf=toks.map(tok=>{ const isRest=tok.endsWith('r'); const base=tok.replace('d','').replace('r','');
+      const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:base+(isRest?'r':'')}); if(tok.replace('r','').endsWith('d'))VF.Dot.buildAndAttach([sn]); return sn; });
+    const vbeams=beams.map(g=>{ try{ return new VF.Beam(g.map(i=>vf[i])); }catch(e){return null;} }).filter(Boolean);
+    const [tn2,td2]=String(ts||'6/8').split('/').map(Number);
+    const voice=new VF.Voice({num_beats:tn2||6,beat_value:td2||8}).setStrict(false); voice.addTickables(vf);
+    new VF.Formatter().joinVoices([voice]).format([voice],W-70); voice.draw(ctx,st); vbeams.forEach(b=>{try{b.setContext(ctx).draw();}catch(e){}});
+    if(tup){ try{ const grp=tup.idx.map(i=>vf[i]).filter(Boolean); if(grp.length>1) new VF.Tuplet(grp,{num_notes:tup.num,notes_occupied:tup.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} }
+    const svg=host.querySelector('svg'); const top=st.getYForLine(0), bot=st.getYForLine(4);
+    svg.setAttribute('viewBox',`0 ${(top-22).toFixed(1)} ${W} ${(bot-top+44).toFixed(1)}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height');
+    return svg?svg.outerHTML:'';
+  }catch(e){ return ''; }
+}
+function studyScreen(){ extremeMode=false; document.body.classList.remove('fire'); document.getElementById('faseTitle').textContent='Sigue el ritmo';
+  ['ovWin','ovExtResult','ovResult','ovExtWarn','ovBasta'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  const host=document.getElementById('studyVars'); host.innerHTML='';
+  CARD.cells.forEach((toks,i)=>{ const d=document.createElement('div'); d.className='svar';
+    const ts=CELL_TS[i]; const hasUnit=!!(_CFG&&_CFG.cells[i]&&_CFG.cells[i].unit);
+    const [tn3,td3]=String(ts||'6/8').split('/').map(Number);
+    const cierre = td3===2?'h' : (td3===8&&tn3%3===0)?'qd' : (td3===8)?null : 'q';   // dispar: sin cierre
+    const show = hasUnit ? toks.concat([cierre||'qd']) : toks.slice();   // unidad de pulso + cierre; compás entero tal cual
+    d.innerHTML=`<span>Ritmo ${i+1}</span>`+renderPreview(show, ts, CELL_TUP[i]); host.appendChild(d); });
+  // FASE 7.1 · lecciones del libro (capturas subidas por Iago desde el Diario,
+  // llegan por _CFG.lecciones): botón protagonista + nota ajustada
+  const LECC=(_CFG && Array.isArray(_CFG.lecciones)) ? _CFG.lecciones : [];
+  const bk=document.getElementById('studyBookBtn'), note=document.querySelector('#ovStudy .booknote');
+  if(LECC.length){
+    bk.style.display='';
+    bk.textContent='📖 Ver lecciones pendientes ('+LECC.length+')';
+    if(note) note.innerHTML='📖 <b>Recuerda:</b> el profe te ha dejado <b>'+LECC.length+(LECC.length===1?' lección':' lecciones')+' del libro</b> para trabajar esta semana. Jugar está genial, pero <b>esto es el trabajo de verdad</b> — las tienes en el botón de abajo.';
+  } else {
+    bk.style.display='none';
+    if(note) note.innerHTML='📖 <b>Recuerda:</b> tienes pendiente la lección del <b>libro</b> que te puso el profe. Jugar está genial, pero <b>esto es el trabajo de verdad</b> — no te lo saltes.';
+  }
+  // (Iago 14-sep-2026) Si entró desde la campana de tareas, aquí no toca ni el
+  // generador de ejercicios ni repetir las lecciones: eso ya está en el portal,
+  // y allí además verá la ficha de teoría y lo que haya. Una despedida y fuera.
+  if(DE_TAREAS){
+    const badge=document.querySelector('#ovStudy .badge'); if(badge) badge.textContent='Quiz completado';
+    const h1=document.querySelector('#ovStudy h1'); if(h1) h1.textContent='¡Enhorabuena, has acabado el quiz!';
+    const sub=document.querySelector('#ovStudy .sub');
+    if(sub) sub.textContent='No te olvides de hacer el resto de tareas que tienes pendientes.';
+    const vars=document.getElementById('studyVars'); if(vars) vars.style.display='none';
+    if(note) note.style.display='none';
+    if(bk) bk.style.display='none';
+    const gb=document.getElementById('studyGoBtn'); if(gb) gb.style.display='none';
+    const tb=document.getElementById('studyTareasBtn'); if(tb){ tb.style.display=''; tb.textContent='Entendido'; }
+  }
+  document.getElementById('ovStudy').classList.add('show');
+}
+function mostrarLecciones(){
+  const LECC=(_CFG && Array.isArray(_CFG.lecciones)) ? _CFG.lecciones : [];
+  const host=document.getElementById('leccionesHost'); host.innerHTML='';
+  LECC.forEach((url,i)=>{ const w=document.createElement('div');
+    w.innerHTML='<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#ffb86b;margin:0 0 5px 2px">Lección '+(i+1)+'</div>'+
+      '<img src="'+url+'" alt="Lección '+(i+1)+'" style="display:block;width:100%;height:auto;border-radius:10px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.35)" loading="lazy">';
+    host.appendChild(w); });
+  document.getElementById('ovStudy').classList.remove('show');
+  document.getElementById('ovLecciones').classList.add('show');
+}
+
+/* ===== controles ===== */
+function subFig(dur){ const x=15,midY=40,sx=20,topY=14;
+  let s=`<ellipse cx="${x}" cy="${midY}" rx="6" ry="4.4" transform="rotate(-20 ${x} ${midY})" fill="currentColor"/><line x1="${sx}" y1="${midY-1}" x2="${sx}" y2="${topY}" stroke="currentColor" stroke-width="2"/>`;
+  const n=dur==='16'?2:(dur==='32'?3:1); for(let i=0;i<n;i++){ const fy=topY+i*7; s+=`<path d="M${sx} ${fy} C ${sx+8} ${fy+3}, ${sx+9} ${fy+9}, ${sx+4} ${fy+13}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`; }
+  return `<svg viewBox="0 0 32 52" style="height:28px;width:auto">${s}</svg>`; }
+function buildSeg(){
+  // VELOCIDAD: una línea con nodos (normal · lento(punto) · muy lento(tortuga)), sin texto
+  const v=document.getElementById('velSeg'); v.innerHTML='<span class="lbl">Velocidad</span>';
+  const line=document.createElement('div'); line.className='speedline';
+  const icons=['', '<span style="font-size:26px;line-height:0">●</span>', '<span style="font-size:34px;line-height:1">🐢</span>'];
+  SPEEDS.forEach((s,i)=>{ const b=document.createElement('button'); b.className='snode'+(i===speedLevel?' on':''); b.innerHTML=icons[i]||''; b.title=s.n; b.onclick=()=>{ speedLevel=i; buildSeg(); }; line.appendChild(b); });
+  v.appendChild(line);
+  // SUBDIVISIÓN: figuras seleccionables (una sola), en vivo
+  const su=document.getElementById('subSeg'); su.innerHTML='<span class="lbl">Subdivisión</span>';
+  SUBDIV_OPTS.forEach(o=>{ const b=document.createElement('button'); b.className=(o.key===subdivSel?'on':''); b.innerHTML = o.key==='off' ? '—' : subFig(o.key); b.title=o.label; b.onclick=()=>{ subdivSel=o.key; buildSeg(); }; su.appendChild(b); });
+}
+function resetSegs(){ buildSeg(); }
+
+document.getElementById('startBtn').onclick=()=>startQuiz();
+const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints||0)>0;
+if(isTouch) document.body.classList.add('touch');
+function padHit(e){ e.preventDefault(); ac(); onTap(); }
+document.getElementById('padL').addEventListener('pointerdown',padHit);
+document.getElementById('padR').addEventListener('pointerdown',padHit);
+function anyOvShown(){ return ['ovResult','ovWin','ovExtWarn','ovExtResult','ovStudy','ovLecciones','ovBasta'].some(id=>document.getElementById(id).classList.contains('show')); }
+window.addEventListener('keydown',e=>{ if(e.code!=='Space') return; e.preventDefault(); if(e.repeat) return; ac();   // (22-sep) mantener pulsada no es percutir
+  if(running){ onTap(); } else if(!anyOvShown()){ startQuiz(); } });
+// win → los botones se montan en showWin() según el tramo (finalizar / extremo / otra vez)
+document.getElementById('extGoBtn').onclick=()=>startExtreme();
+document.getElementById('extNoBtn').onclick=()=>document.getElementById('ovExtWarn').classList.remove('show');
+document.getElementById('extDoneBtn').onclick=()=>studyScreen();
+document.getElementById('studyGoBtn').onclick=()=>{ const b=document.getElementById('studyGoBtn'); b.textContent='Generando ejercicio…'; setTimeout(()=>{ b.textContent='(En la app real: Ritmo aislado · Lectura · Entonación)'; },700); };
+// FASE 7.1 · galería de lecciones del libro
+document.getElementById('studyBookBtn').onclick=()=>mostrarLecciones();
+function irAMisTareas(){ try{ (window.top||window).location.href=URL_PORTAL; }catch(e){ location.href=URL_PORTAL; } }
+document.getElementById('studyTareasBtn').onclick=irAMisTareas;
+document.getElementById('leccionesTareasBtn').onclick=irAMisTareas;
+document.getElementById('leccionesBackBtn').onclick=()=>{ document.getElementById('ovLecciones').classList.remove('show'); document.getElementById('ovStudy').classList.add('show'); };
+window.addEventListener('resize',()=>{ drawStaff(); if(!running) document.getElementById('track').innerHTML=''; });
+
+/* init */
+resetSegs(); drawStaff(); updateBar();
+</script>
+<!--__quiz_bridge_done__-->
+<script>
+/* ===== puente de embebido (shell quiz_completo) ===== */
+(function(){
+  if(window.top===window.self) return;                 // suelto: no hace nada
+  var P=new URLSearchParams(location.search);
+  var isLast=P.get('last')==='1';
+  var st=document.createElement('style');
+  st.textContent='.topbar{display:none!important}';
+  document.head.appendChild(st);
+  // Fase 1: arrancar directo al embeber (la app real ya presenta la carta antes)
+  try{
+    if(document.getElementById('introGo')){
+      document.body.classList.add('quiz');
+      var sc=document.getElementById('stageCarta'); if(sc) sc.style.display='none';
+      var ov=document.getElementById('ovIntro'); if(ov) ov.classList.remove('show');
+      var fe=document.getElementById('faseEscucha'); if(fe) fe.classList.add('show');
+      if(typeof buildGrid==='function'){ try{ buildGrid(); }catch(e){} }
+    }
+  }catch(e){}
+  var done=false;
+  function fireDone(){ if(done)return; done=true; parent.postMessage({type:'quizPhaseDone',last:isLast},'*'); }
+  ['ovTrans','ovWin'].forEach(function(id){ var ov=document.getElementById(id); if(!ov)return;
+    new MutationObserver(function(){ if(ov.classList.contains('show')) fireDone(); }).observe(ov,{attributes:true,attributeFilter:['class']}); });
+  function wire(btnId){ var b=document.getElementById(btnId); if(!b)return; b.textContent=isLast?'Terminar quiz ▶':'Siguiente fase ▶'; b.onclick=function(){ parent.postMessage({type:'quizAdvanceNow'},'*'); }; }
+  ['transBack','winBtn'].forEach(wire);
+})();
+</script>
+</body>
+</html>

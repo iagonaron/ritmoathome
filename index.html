@@ -686,6 +686,23 @@ footer .lock{color:var(--gold1);}
 .imeters{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
 .imeter{font-size:16px;font-weight:900;color:#06281b;background:linear-gradient(135deg,var(--gold-soft),var(--gold2));
   border-radius:9px;padding:6px 13px;letter-spacing:.02em;}
+/* (22-sep-2026, Iago) FICHA INTERACTIVA: el alumno elige la figura que ocupa el
+   ritmo y los compases donde vive. Acierto = verde y se queda; fallo = rojo un segundo. */
+.ifact-prompt{font-size:13.5px;color:var(--muted);line-height:1.5;margin:6px 0 0;}
+.ifact-prompt b{color:var(--gold-soft);}
+.ifact-opts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:8px 0 2px;}
+.ipaper.iopt{cursor:pointer;transition:box-shadow .16s,transform .12s;}
+.ipaper.iopt:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 2px rgba(111,227,180,.4);}
+.ipaper.iopt.good,.ipaper.iopt.good:hover{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 3px var(--gold1),0 0 26px rgba(34,201,138,.55);}
+.ipaper.iopt.bad,.ipaper.iopt.bad:hover{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 3px var(--red),0 0 26px rgba(255,92,114,.55);animation:ishake .32s ease;}
+.imeter.iopt{cursor:pointer;background:#0c1330;color:var(--muted);border:1px solid var(--line);transition:all .16s;}
+.imeter.iopt:hover{color:var(--gold-soft);border-color:var(--gold1);}
+.imeter.iopt.good,.imeter.iopt.good:hover{background:linear-gradient(135deg,var(--gold-soft),var(--gold2));color:#06281b;border-color:transparent;box-shadow:0 0 18px rgba(34,201,138,.45);}
+.imeter.iopt.bad,.imeter.iopt.bad:hover{background:#7a1620;color:#ffd9de;border-color:transparent;box-shadow:0 0 18px rgba(255,92,114,.45);animation:ishake .32s ease;}
+@keyframes ishake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+.ifact-a.reveal{animation:ipopin .45s ease;}
+.ipaper.iopt.dim{opacity:.45;}
+.imeter.iopt.dim{opacity:.4;}
 
 /* génesis */
 .igenesis,.italla{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:6px;}
@@ -5734,32 +5751,41 @@ document.addEventListener('keydown',(e)=>{
 try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return activeGroups;}, buildSchedule, renderGroupMini, genLesson, genLessonGP1, genLessonComb, gp1Config, gp1CombConfig, combPickMeters, cardCanSound, combFusasPossible, GP1_WORLDS, renderLesson, chordDegsOf, pulseOnsetsQ, measureNoteBeats, degreeOf, ROMAN, TONIC_PC, buildScale, buildHarmonyPlan, CADENCES, buildAccompaniment, spanPCs}; }catch(e){}
 
 /* ============================================================
-   QUIZ POR CARTA — overlay a pantalla completa con las 5 fases
+   QUIZ POR CARTA — overlay a pantalla completa con las 4 fases
    en iframe. 1ª integración: cableado a la carta 1.1 (las fases
-   ya contienen sus datos). Los 5 quiz_fase*.html deben estar en
+   ya contienen sus datos). Los 4 quiz_fase*.html deben estar en
    la misma carpeta que index.html (GitHub Pages / Netlify).
+   (Iago 22-sep-2026) De 5 fases a 4: fuera la antigua fase 1
+   «Escucha las cartas»; el resto se renumera. Los ficheros con los
+   nombres viejos (quiz_fase1_proto_v2 … quiz_fase5_proto) siguen
+   existiendo solo como redirección a los nuevos.
    ============================================================ */
 (function(){
   const PHASES=[
-    {file:'quiz_fase1_proto_v2.html', name:'Escucha las cartas'},
-    {file:'quiz_fase2_proto.html',    name:'Identifica el pulso'},
-    {file:'quiz_fase3_proto.html',    name:'Resuelve el puzzle'},
-    {file:'quiz_fase4_proto.html',    name:'Escucha y escribe'},
-    {file:'quiz_fase5_proto.html',    name:'Sigue el ritmo'},
+    {file:'quiz_fase1_pulso.html',    name:'Identifica el pulso'},
+    {file:'quiz_fase2_puzzle.html',   name:'Resuelve el puzzle'},
+    {file:'quiz_fase3_escribe.html',  name:'Escucha y escribe'},
+    {file:'quiz_fase4_sigue.html',    name:'Sigue el ritmo'},
   ];
   let ov=null, frame=null, stepsEl=null, idx=0, done=[], maxReached=0, cfgB64='';
   // (6-ago Iago) QUIZ A MEDIAS · si el quiz viene de la campana (?envio&cuenta),
   // cada fase superada deja un punto de control en ESTE dispositivo; al volver
   // a entrar se retoma en la fase alcanzada (las anteriores quedan ✓ y se
-  // pueden revisitar con los pasos de arriba). Al terminar la fase 5 se borra.
+  // pueden revisitar con los pasos de arriba). Al terminar la última fase se borra.
+  // (Iago 22-sep-2026) La última fase («Sigue el ritmo») manda además su porcentaje
+  // de precisión en cada pasada (quizPhaseProgress): se guarda en el mismo punto de
+  // control como `f4` {pct, superado, intentos, t}. Si el alumno se va con
+  // «Suficiente por hoy» (< 50 %), el punto de control se queda y al volver desde
+  // la campana salta directo a la fase 4.
   const _QP=new URLSearchParams(location.search);
   const _QENVIO=_QP.get('envio')||'', _QCUENTA=_QP.get('cuenta')||'';
-  let avKey=null;
+  let avKey=null, av4=null;
   function avanceLeer(){ if(!avKey) return null;
     try{ const v=JSON.parse(localStorage.getItem(avKey)||'null');
       if(v && (v.max|0)>0 && Array.isArray(v.done)) return v; }catch(e){} return null; }
   function avanceGuardar(){ if(!avKey) return;
-    try{ localStorage.setItem(avKey, JSON.stringify({max:maxReached, done:done.map(x=>!!x), t:Date.now()})); }catch(e){} }
+    try{ const v={max:maxReached, done:done.map(x=>!!x), t:Date.now()}; if(av4) v.f4=av4;
+      localStorage.setItem(avKey, JSON.stringify(v)); }catch(e){} }
   function avanceBorrar(){ if(!avKey) return; try{ localStorage.removeItem(avKey); }catch(e){} }
   function avisoRetomar(n){
     try{
@@ -5884,7 +5910,18 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   function onMsg(e){ if(!frame||e.source!==frame.contentWindow) return; const d=e.data||{};
     if(d.type==='quizPhaseDone'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); avanceGuardar(); paint(); quizTerminadoSiToca(); }
     else if(d.type==='quizAdvanceNow'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); avanceGuardar(); quizTerminadoSiToca();
-      if(idx<PHASES.length-1) load(idx+1); else paint(); } }
+      if(idx<PHASES.length-1) load(idx+1); else paint(); }
+    // (22-sep-2026) porcentaje de la última fase: al punto de control y, si hay
+    // envío y cuenta, constancia para Iago (SuiteQuizRitmo.progreso, ver más abajo)
+    else if(d.type==='quizPhaseProgress'){
+      av4={pct:(d.pct|0), superado:!!d.superado, intentos:(d.intentos|0), t:Date.now()};
+      maxReached=Math.max(maxReached, idx);
+      // si la última fase ya se dio por hecha (repite «otra vez» por gusto), el punto de
+      // control NO se vuelve a crear: el aviso a Iago ya lo borró.
+      if(!(idx===PHASES.length-1 && done[idx])) avanceGuardar();
+      try{ if(window.SuiteQuizRitmo && window.SuiteQuizRitmo.progreso) window.SuiteQuizRitmo.progreso(av4); }catch(e2){} }
+    // «Suficiente por hoy» en el quiz libre (sin envío): cerrar el overlay y volver a la app
+    else if(d.type==='quizClose'){ close(); } }
   // FASE 7 · si la ÚLTIMA fase acaba de completarse y venimos de la campana
   // del portal (?envio&cuenta), se avisa a Iago (una sola vez por envío).
   function quizTerminadoSiToca(){
@@ -5900,7 +5937,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   function open(card,worldId){
     if(!ov) build();
     cfgB64=''; try{ const cfg=cardQuizConfig(card); cfgB64=encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(cfg))))); }catch(e){ console.error('cfg',e); }
-    done=PHASES.map(()=>false); idx=0; maxReached=0;
+    done=PHASES.map(()=>false); idx=0; maxReached=0; av4=null;
     // (6-ago) punto de control SOLO para el quiz de tareas (con envío y cuenta):
     // clave por cuenta+envío+carta, así nunca pisa a otro quiz ni a otro alumno.
     avKey=(_QENVIO && _QCUENTA && card && card.atlasId) ? ('quiz_avance_'+_QCUENTA+'_'+_QENVIO+'_'+card.atlasId) : null;
@@ -5909,6 +5946,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       done=PHASES.map((_,i)=>!!av.done[i]);
       maxReached=Math.max(0, Math.min(av.max|0, PHASES.length-1));
       idx=maxReached;
+      if(av.f4 && typeof av.f4==='object') av4=av.f4;
     }
     document.body.style.overflow='hidden';
     ov.classList.add('show'); load(idx);
@@ -5926,9 +5964,16 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
      ?quizCarta=1.1&envio=<uuid>&cuenta=<uuid>
    → localiza la carta por atlasId en GE_WORLDS y lanza el quiz
      directamente (sin pasar por la landing).
-   Al completar la fase 5 (lo dispara el overlay del quiz):
+   Al completar la última fase (lo dispara el overlay del quiz):
      RPC suite_quiz_completar(cuenta, envio) → la campana del
      Diario avisa a Iago. Sin nota: solo el "hecho".
+   (22-sep-2026) Progreso parcial de la fase 4 («Sigue el ritmo»):
+     SuiteQuizRitmo.progreso({pct,…}) → RPC suite_quiz_progreso
+     SOLO si PROGRESO_RPC_ACTIVA es true (la RPC/tabla aún no
+     existe en Supabase: ver el informe de esta entrega). Mientras
+     tanto, lo que le llega a Iago es el tiempo de actividad
+     (suite_tiempo_ping) y el punto de control queda en este
+     dispositivo.
    supabase-js se carga PEREZOSAMENTE solo si hay parámetros de
    quiz en la URL: el uso normal de la app no cambia en nada.
    ============================================================ */
@@ -6066,7 +6111,24 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     }catch(e){ console.error('[suite-quiz] lanzar', e); } }, 120);
   }
 
-  window.SuiteQuizRitmo={ completar: completar };
+  /* (22-sep-2026) Constancia del progreso parcial de la última fase para Iago.
+     Contrato previsto (por crear en Supabase; NO se llama hasta activar el flag):
+       RPC suite_quiz_progreso(p_cuenta_id uuid, p_envio_id uuid, p_carta text,
+                               p_fase int, p_pct int, p_intentos int)
+       → upsert en suite_quiz_progreso(cuenta_id, envio_id, carta, fase, pct,
+         intentos, actualizado_en) con clave (cuenta_id, envio_id). */
+  const PROGRESO_RPC_ACTIVA=true;   // (22-sep-2026) tabla y RPC suite_quiz_progreso ya creadas
+  async function progreso(av4){
+    if(!ENVIO || !CUENTA || !av4) return false;
+    try{ if(window.SuiteTiempo) window.SuiteTiempo.flush(); }catch(e){}   // el tiempo sí le llega ya
+    if(!PROGRESO_RPC_ACTIVA) return false;
+    try{
+      const c=await sb(); if(!c) return false;
+      const { error } = await c.rpc('suite_quiz_progreso', { p_cuenta_id:CUENTA, p_envio_id:ENVIO, p_carta:CARTA||null, p_fase:4, p_pct:(av4.pct|0), p_intentos:(av4.intentos|0) });
+      if(error) throw error; return true;
+    }catch(e){ console.warn('[suite-quiz] progreso', e); return false; }
+  }
+  window.SuiteQuizRitmo={ completar: completar, progreso: progreso };
   /* 3-ago-2026 · quiz-fix H4: ?introCarta=X (botón «Ver explicación interactiva» del portal)
      abre directamente la INTRO de esa carta. Si la carta no tiene INTRO definida, aviso suave. */
   function autoIntro(){
@@ -6329,10 +6391,42 @@ function go(i){
   if(fn){ cleanup=fn(el,s)||null; }
   requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
 }
+/* (22-sep-2026, Iago) «EN LA ANTERIOR CARTA…»: antes de presentar la carta
+   nueva, un repaso de la anterior DEL MISMO MUNDO. La carta anterior es la que
+   va justo antes en la lista `cards` de su mundo en GE_WORLDS; la primera carta
+   de cada mundo no tiene repaso. La pantalla es la MISMA portada (tipo 'cover',
+   mismo codigo) que abre la intro de esa carta anterior — se toma tal cual de
+   su propia definicion en CARD_INTROS y solo se le cambia el rotulo —, y si la
+   carta anterior no tuviera intro, se monta la portada generica con sus datos. */
+function cartaAnterior(card){
+  const ms=(typeof GE_WORLDS!=='undefined'&&GE_WORLDS)||[];
+  for(const w of ms){
+    const cs=w.cards||[];
+    const i=cs.findIndex(c=>c.atlasId===card.atlasId);
+    if(i>0) return cs[i-1];
+    if(i===0) return null;
+  }
+  return null;
+}
+function portadaRepaso(card){
+  const prev=cartaAnterior(card); if(!prev) return null;
+  let s=null;
+  try{
+    const d=window.CARD_INTROS&&window.CARD_INTROS[prev.atlasId];
+    if(d){ const first=(d.slides(prev)||[])[0]; if(first&&first.type==='cover') s=Object.assign({},first); }
+  }catch(e){ console.warn('[intro] portada de repaso', e); }
+  if(!s) s={type:'cover',title:prev.name||'',sub:prev.note||'',ref:prev.ref||'',
+    cells:(prev.cells||[]).filter(c=>!c.equiv&&c.notes&&typeof c.notes[0]==='string').slice(0,4)
+      .map(c=>({notes:c.notes.slice(),beams:c.beams,ties:c.ties,tuplets:c.tuplets}))};
+  s.kicker='EN LA ANTERIOR CARTA… · '+(prev.atlasId||'');
+  s.repaso={prev:prev.atlasId||'',next:card.atlasId||''};
+  return s;
+}
 window.launchCardIntro=function(card){
   const def=window.CARD_INTROS&&window.CARD_INTROS[card.atlasId];
   if(!def) return;
   buildOv(); slides=def.slides(card); sIdx=0;
+  const rep=portadaRepaso(card); if(rep) slides.unshift(rep);
   _voces = vocesDelArbol(slides);     // los timbres del arbol, listos desde la portada
   /* (18-sep-2026, Iago) EL TEMPO DEL ARBOL MANDA EN TODA LA INTRO. Antes las
      primeras diapositivas iban al spq "crudo" y el arbol lo rebajaba un 12%,
@@ -6419,30 +6513,51 @@ function pararUno(){
   if(!_uno) return;
   (_uno.vis||[]).forEach(function(t){ clearTimeout(t); });
   clearTimeout(_uno.fin);
-  try{ _uno.el.classList.remove('on'); }catch(e){}
+  try{ if(_uno.el) _uno.el.classList.remove('on'); }catch(e){}
   _uno=null;
 }
-function tocarUnaVez(w, spec, voz){
+/* (22-sep-2026, Iago) «que las reproducciones automaticas suenen UNA SOLA VEZ»:
+   este es el disparo de una vuelta para VARIAS capas a la vez (la figura y,
+   debajo, el pulso), con la misma receta del quiz: todo programado de golpe
+   sobre el reloj del audio y corte limpio al terminar. Lo usan la portada, la
+   ficha, la genesis y el cambio de talla. El arbol genealogico sigue con su
+   bucle superponible (Loop), que es lo que Iago quiere conservar alli.
+   capas: [{onsets:[{t,i,d}], timbre, gain, freq, els, map, accent, lamp}] */
+function unaVezCapas(w, capas, largoBeats){
   const c=iCtx(); if(!c) return;
   pararUno();
-  const on=iOnsets(spec), spq=Loop.spq||0.8;
-  const k=(w.__playK!=null)?w.__playK:(w.__playK=++_chipN);
-  const timbre=spec.timbre||(voz&&voz.timbre)||LEAF_TIMBRES[k%LEAF_TIMBRES.length];
-  const freq=(voz&&voz.freq!=null)?voz.freq:CHIP_TONES[k%CHIP_TONES.length];
-  const gain=(voz&&voz.gain)||0.95;
+  const spq=Loop.spq||0.8;
   const t0=c.currentTime+0.04;                 // el arranque del quiz: inmediato y a tiempo
-  const els=(w.__drawn&&w.__drawn.els)||[];
   const vis=[];
-  on.onsets.forEach(function(ev){
-    const t=t0+ev.t*spq;
-    try{ (TIMBRES[timbre]||TIMBRES.clave)(c,t,gain); }catch(e){}
-    if(freq!=null){ try{ toneHit(c,t,0.15*gain,Math.max(0.09,(ev.d||0.5)*spq-0.05),freq); }catch(e){} }
-    const nodo=els[ev.i];
-    if(nodo) vis.push(setTimeout(function(){ iFlash(nodo); }, Math.max(0,(t-c.currentTime)*1000)));
+  capas.forEach(function(cp){
+    (cp.onsets||[]).forEach(function(ev,n){
+      const t=t0+ev.t*spq;
+      const g=(cp.accent?cp.accent(n,ev):1)*(cp.gain||1);
+      try{ (TIMBRES[cp.timbre]||TIMBRES.clave)(c,t,g); }catch(e){}
+      if(cp.freq!=null){ try{ toneHit(c,t,0.15*g,Math.max(0.09,(ev.d||0.5)*spq-0.05),cp.freq); }catch(e){} }
+      const idx=cp.map?cp.map[n]:ev.i;
+      const nodo=cp.els&&cp.els[idx];
+      if(nodo||cp.lamp) vis.push(setTimeout(function(){ if(nodo) iFlash(nodo); if(cp.lamp) cp.lamp(n,ev); }, Math.max(0,(t-c.currentTime)*1000)));
+    });
   });
-  const largo=(spec.loopBeats||(voz&&voz.loopBeats)||on.total)*spq;
-  w.classList.add('on');
-  _uno={el:w, vis:vis, fin:setTimeout(pararUno, largo*1000+90)};
+  const largo=largoBeats*spq;
+  if(w) w.classList.add('on');
+  _uno={el:w||null, vis:vis, fin:setTimeout(pararUno, largo*1000+90)};
+}
+function tocarUnaVez(w, spec, voz, extra){
+  extra=extra||{};
+  const on=iOnsets(spec);
+  const k=(w.__playK!=null)?w.__playK:(w.__playK=++_chipN);
+  const timbre=extra.timbre||spec.timbre||(voz&&voz.timbre)||LEAF_TIMBRES[k%LEAF_TIMBRES.length];
+  const freq=(extra.freq!==undefined)?extra.freq:((voz&&voz.freq!=null)?voz.freq:CHIP_TONES[k%CHIP_TONES.length]);
+  const gain=extra.gain||(voz&&voz.gain)||0.95;
+  const els=(extra.els)||(w.__drawn&&w.__drawn.els)||[];
+  const capas=[{onsets:on.onsets,timbre:timbre,gain:gain,freq:freq,els:els,map:extra.map||null}];
+  /* el pulso por debajo (genesis / cambio de talla) */
+  if(extra.pulse){ const po=iOnsets(extra.pulse); capas.push({onsets:po.onsets,timbre:extra.pulseTimbre||'drum',gain:extra.pulseGain||0.85,els:[],lamp:extra.pulseLamp||null}); }
+  if(extra.pulseOnsets){ capas.push({onsets:extra.pulseOnsets.map(t=>({t:t,i:-1})),timbre:extra.pulseTimbre||'drum',gain:extra.pulseGain||0.8,els:[],lamp:extra.pulseLamp||null}); }
+  const largo=extra.loopBeats||spec.loopBeats||(voz&&voz.loopBeats)||on.total;
+  unaVezCapas(w, capas, largo);
 }
 function chipSuena(w,spec){
   if(!spec) return;
@@ -6453,21 +6568,10 @@ function chipSuena(w,spec){
       ev.stopPropagation();
       /* el timbre y la nota que este ritmo tendra en el arbol */
       const voz = (_voces && _voces[firmaSpec(spec)]) || null;
-      if(sIdx <= 1){
-        if(_uno && _uno.el===w){ pararUno(); return; }
-        tocarUnaVez(w, spec, voz);
-        return;
-      }
-      const id=w.__playId||(w.__playId='chip_'+(++_chipN));
-      if(Loop.has(id)){ paraChip(w, id); return; }
-      const k=w.__playK!=null?w.__playK:(w.__playK=_chipN);
-      const timbre = spec.timbre || (voz && voz.timbre) || LEAF_TIMBRES[k%LEAF_TIMBRES.length];
-      const freq   = (voz && voz.freq!=null) ? voz.freq : CHIP_TONES[k%CHIP_TONES.length];
-      const lb     = spec.loopBeats || (voz && voz.loopBeats) || undefined;
-      Loop.add(specLayer(id,spec,w.__drawn,timbre,
-        {loopBeats:lb, gain:(voz&&voz.gain)||.95, accent:spec.accent||(voz&&voz.accent)||null,
-         raw:{sustain:true, freq:freq}}));
-      w.classList.add('on');
+      /* (22-sep-2026, Iago) fuera del arbol TODO suena UNA SOLA VUELTA (antes,
+         de la tercera diapositiva en adelante, la tarjeta entraba en bucle). */
+      if(_uno && _uno.el===w){ pararUno(); return; }
+      tocarUnaVez(w, spec, voz);
     }catch(e){}
   });
 }
@@ -6491,23 +6595,93 @@ SLIDE_TYPES.cover=function(host,s){
   (s.cells||[]).forEach(sp=>{ row.appendChild(paperChip(sp,{height:104,stretch:1.5,cls:'float'})); });
   c.appendChild(row);
   if(s.ref) c.appendChild(el('p','iref','📖 '+s.ref));
+  if(s.repaso) c.appendChild(el('p','iref','↻ un vistazo a la carta '+s.repaso.prev+' antes de empezar la '+s.repaso.next+' · pulsa los ritmos para recordarlos'));
   host.appendChild(c);
   stagger([].slice.call(c.children),80,150);
 };
 
 /* --- ficha: cuánto ocupa / dónde vive --- */
+/* (22-sep-2026, Iago) LA FICHA ES INTERACTIVA: en «¿Cuánto ocupa?» el alumno
+   pulsa la figura que ocupa el ritmo (entre cuatro vecinas de la escalera de
+   valores) y en «¿Dónde vive?» pulsa TODOS los compases donde puede vivir
+   (mezclados con los del otro tipo de subdivisión). Acierto: verde y se queda;
+   fallo: rojo un segundo y se le quita. Los bloques sin figura ni compases
+   (de qué lo conoces, la regla de oro…) siguen siendo de lectura. */
+const ESCALERA=['16','8','q','qd','h','hd','w'];
+const GRUPOS_COMPAS=[['2/4','3/4','4/4'],['3/8','6/8','9/8','12/8'],['2/2 (¢)','3/2','4/2'],['5/8']];
+function baraja(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function opcionesFigura(fig){
+  const tok=(fig.notes||[])[0]; if(!tok || (fig.notes||[]).length!==1) return null;
+  const i=ESCALERA.indexOf(tok); if(i<0) return null;
+  const lo=Math.max(0,Math.min(i-2,ESCALERA.length-4));
+  return baraja(ESCALERA.slice(lo,lo+4));
+}
+function opcionesCompas(correctos){
+  const dentro=g=>g.some(m=>correctos.indexOf(m)>=0);
+  let hermanos=[], ajeno=null;
+  GRUPOS_COMPAS.forEach(g=>{ if(dentro(g)) hermanos=hermanos.concat(g.filter(m=>correctos.indexOf(m)<0)); else if(!ajeno) ajeno=g; });
+  const todos=[]; correctos.concat(hermanos,ajeno||[]).forEach(m=>{ if(todos.indexOf(m)<0) todos.push(m); });
+  return baraja(todos);
+}
+function fallo(node){ node.classList.remove('ipop'); node.classList.remove('bad'); void node.offsetWidth; node.classList.add('bad'); clearTimeout(node.__badT); node.__badT=setTimeout(()=>{ try{ node.classList.remove('bad'); }catch(e){} },1000); }
 SLIDE_TYPES.facts=function(host,s){
   const c=el('div','ifacts');
   c.appendChild(el('p','ikicker','LA FICHA DEL RITMO'));
   (s.blocks||[]).forEach(b=>{
     const bx=el('div','ifact');
     bx.appendChild(el('p','ifact-q',b.q));
-    if(b.fig){ const fw=el('div','ifact-fig'); fw.appendChild(paperChip(b.fig,{height:96,minInner:60,stretch:2})); bx.appendChild(fw); }
-    if(b.a) bx.appendChild(el('p','ifact-a',b.a));
+    const opts=b.fig?opcionesFigura(b.fig):null;
+    if(b.fig && opts){
+      /* --- quiz de figura: pulsa la que ocupa el ritmo --- */
+      const tok=b.fig.notes[0];
+      const prompt=el('p','ifact-prompt',/pulso/i.test(b.q||'')?'Pulsa la figura que hace de <b>pulso</b>.':'Pulsa la figura que <b>dura lo mismo</b>, de principio a fin.');
+      bx.appendChild(prompt);
+      const fw=el('div','ifact-opts'); let hecho=false;
+      opts.forEach(t=>{
+        const sp={notes:[t]};
+        const w=paperChip(sp,{height:96,minInner:60,stretch:2,noPlay:true,cls:'iopt'});
+        w.dataset.fig=t;
+        w.onclick=()=>{
+          if(hecho){ if(t===tok){ if(_uno&&_uno.el===w){ pararUno(); } else tocarUnaVez(w,sp,(_voces&&_voces[firmaSpec(b.fig)])||null); } return; }
+          if(t===tok){
+            hecho=true; w.classList.add('good');
+            fw.querySelectorAll('.iopt').forEach(x=>{ if(x!==w){ x.classList.remove('ipop'); x.classList.add('dim'); } });
+            prompt.remove();
+            if(b.a){ const a=el('p','ifact-a reveal',b.a); bx.insertBefore(a,fw.nextSibling); }
+            tocarUnaVez(w,sp,(_voces&&_voces[firmaSpec(b.fig)])||null);
+          } else fallo(w);
+        };
+        fw.appendChild(w);
+      });
+      bx.appendChild(fw); stagger([].slice.call(fw.children),320,120);
+    } else {
+      if(b.fig){ const fw=el('div','ifact-fig'); fw.appendChild(paperChip(b.fig,{height:96,minInner:60,stretch:2})); bx.appendChild(fw); }
+      if(b.a && !b.meters) bx.appendChild(el('p','ifact-a',b.a));
+    }
     if(b.figs){ const fr=el('div','icells small'); b.figs.forEach(sp=>fr.appendChild(paperChip(sp,{height:84,stretch:1.4,minInner:56}))); bx.appendChild(fr); stagger([].slice.call(fr.children),320,140); }
-    if(b.meters){ const mr=el('div','imeters');
-      b.meters.forEach(m=>mr.appendChild(el('span','imeter',m)));
-      bx.appendChild(mr); stagger([].slice.call(mr.children),350,120); }
+    if(b.meters){
+      /* --- quiz de compases: pulsa TODOS los que pueden tenerlo --- */
+      const correctos=b.meters.slice(), todos=opcionesCompas(correctos); let vistos=0;
+      const prompt=el('p','ifact-prompt',correctos.length===1?'Pulsa el compás <b>correcto</b>.':'Pulsa <b>todos</b> los compases donde puede vivir · <span class="ifact-cnt">0</span> de '+correctos.length);
+      bx.appendChild(prompt);
+      const mr=el('div','imeters');
+      todos.forEach(m=>{
+        const sp=el('span','imeter iopt',m);
+        sp.onclick=()=>{
+          if(sp.classList.contains('good')) return;
+          if(correctos.indexOf(m)>=0){
+            sp.classList.add('good'); vistos++;
+            const cnt=prompt.querySelector('.ifact-cnt'); if(cnt) cnt.textContent=String(vistos);
+            if(vistos>=correctos.length){
+              prompt.remove();
+              mr.querySelectorAll('.iopt:not(.good)').forEach(x=>{ x.classList.remove('ipop'); x.classList.add('dim'); });
+              bx.insertBefore(el('p','ifact-a reveal',b.a||'✓ Todos los compases donde vive.'),mr);
+            }
+          } else fallo(sp);
+        };
+        mr.appendChild(sp);
+      });
+      bx.appendChild(mr); stagger([].slice.call(mr.children),350,90); }
     c.appendChild(bx);
   });
   host.appendChild(c);
@@ -6533,20 +6707,21 @@ SLIDE_TYPES.genesis=function(host,s){
   const replay=el('button','ibtn ghost','↺ desde el principio'); replay.style.display='none';
   controls.appendChild(btn); controls.appendChild(replay);
   c.appendChild(controls);
-  c.appendChild(el('p','igen-hint','🔊 Pulsa la tarjeta para escucharla en bucle · vuelve a pulsarla para silenciarla'));
+  c.appendChild(el('p','igen-hint','🔊 Cada paso suena una vez al aparecer · pulsa la tarjeta para volver a escucharla'));
   host.appendChild(c);
   stagger([].slice.call(c.children),60,120);
 
-  let step=-1, chip=null, curSpec=null, sndOn=false, busy=false;
+  let step=-1, chip=null, curSpec=null, busy=false, sonarT=null;
   const defAnim=()=>({tajo:'tajo',fusion:'fusion',apagar:'apagar',cascade:'tajo'})[s.mode]||null;
 
-  function layerNow(){
-    Loop.remove('gfig'); Loop.remove('gpulse');
-    if(!sndOn||!chip||!curSpec) return;
-    Loop.add(specLayer('gfig',curSpec,chip.__drawn,s.timbre||'clave',{loopBeats:s.loopBeats,gain:1,raw:{sustain:true,freq:s.toneFreq||523}}));
-    if(s.pulse) Loop.add(specLayer('gpulse',s.pulse,{els:[]},'drum',{loopBeats:s.loopBeats,gain:0.85}));
+  /* (22-sep-2026, Iago) la tarjeta ya NO entra en bucle: cada paso suena UNA
+     vuelta (figura + pulso debajo) al aparecer, y otra si se pulsa la tarjeta. */
+  function sonar(){
+    clearTimeout(sonarT); sonarT=null;
+    if(!chip||!curSpec) return;
+    tocarUnaVez(chip,curSpec,null,{timbre:s.timbre||'clave',freq:s.toneFreq||523,gain:1,pulse:s.pulse,loopBeats:s.loopBeats});
   }
-  function render(st,animated){
+  function render(st,animated,silent){
     const nu=paperChip(st,{height:130,stretch:1.8,cls:'big'});
     if(animated==='tajo'||animated==='magia'){ nu.classList.add('sprout'); }
     else if(animated==='fusion'){ flash.classList.remove('go','green'); void flash.offsetWidth; flash.classList.add('go','green'); nu.classList.add('melt'); }
@@ -6555,11 +6730,12 @@ SLIDE_TYPES.genesis=function(host,s){
     if(chip){ const oldc=chip; oldc.classList.add('bye'); setTimeout(()=>{try{oldc.remove();}catch(e){}},520); }
     holder.appendChild(nu); chip=nu; curSpec=st;
     nu.classList.add('clickable');
-    nu.classList.toggle('on',sndOn);
-    nu.onclick=()=>{ sndOn=!sndOn; nu.classList.toggle('on',sndOn); layerNow(); };
+    nu.onclick=()=>{ if(_uno&&_uno.el===nu){ pararUno(); return; } sonar(); };
     if(st.caption!=null) cap.innerHTML=st.caption;
-    if(st.mark&&chip.__drawn){ st.mark.forEach(i=>{ const e=chip.__drawn.els[i]; if(e)e.classList.add('imark'); }); }
-    layerNow();
+    /* (22-sep-2026, Iago) sin notas remarcadas en verde de forma permanente
+       (antes st.mark las dejaba en verde): solo se iluminan mientras suenan. */
+    pararUno(); clearTimeout(sonarT);
+    if(!silent) sonarT=setTimeout(sonar,step<=0?600:260);   // el primer paso espera a que entre la diapositiva
   }
   /* la cuchillada atraviesa la(s) nota(s) objetivo del chip ACTUAL */
   function slashAt(cut){
@@ -6673,15 +6849,15 @@ SLIDE_TYPES.genesis=function(host,s){
     /* antes de una nueva fase, vuelve el ritmo base si así se pide */
     if(nxt.viaBase && s.base){
       busy=true; btn.disabled=true;
-      render(s.base,'melt');
+      render(s.base,'melt',true);
       cap.innerHTML='<i>volvemos al ritmo base…</i>';
       setTimeout(()=>{ act(); },900);
     } else act();
   }
   btn.onclick=advance;
-  replay.onclick=()=>{ step=-1; sndOn=false; Loop.remove('gfig'); Loop.remove('gpulse'); replay.style.display='none'; advance(); };
+  replay.onclick=()=>{ step=-1; pararUno(); replay.style.display='none'; advance(); };
   advance();
-  return function(){ Loop.clear(); };
+  return function(){ clearTimeout(sonarT); pararUno(); Loop.clear(); };
 };
 
 /* --- cambio de talla (m2) --- */
@@ -6702,32 +6878,35 @@ SLIDE_TYPES.talla=function(host,s){
   controls.appendChild(btn); c.appendChild(controls);
   host.appendChild(c);
   stagger([].slice.call(c.children),60,120);
-  let big=false, sndOn=false, cur=null;
+  let big=false, cur=null, sonarT=null;
   const on=iOnsets(s.small);
-  function layers(){
-    Loop.remove('talla'); Loop.remove('tpul');
-    if(!sndOn||!cur) return;
-    const spec=big?s.big:s.small;
-    Loop.add({id:'talla',loopBeats:on.total,onsets:on.onsets,timbre:'marimba',gain:1,vis:[{els:cur.__drawn.els,map:big?iSoundIdx(spec):null}]});
-    Loop.add({id:'tpul',loopBeats:on.total,onsets:(s.pulseOn||[]).map(t=>({t:t,i:-1})),timbre:'drum',gain:0.8,vis:[]});
+  /* (22-sep-2026, Iago) una sola vuelta, nada de bucle: el ritmo (con el pulso
+     debajo) suena al entrar, al cambiar de talla y cada vez que se pulsa la
+     tarjeta. El sonido es SIEMPRE el del ritmo pequeño: en la talla grande solo
+     se re-vincula la iluminación de las cabezas. */
+  function sonar(){
+    clearTimeout(sonarT); sonarT=null;
+    if(!cur) return;
+    tocarUnaVez(cur,s.small,null,{timbre:'marimba',freq:null,gain:1,loopBeats:on.total,pulseOnsets:s.pulseOn||[],
+      els:cur.__drawn.els,map:big?iSoundIdx(s.big):null});
   }
-  function bindToggle(ch){ ch.classList.add('clickable'); ch.classList.toggle('on',sndOn);
-    ch.onclick=()=>{ sndOn=!sndOn; ch.classList.toggle('on',sndOn); layers(); }; }
-  const chipA=paperChip(s.small,{height:120,stretch:1.7,ts:s.tsSmall,cls:'big'});
+  function bindToggle(ch){ ch.classList.add('clickable');
+    ch.onclick=()=>{ if(_uno&&_uno.el===ch){ pararUno(); return; } sonar(); }; }
+  const chipA=paperChip(s.small,{height:120,stretch:1.7,ts:s.tsSmall,cls:'big',noPlay:true});
   holder.appendChild(chipA); cur=chipA; bindToggle(chipA);
-  c.appendChild(el('p','igen-hint','🔊 Pulsa la tarjeta para escucharla en bucle · vuelve a pulsarla para silenciarla'));
+  c.appendChild(el('p','igen-hint','🔊 Suena una vez al aparecer · pulsa la tarjeta para volver a escucharla'));
+  sonarT=setTimeout(sonar,420);
   btn.onclick=()=>{
     if(big) return; big=true;
     flash.classList.add('go','green');
-    const chipB=paperChip(s.big,{height:132,stretch:1.7,ts:s.tsBig,cls:'big grow'});
+    const chipB=paperChip(s.big,{height:132,stretch:1.7,ts:s.tsBig,cls:'big grow',noPlay:true});
     chipA.classList.add('bye'); setTimeout(()=>{try{chipA.remove();}catch(e){}},520);
     holder.appendChild(chipB); cur=chipB; bindToggle(chipB);
-    /* el sonido NO cambia: solo re-vinculamos la iluminación */
-    const L=Loop.layers.get('talla'); if(L){ const map=iSoundIdx(s.big); L.vis=[{els:chipB.__drawn.els,map:map}]; }
     cap.innerHTML=s.capB||'<b>El sonido no ha cambiado.</b> Solo la ropa: ahora la unidad de pulso es la <b>blanca</b>.';
     btn.style.display='none';
+    pararUno(); clearTimeout(sonarT); sonarT=setTimeout(sonar,320);
   };
-  return function(){ Loop.clear(); };
+  return function(){ clearTimeout(sonarT); pararUno(); Loop.clear(); };
 };
 
 /* --- árbol genealógico sonoro --- */
@@ -6821,7 +7000,8 @@ SLIDE_TYPES.tree=function(host,s){
   return function(){ Loop.clear(); };
 };
 window.__INTRO_SLIDE_TYPES=SLIDE_TYPES;
-window.__INTRO_LIB={iDraw:iDraw,iOnsets:iOnsets,iSoundIdx:iSoundIdx,Loop:Loop,TIMBRES:TIMBRES,iCtx:iCtx,paperChip:paperChip,el:el,stagger:stagger,iFlash:iFlash,slashSound:slashSound,magicSound:magicSound,toneHit:toneHit,fusionSound:fusionSound};
+window.__INTRO_LIB={iDraw:iDraw,iOnsets:iOnsets,iSoundIdx:iSoundIdx,Loop:Loop,TIMBRES:TIMBRES,iCtx:iCtx,paperChip:paperChip,el:el,stagger:stagger,iFlash:iFlash,slashSound:slashSound,magicSound:magicSound,toneHit:toneHit,fusionSound:fusionSound,
+  unaVezCapas:unaVezCapas,tocarUnaVez:tocarUnaVez,pararUno:pararUno,estaSonando:function(w){ return !!(_uno&&_uno.el===w); }};
 })();
 
 </script>
@@ -6833,6 +7013,7 @@ window.__INTRO_LIB={iDraw:iDraw,iOnsets:iOnsets,iSoundIdx:iSoundIdx,Loop:Loop,TI
 'use strict';
 const L=window.__INTRO_LIB, S=window.__INTRO_SLIDE_TYPES;
 const el=L.el, iDraw=L.iDraw, Loop=L.Loop, TIMBRES=L.TIMBRES, iCtx=L.iCtx, iFlash=L.iFlash, stagger=L.stagger;
+const unaVezCapas=L.unaVezCapas, pararUno=L.pararUno, estaSonando=L.estaSonando;
 
 /* agrupaciones: pulsos en corcheas */
 const GROUPINGS={
@@ -6886,7 +7067,15 @@ S.dispar=function(host,s){
     '32':'Dos pulsos <b>desiguales</b>: uno LARGO (3 corcheas) y uno corto (2). El compás <b>cojea</b> — esa cojera es su carácter.',
     '23':'El tajo se muda: ahora el pulso corto va PRIMERO y el largo después. La cojera cambia de pie.',
     '122':'La variante regional: <b>1+2+2</b>, el <b>zortziko</b> vasco ✳. Tres pulsos: corto, largo, largo.'};
-  let idx=-1, chip=null;
+  let idx=-1, chip=null, sonarT=null;
+  /* (22-sep-2026, Iago) nada de bucle automatico: el compas suena UNA vuelta al
+     aparecer (y al pulsar la tarjeta). capas = corcheas planas + pulsos con lamparas */
+  function sonar(capas){
+    clearTimeout(sonarT); sonarT=null;
+    if(!chip) return;
+    unaVezCapas(chip,capas,2.5);
+  }
+  function pulsable(nu,capas){ nu.classList.add('clickable'); nu.onclick=()=>{ if(estaSonando(nu)){ pararUno(); return; } sonar(capas); }; }
 
   function beamsFor(g){ const out=[]; let i=0;
     GROUPINGS[g].pulses.forEach(p=>{ if(p>1){ const run=[]; for(let k=0;k<p;k++)run.push(i+k); out.push(run); } i+=p; });
@@ -6898,19 +7087,22 @@ S.dispar=function(host,s){
     holder.appendChild(nu); chip=nu;
     lamps.innerHTML=''; const lampEls=[];
     pulseOnsets(g).forEach(p=>{ const l=el('span','ilamp'+(p.len>=3?' big':(p.len===1?' small':''))); lamps.appendChild(l); lampEls.push(l); });
-    Loop.remove('flat'); Loop.remove('puls');
-    Loop.add({id:'flat',loopBeats:2.5,onsets:[0,.5,1,1.5,2].map((t,i)=>({t:t,i:i,d:0.5})),timbre:'tick',gain:0.7,vis:[{els:dd.els}]});
     const po=pulseOnsets(g);
-    Loop.add({id:'puls',loopBeats:2.5,onsets:po.map((o,i)=>({t:o.t*0.5,i:i})),timbre:'drum',gain:1,
-      accent:(n)=>n===0?1.15:0.9,
-      vis:[],lamp:(n)=>{ iFlash(lampEls[n], po[n].len>=3?260:(po[n].len===1?110:180)); }});
+    const capas=[
+      {onsets:[0,.5,1,1.5,2].map((t,i)=>({t:t,i:i,d:0.5})),timbre:'tick',gain:0.7,els:dd.els},
+      {onsets:po.map((o,i)=>({t:o.t*0.5,i:i})),timbre:'drum',gain:1,accent:(n)=>n===0?1.15:0.9,
+       lamp:(n)=>{ iFlash(lampEls[n], po[n].len>=3?260:(po[n].len===1?110:180)); }}];
+    pulsable(nu,capas);
+    pararUno(); clearTimeout(sonarT); sonarT=setTimeout(()=>sonar(capas),380);
     cap.innerHTML=CAPS[g];
   }
   /* estado inicial: las cinco corcheas planas, sin jerarquía */
   const flat={notes:['8','8','8','8','8'],beams:[[0,1,2,3,4]]};
   chip=el('div','ipaper big'); const d0=iDraw(chip,flat,{height:120,stretch:1.9,ts:'5/8'});
   chip.__drawn=d0; holder.appendChild(chip);
-  Loop.add({id:'flat',loopBeats:2.5,onsets:[0,.5,1,1.5,2].map((t,i)=>({t:t,i:i,d:0.5})),timbre:'wood',gain:0.9,vis:[{els:d0.els}]});
+  const capas0=[{onsets:[0,.5,1,1.5,2].map((t,i)=>({t:t,i:i,d:0.5})),timbre:'wood',gain:0.9,els:d0.els}];
+  pulsable(chip,capas0);
+  sonarT=setTimeout(()=>sonar(capas0),480);
   btn.onclick=()=>{
     idx=(idx+1)%SEQ.length;
     slash.classList.remove('go'); void slash.offsetWidth; slash.classList.add('go');
@@ -6921,7 +7113,7 @@ S.dispar=function(host,s){
     if(idx<SEQ.length-1) btn.textContent=BTNS[SEQ[idx+1]];
     else btn.textContent='↺ Vuelve al 3+2';
   };
-  return function(){ Loop.clear(); };
+  return function(){ clearTimeout(sonarT); pararUno(); Loop.clear(); };
 };
 
 /* --- diapositiva: audición de las tres variantes --- */
