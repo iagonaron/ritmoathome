@@ -159,11 +159,11 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 
   <div class="fase-head"><span class="fase-step">Fase 1 de 4</span><h2>Identifica el pulso</h2></div>
   <p class="fase-sub">Escucha la frase y di <b>en qué pulso</b> suena el ritmo de la tarjeta. Pulsa el número del pulso.
-    Acierta <b>3 veces</b> para completar la barra.</p>
+    <b>3 rondas</b> · 2 escuchas y 2 intentos en cada una.</p>
 
   <div class="bar-row">
     <div class="bar-wrap"><div class="bar-fill" id="barFill"></div></div>
-    <span class="bar-tag" id="barTag">¡A por las 3!</span>
+    <span class="bar-tag" id="barTag">Ronda 1 de 3</span>
   </div>
 
   <div class="staff-panel"><div id="staffHost"></div></div>
@@ -190,6 +190,16 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 <div class="toast" id="toast"></div>
 <div class="confetti" id="confetti"></div>
 
+<!-- (23-sep-2026, Iago) ventana inicial: explica cómo se juega y, al pulsar, da el
+     gesto que necesita el audio para que el ritmo a encontrar suene solo. -->
+<div class="ov show" id="ovIni">
+  <div class="cartel">
+    <div class="badge" id="iniKicker">Quiz</div>
+    <h1>Identifica el pulso</h1>
+    <p class="sub">Primero suena el <b>ritmo de la tarjeta</b>. Después pulsa ▶ para oír la frase y toca el <b>número del pulso</b> donde está escondido.<br>Tres rondas, dos escuchas y dos intentos en cada una. Nada resta.</p>
+    <button class="cbtn" id="iniBtn">▶ Empezar</button>
+  </div>
+</div>
 <div class="ov" id="ovWin">
   <div class="cartel">
     <div class="badge">¡Bien!</div>
@@ -355,13 +365,15 @@ function ritmoSound(t0,durSec,gain,dest){
 /* ===== estado de ronda ===== */
 // (Iago 14-sep-2026) Antes siempre 3 aciertos. Ahora, tantos como ritmos
 // tenga la carta: con 2 células no tiene sentido pedir 3 vueltas.
-const RONDAS = Math.max(2, Math.min(3, (CARD.cells||[]).length || 3));
-let round=null, score=0, hits=0, answered=false, targetCellIdx=-1, lastTargetPulse=-1;
+// (23-sep-2026, Iago) SIEMPRE 3 rondas, se acierte o no: la barra mide rondas
+// jugadas, no aciertos. Cada ronda tiene 2 escuchas y 2 intentos; fallar no resta.
+const RONDAS = 3;
+let round=null, score=0, hits=0, jugadas=0, intento=0, answered=false, targetCellIdx=-1, lastTargetPulse=-1;
 const spq = _CFG ? _CFG.spq : (COMPOUND ? (60/CARD.bpmComp)/1.5 : 60/CARD.bpmSimple);   // seg por negra
 const secPerPulse = PULSE_Q*spq;
 
 function newRound(){
-  answered=false; playing=false; listensLeft=2; clearLive();
+  answered=false; playing=false; listensLeft=2; intento=0; clearLive();
   const pb=document.getElementById('playBtn'); pb.classList.remove('spent'); updateReps();
   document.getElementById('hint').textContent='Pulsa ▶ y luego elige el pulso.';
   // objetivo: rota entre células, distinto al de la ronda anterior
@@ -480,28 +492,43 @@ function pedirEscucha(){
 }
 
 function setBar(){ const f=document.getElementById('barFill'); f.style.width=Math.max(0,Math.min(100,score))+'%';
-  document.getElementById('barTag').textContent = hits>=RONDAS?'¡Completada!':(`Aciertos: ${hits} de ${RONDAS}`); }
+  document.getElementById('barTag').textContent = jugadas>=RONDAS?'¡Completada!':(`Ronda ${Math.min(jugadas+1,RONDAS)} de ${RONDAS}`); }
 function flashBarBad(){ const f=document.getElementById('barFill'); f.classList.add('bad'); setTimeout(()=>f.classList.remove('bad'),650); }
 
 function onPick(idx,g){
-  if(answered) return; answered=true;
-  stopPhrase();                 // al responder se corta la vuelta (lo que suena ahora es el ritmo de la tarjeta)
-  document.querySelectorAll('.pnum').forEach(n=>n.classList.add('lock'));
-  document.getElementById('playBtn').classList.add('spent');
+  if(answered) return;
   const correctG=pnumByIdx(round.targetPulse);
   const good=(idx===round.targetPulse);
-  if(good){ g.classList.add('ok'); hits++; score=Math.min(100,score+(100/RONDAS)); toast('¡Correcto!','ok'); }
-  // (Iago 14-sep-2026) Equivocarse no resta: simplemente no suma y hay que
-  // volver a intentarlo. Así la barra llena significa completado de verdad.
-  else { g.classList.add('bad'); toast('Ese no','no'); flashBarBad(); }
+  /* (23-sep-2026, Iago) «si te equivocas en la fase uno que tengas una segunda
+     oportunidad para volver a escuchar la frase y acertar o fallar, pero que no
+     te reste». Primer fallo: se marca el pulso, se devuelve una escucha y se
+     sigue en la misma ronda. Segundo fallo: se enseña el correcto y se pasa a la
+     siguiente ronda. La barra avanza por rondas jugadas, aciertes o no. */
+  if(!good && intento===0){
+    intento=1; stopPhrase();
+    g.classList.add('bad'); toast('Ese no · te queda un intento','no');
+    if(listensLeft<=0){ listensLeft=1; updateReps(); document.getElementById('playBtn').classList.remove('spent'); }
+    document.getElementById('hint').textContent='Vuelve a escuchar la frase y elige otro pulso.';
+    setTimeout(()=>{ g.classList.remove('bad'); }, 900);
+    return;
+  }
+  answered=true;
+  stopPhrase();                 // al responder se corta la vuelta
+  document.querySelectorAll('.pnum').forEach(n=>n.classList.add('lock'));
+  document.getElementById('playBtn').classList.add('spent');
+  jugadas++; score=Math.min(100, jugadas*(100/RONDAS));
+  if(good){ g.classList.add('ok'); hits++; toast('¡Correcto!','ok'); burst(); }
+  else { g.classList.add('bad'); toast('Era este','no'); }
   setBar();
-  // revelar el pulso correcto + FOCO en la tarjeta y sonar su ritmo (con cabezas iluminándose)
-  setTimeout(()=>{ if(correctG) correctG.classList.add('reveal'); showSpotlight(); playOnePulse(round.targetPulse); lightTargetHeads(cellTokens(CARD.cells[targetCellIdx]),cellBeatsQ(CARD.cells[targetCellIdx])); if(good) burst(); }, 430);
-  const revealMs = 430 + Math.round(PULSE_Q*spq*1000) + 750;
+  // (23-sep-2026) al acertar NO se vuelve a reproducir el ritmo: se pasa a la
+  // siguiente ronda y suena el nuevo. Al fallar dos veces se enseña el correcto
+  // un instante (sin sonar) y también se avanza.
+  if(!good && correctG){ setTimeout(()=>{ correctG.classList.add('reveal'); }, 250); }
+  const espera = good ? 650 : 1500;
   setTimeout(()=>{ hideSpotlight();
-    if(hits>=RONDAS){ document.getElementById('ovWin').classList.add('show'); burst(); }
+    if(jugadas>=RONDAS){ document.getElementById('ovWin').classList.add('show'); burst(); }
     else { roundTransition(newRound); }
-  }, revealMs);
+  }, espera);
 }
 function roundTransition(cb){ stopPhrase(); const ov=document.getElementById('roundOv'); ov.classList.add('show');
   setTimeout(()=>{ cb(); }, 720); setTimeout(()=>{ ov.classList.remove('show'); }, 1320); }
@@ -521,10 +548,17 @@ document.getElementById('playBtn').onclick=()=>{ ac();
   if(listensLeft<=0){ document.getElementById('playBtn').classList.add('spent'); return; }
   playPhrase();
 };
-document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); score=0; hits=0; targetCellIdx=-1; setBar(); newRound(); };
+document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); score=0; hits=0; jugadas=0; targetCellIdx=-1; setBar(); newRound(); };
 document.getElementById('targetPlayBtn').onclick=()=>{ ac(); const b=document.getElementById('targetPlayBtn'); if(b) b.classList.remove('suena'); playTargetCard(true); };
 
-setBar(); newRound();
+setBar();
+// (23-sep-2026) la ronda arranca al pulsar «Empezar» (así el ritmo a encontrar
+// puede sonar solo: ya hay un gesto del alumno para el audio)
+(function(){
+  const k=document.getElementById('iniKicker'); if(k && CARD.kicker) k.textContent='Quiz · '+String(CARD.kicker).replace(/^Carta\s*/i,'');
+  const b=document.getElementById('iniBtn');
+  b.onclick=()=>{ ac(); document.getElementById('ovIni').classList.remove('show'); firstRound=true; newRound(); };
+})();
 </script>
 <!--__quiz_bridge_done__-->
 <script>
