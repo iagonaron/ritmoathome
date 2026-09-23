@@ -658,6 +658,17 @@ footer .lock{color:var(--gold1);}
 .isub{color:var(--muted);font-size:14.5px;line-height:1.6;text-align:center;max-width:640px;margin:0 auto 8px;}
 .iref{color:var(--muted2);font-size:12px;text-align:center;margin-top:16px;}
 .icells{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:22px;}
+/* (23-sep-2026, Iago) recordatorio de la semana anterior: rótulo grande y todo en gris */
+.icover.irepaso{opacity:.85;}
+/* toda la pantalla del recordatorio en gris: el fondo deja de ser azul/dorado y todo va desaturado */
+.intro-ov.ov-repaso{background:linear-gradient(160deg,#3b3f47 0%,#24272d 45%,#15171b 100%) !important;}
+.intro-ov.ov-repaso .intro-stage{filter:grayscale(1);}
+.intro-ov.ov-repaso .intro-bar{filter:grayscale(1);}
+.icover.irepaso .ititle{opacity:.85;}
+.ikicker.ikicker-repaso{font-size:clamp(22px,3.4vw,34px);letter-spacing:.1em;color:#e2e8f0;margin:0 0 10px;}
+/* (23-sep-2026) la ficha interactiva dentro de la portada */
+.icover-quiz{display:flex;flex-direction:column;gap:14px;align-items:center;margin-top:20px;width:100%;}
+.icover-quiz .ifact{width:min(100%,720px);}
 
 .ipaper{background:var(--paper);border-radius:14px;padding:10px 14px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(0,0,0,.35);}
 .ipaper svg{display:block;}
@@ -6384,6 +6395,8 @@ function go(i){
   const old=stageEl.querySelector('.islide');
   if(old){ old.classList.add('leave'); setTimeout(()=>{try{old.remove();}catch(e){}},430); }
   sIdx=i; paintDots();
+  /* (23-sep-2026, Iago) el recordatorio de la semana anterior en gris: TODA la pantalla, fondo incluido */
+  try{ OV.classList.toggle('ov-repaso', !!(slides[i]&&slides[i].repaso)); }catch(e){}
   const el=document.createElement('div'); el.className='islide';
   stageEl.appendChild(el);
   const s=slides[sIdx];
@@ -6422,10 +6435,25 @@ function portadaRepaso(card){
   s.repaso={prev:prev.atlasId||'',next:card.atlasId||''};
   return s;
 }
+/* (23-sep-2026, Iago) Si la intro empieza por la portada y sigue la ficha, las
+   preguntas interactivas de la ficha (los bloques con figura y el de compases)
+   pasan a la portada, debajo del ritmo. Lo que quede de la ficha (de qué lo
+   conoces, la regla…) sigue en su diapositiva; si no queda nada, desaparece. */
+function fusionarPortadaYFicha(sl){
+  try{
+    if(!sl || sl.length<2 || sl[0].type!=='cover' || sl[1].type!=='facts') return;
+    const bl=sl[1].blocks||[]; const quiz=[], resto=[];
+    bl.forEach(b=>{ if((b.fig && opcionesFigura(b.fig)) || b.meters) quiz.push(b); else resto.push(b); });
+    if(!quiz.length) return;
+    sl[0]=Object.assign({},sl[0],{quiz:quiz});
+    if(resto.length) sl[1]=Object.assign({},sl[1],{blocks:resto}); else sl.splice(1,1);
+  }catch(e){ console.warn('[intro] fusionar portada+ficha', e); }
+}
 window.launchCardIntro=function(card){
   const def=window.CARD_INTROS&&window.CARD_INTROS[card.atlasId];
   if(!def) return;
   buildOv(); slides=def.slides(card); sIdx=0;
+  fusionarPortadaYFicha(slides);
   const rep=portadaRepaso(card); if(rep) slides.unshift(rep);
   _voces = vocesDelArbol(slides);     // los timbres del arbol, listos desde la portada
   /* (18-sep-2026, Iago) EL TEMPO DEL ARBOL MANDA EN TODA LA INTRO. Antes las
@@ -6587,8 +6615,10 @@ const SLIDE_TYPES={};
 
 /* --- portada --- */
 SLIDE_TYPES.cover=function(host,s){
-  const c=el('div','icover');
-  c.appendChild(el('p','ikicker',s.kicker||'PRESENTACIÓN DEL RITMO'));
+  const c=el('div','icover'+(s.repaso?' irepaso':''));
+  /* (23-sep-2026, Iago) el recordatorio de la semana anterior va con el rótulo
+     GRANDE y toda la pantalla en gris: «esto ya pasó, solo lo estamos recordando». */
+  c.appendChild(el('p','ikicker'+(s.repaso?' ikicker-repaso':''),s.kicker||'PRESENTACIÓN DEL RITMO'));
   c.appendChild(el('h1','ititle',s.title));
   if(s.sub) c.appendChild(el('p','isub',s.sub));
   const row=el('div','icells');
@@ -6596,6 +6626,13 @@ SLIDE_TYPES.cover=function(host,s){
   c.appendChild(row);
   if(s.ref) c.appendChild(el('p','iref','📖 '+s.ref));
   if(s.repaso) c.appendChild(el('p','iref','↻ un vistazo a la carta '+s.repaso.prev+' antes de empezar la '+s.repaso.next+' · pulsa los ritmos para recordarlos'));
+  /* (23-sep-2026) la ficha interactiva (¿cuánto ocupa? · ¿dónde vive?) debajo del
+     ritmo: una sección por figura de pulso (si la carta mezcla dos, dos secciones). */
+  if(s.quiz && s.quiz.length && typeof factBlock==='function'){
+    const q=el('div','icover-quiz');
+    s.quiz.forEach(b=>{ q.appendChild(factBlock(b)); });
+    c.appendChild(q);
+  }
   host.appendChild(c);
   stagger([].slice.call(c.children),80,150);
 };
@@ -6624,10 +6661,12 @@ function opcionesCompas(correctos){
   return baraja(todos);
 }
 function fallo(node){ node.classList.remove('ipop'); node.classList.remove('bad'); void node.offsetWidth; node.classList.add('bad'); clearTimeout(node.__badT); node.__badT=setTimeout(()=>{ try{ node.classList.remove('bad'); }catch(e){} },1000); }
-SLIDE_TYPES.facts=function(host,s){
-  const c=el('div','ifacts');
-  c.appendChild(el('p','ikicker','LA FICHA DEL RITMO'));
-  (s.blocks||[]).forEach(b=>{
+/* (23-sep-2026, Iago) El render de cada bloque de la ficha sale a factBlock(b)
+   para poder pintarlo TAMBIÉN en la portada: «unificar el paso de presentación
+   del nuevo ritmo con el paso en el que te pregunta qué figura de pulso ocupa y
+   en qué compás se podría encontrar», de modo que al pensar la respuesta se vea
+   el ritmo. */
+function factBlock(b){
     const bx=el('div','ifact');
     bx.appendChild(el('p','ifact-q',b.q));
     const opts=b.fig?opcionesFigura(b.fig):null;
@@ -6682,8 +6721,12 @@ SLIDE_TYPES.facts=function(host,s){
         mr.appendChild(sp);
       });
       bx.appendChild(mr); stagger([].slice.call(mr.children),350,90); }
-    c.appendChild(bx);
-  });
+    return bx;
+}
+SLIDE_TYPES.facts=function(host,s){
+  const c=el('div','ifacts');
+  c.appendChild(el('p','ikicker','LA FICHA DEL RITMO'));
+  (s.blocks||[]).forEach(b=>{ c.appendChild(factBlock(b)); });
   host.appendChild(c);
   stagger([].slice.call(c.querySelectorAll('.ifact')),100,300);
 };
