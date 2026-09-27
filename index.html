@@ -5791,14 +5791,36 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   const _QP=new URLSearchParams(location.search);
   const _QENVIO=_QP.get('envio')||'', _QCUENTA=_QP.get('cuenta')||'';
   let avKey=null, av4=null;
+  // (27-sep-2026) RETOMAR EN LA RONDA · además de la fase alcanzada, el punto de control
+  // guarda `pos` = {fase, estado, t}: lo último que mandó la fase FRONTERA (la alcanzada y
+  // aún sin superar) al terminar una ronda o ejercicio (mensaje quizPhaseState). Al volver
+  // a abrir esa fase se le pasa como &resume=… y sigue donde iba; al superarla, `pos` se
+  // borra. Los puntos de control antiguos (sin `pos`) abren la fase desde su principio.
+  // avance = fase*100 + rondas terminadas: con él se elige el más adelantado entre este
+  // dispositivo y el servidor.
+  let pos=null, avCarta='';
+  function posDe(v){ const p=v && v.pos;
+    if(!p || typeof p!=='object' || !p.estado || typeof p.estado!=='object') return null;
+    const e=p.estado, m=Math.max(0, Math.min(v.max|0, PHASES.length-1));
+    if(p.fase!==m || (Array.isArray(v.done) && v.done[m]) || (e.atlasId||'')!==avCarta) return null;
+    if(typeof e.ronda!=='number' || (e.ronda|0)!==e.ronda || e.ronda<0) return null;
+    if(typeof e.total!=='number' || (e.total|0)!==e.total || e.total<1) return null;
+    return p; }
+  function posActual(){ return posDe({max:maxReached, done:done, pos:pos}); }
+  function avanceDe(v){ if(!v) return -1; const p=posDe(v);
+    return Math.max(0, Math.min(v.max|0, PHASES.length-1))*100 + (p ? Math.min(99, p.estado.ronda) : 0); }
+  function avanceValido(v){ return !!(v && typeof v==='object' && Array.isArray(v.done) && ((v.max|0)>0 || posDe(v))); }
   function avanceLeer(){ if(!avKey) return null;
     try{ const v=JSON.parse(localStorage.getItem(avKey)||'null');
-      if(v && (v.max|0)>0 && Array.isArray(v.done)) return v; }catch(e){} return null; }
+      if(avanceValido(v)) return v; }catch(e){} return null; }
   function avanceGuardar(){ if(!avKey) return;
-    try{ const v={max:maxReached, done:done.map(x=>!!x), t:Date.now()}; if(av4) v.f4=av4;
-      localStorage.setItem(avKey, JSON.stringify(v)); }catch(e){} }
+    const v={max:maxReached, done:done.map(x=>!!x), t:Date.now()}; if(av4) v.f4=av4;
+    if(posActual()) v.pos=pos;
+    try{ localStorage.setItem(avKey, JSON.stringify(v)); }catch(e){}
+    // (27-sep-2026) copia en el servidor para seguir en otro dispositivo (dormida mientras la RPC no exista)
+    try{ if(window.SuiteQuizRitmo && window.SuiteQuizRitmo.estadoGuardar) window.SuiteQuizRitmo.estadoGuardar(avCarta, v, avanceDe(v)); }catch(e){} }
   function avanceBorrar(){ if(!avKey) return; try{ localStorage.removeItem(avKey); }catch(e){} }
-  function avisoRetomar(n){
+  function avisoRetomar(n, p){
     try{
       const el=document.createElement('div');
       el.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:100002;'+
@@ -5806,7 +5828,15 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
         'background:rgba(169,116,255,.22);border:1.5px solid rgba(169,116,255,.65);color:#e2d4ff;'+
         'backdrop-filter:blur(6px);box-shadow:0 14px 40px rgba(0,0,0,.4)';
       el.id='quizRetomarAviso';
-      el.textContent='⏸ Retomando el quiz donde lo dejaste · fase '+n+' de '+PHASES.length;
+      // (27-sep-2026) si la fase apuntó por dónde iba, también la ronda/ejercicio en que sigue. Con una
+      // sola unidad (fase 4) no «ejercicio 1 de 1», que no dice nada: el intento, si lo trae; si no, solo la fase
+      const e=p && p.estado; let donde='';
+      if(e && e.ronda<e.total){
+        if(e.total>1) donde=' · '+(e.etiqueta==='ejercicio'?'ejercicio':'ronda')+' '+(e.ronda+1)+' de '+e.total;
+        else if(typeof e.intentos==='number' && (e.intentos|0)===e.intentos && e.intentos>=0) donde=' · intento '+(e.intentos+1);
+      }
+      if(donde){ el.style.width='max-content'; el.style.maxWidth='calc(100vw - 32px)'; }   // texto más largo: que no se parta en iPad vertical
+      el.textContent='⏸ Retomando el quiz donde lo dejaste · fase '+n+' de '+PHASES.length+donde;
       document.body.appendChild(el);
       setTimeout(()=>{ try{ el.remove(); }catch(e){} }, 6000);
     }catch(e){}
@@ -5917,11 +5947,27 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   }); }
   function load(i){ idx=Math.max(0,Math.min(PHASES.length-1,i)); const p=PHASES[idx];
     const last=(idx===PHASES.length-1)?'&last=1':''; const cfgQ=cfgB64?('&cfg='+cfgB64):''; ov.classList.add('loading');
-    frame.src=p.file+'?embed=1'+last+cfgQ; paint(); }
+    // (27-sep-2026) la fase frontera se vuelve a abrir en la ronda/ejercicio en que iba
+    let resQ=''; const pf=posActual();
+    if(pf && pf.fase===idx){ try{ resQ='&resume='+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(pf.estado))))); }catch(e){ resQ=''; } }
+    frame.src=p.file+'?embed=1'+last+cfgQ+resQ; paint(); }
+  // (27-sep-2026) la fase actual queda superada; si era la frontera, su `pos` se borra.
+  // Devuelve si ha cambiado algo: repasar una fase ya superada NO toca el punto de control.
+  function superar(){ const nuevoMax=Math.max(maxReached, Math.min(idx+1, PHASES.length-1));
+    const cambia=!done[idx] || nuevoMax!==maxReached || !!(pos && pos.fase===idx);
+    done[idx]=true; maxReached=nuevoMax; if(pos && pos.fase===idx) pos=null; return cambia; }
   function onMsg(e){ if(!frame||e.source!==frame.contentWindow) return; const d=e.data||{};
-    if(d.type==='quizPhaseDone'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); avanceGuardar(); paint(); quizTerminadoSiToca(); }
-    else if(d.type==='quizAdvanceNow'){ done[idx]=true; maxReached=Math.max(maxReached, Math.min(idx+1, PHASES.length-1)); avanceGuardar(); quizTerminadoSiToca();
+    if(d.type==='quizPhaseDone'){ if(superar()) avanceGuardar(); paint(); quizTerminadoSiToca(); }
+    else if(d.type==='quizAdvanceNow'){ if(superar()) avanceGuardar(); quizTerminadoSiToca();
       if(idx<PHASES.length-1) load(idx+1); else paint(); }
+    // (27-sep-2026) ronda/ejercicio terminado: se apunta SOLO en la fase frontera (repasar una fase
+    // ya superada, u «Otra vez» en una fase 4 ya superada, no tocan el punto de control) y si el
+    // estado no pasa de 8 KB (bytes en UTF-8)
+    else if(d.type==='quizPhaseState'){
+      if(avKey && idx===maxReached && !done[idx]){
+        const nuevo={fase:idx, estado:d.estado, t:Date.now()}; let tam=1e9;
+        try{ tam=unescape(encodeURIComponent(JSON.stringify(d.estado))).length; }catch(e2){}
+        if(tam<=8192 && posDe({max:maxReached, done:done, pos:nuevo})){ pos=nuevo; avanceGuardar(); } } }
     // (22-sep-2026) porcentaje de la última fase: al punto de control y, si hay
     // envío y cuenta, constancia para Iago (SuiteQuizRitmo.progreso, ver más abajo)
     else if(d.type==='quizPhaseProgress'){
@@ -5948,20 +5994,28 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
   function open(card,worldId){
     if(!ov) build();
     cfgB64=''; try{ const cfg=cardQuizConfig(card); cfgB64=encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(cfg))))); }catch(e){ console.error('cfg',e); }
-    done=PHASES.map(()=>false); idx=0; maxReached=0; av4=null;
+    done=PHASES.map(()=>false); idx=0; maxReached=0; av4=null; pos=null;
     // (6-ago) punto de control SOLO para el quiz de tareas (con envío y cuenta):
     // clave por cuenta+envío+carta, así nunca pisa a otro quiz ni a otro alumno.
     avKey=(_QENVIO && _QCUENTA && card && card.atlasId) ? ('quiz_avance_'+_QCUENTA+'_'+_QENVIO+'_'+card.atlasId) : null;
-    const av=avanceLeer();
+    avCarta=(card && card.atlasId) || '';
+    let av=avanceLeer();
+    // (27-sep-2026) el punto de control del SERVIDOR (otro dispositivo), si lo trajo autoArranque:
+    // se usa si va más adelante que el de aquí (empate: el más reciente). Solo una vez; queda también aquí.
+    const srv=window.__SUITE_QUIZ_ESTADO_SRV; window.__SUITE_QUIZ_ESTADO_SRV=null;
+    if(avKey && srv && srv.carta===avCarta && avanceValido(srv.estado)){
+      const a=avanceDe(av), b=avanceDe(srv.estado);
+      if(!av || b>a || (b===a && (+srv.estado.t||0)>(+av.t||0))){ av=srv.estado; try{ localStorage.setItem(avKey, JSON.stringify(av)); }catch(e){} } }
     if(av){
       done=PHASES.map((_,i)=>!!av.done[i]);
       maxReached=Math.max(0, Math.min(av.max|0, PHASES.length-1));
       idx=maxReached;
       if(av.f4 && typeof av.f4==='object') av4=av.f4;
+      if(posDe(av)) pos=av.pos;
     }
     document.body.style.overflow='hidden';
     ov.classList.add('show'); load(idx);
-    if(av) avisoRetomar(idx+1);
+    if(av) avisoRetomar(idx+1, posActual());
   }
   function close(){ if(!ov) return; ov.classList.remove('show'); frame.src='about:blank';
     document.body.style.overflow=''; }
@@ -6083,6 +6137,62 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
     return _enviado;
   }
 
+  /* (27-sep-2026) PUNTO DE CONTROL EN EL SERVIDOR · para seguir el quiz en OTRO dispositivo.
+     DORMIDO hasta que Iago apruebe el SQL (las RPC aún no existen):
+       suite_quiz_estado_leer(p_cuenta_id, p_envio_id) → {ok, estado|null, avance, hecho}
+         (estado null si el quiz ya consta como hecho)
+       suite_quiz_estado_guardar(p_cuenta_id, p_envio_id, p_carta, p_estado, p_avance) → {ok}
+         (solo sobrescribe si p_avance >= lo guardado; si ya consta como hecho, no guarda)
+     p_estado = el mismo punto de control de este dispositivo {max, done, t, f4, pos}.
+     «Hecho manda»: si leer dice hecho:true, el punto de control de este dispositivo se descarta.
+     Si una RPC no existe (PGRST202 · HTTP 404), no se vuelve a llamar en esta página y todo
+     sigue con el guardado local; cualquier otro error se ignora (se reintenta en el siguiente
+     guardado). Nunca van dos guardados a la vez: si llega otro mientras uno está en vuelo,
+     al terminar se manda el último. */
+  const _estadoNo={ leer:false, guardar:false };
+  let _estadoHecho=false;   // el servidor dice que este quiz ya consta como hecho
+  function rpcNoExiste(r){ const e=r && r.error; return !!(e && (e.code==='PGRST202' || r.status===404)); }
+  async function estadoLeer(){
+    if(!ENVIO || !CUENTA || !CARTA || _estadoNo.leer) return null;
+    try{
+      const c=await sb(); if(!c) return null;
+      const r=await c.rpc('suite_quiz_estado_leer', { p_cuenta_id:CUENTA, p_envio_id:ENVIO });
+      if(rpcNoExiste(r)){ _estadoNo.leer=true; return null; }
+      const d=r && r.data, est=d && d.estado;
+      if(!r.error && d && d.ok===true && d.hecho===true){ _estadoHecho=true; return null; }
+      if(r.error || !d || d.ok!==true || !est || typeof est!=='object' || !Array.isArray(est.done)) return null;
+      // nada útil, o demasiado grande (el estado de una fase admite hasta 8 KB; el punto de control entero, 12 KB)
+      if(!((est.max|0)>0 || (est.pos && typeof est.pos==='object')) || unescape(encodeURIComponent(JSON.stringify(est))).length>12288) return null;
+      return est;
+    }catch(e){ return null; }
+  }
+  let _estadoEnVuelo=false, _estadoPend=null;
+  function estadoGuardar(carta, estado, avance){
+    if(!ENVIO || !CUENTA || !CARTA || carta!==CARTA || _estadoNo.guardar || !estado) return;
+    _estadoPend={ estado:estado, avance:(avance|0) };
+    if(!_estadoEnVuelo) estadoEnviar();
+  }
+  async function estadoEnviar(){
+    _estadoEnVuelo=true;
+    try{
+      while(_estadoPend && !_estadoNo.guardar){
+        const g=_estadoPend; _estadoPend=null;
+        const c=await sb(); if(!c) break;
+        const r=await c.rpc('suite_quiz_estado_guardar', { p_cuenta_id:CUENTA, p_envio_id:ENVIO, p_carta:CARTA, p_estado:g.estado, p_avance:g.avance });
+        if(rpcNoExiste(r)) _estadoNo.guardar=true;
+      }
+    }catch(e){}finally{ _estadoEnVuelo=false; }
+  }
+  // (15-sep) si arranca DESDE CERO (sin punto de control ni aviso pendiente), el tiempo
+  // de actividad vuelve a 0: el Diario enseña el tiempo de este intento, no la suma.
+  // (27-sep-2026) tampoco si el servidor tiene por dónde seguir (se mira antes de decidir)
+  function resetSiDesdeCero(){
+    try{ if(ENVIO && CUENTA && CARTA && window.SuiteTiempo && window.SuiteTiempo.reset
+          && !localStorage.getItem('quiz_avance_'+CUENTA+'_'+ENVIO+'_'+CARTA)
+          && !(PEND_KEY && localStorage.getItem(PEND_KEY))
+          && !window.__SUITE_QUIZ_ESTADO_SRV) window.SuiteTiempo.reset(); }catch(e){}
+  }
+
   async function autoArranque(){
     if(!CARTA) return;
     // (15-sep) aviso que quedó pendiente en una visita anterior (sin red al acabar): se reintenta ahora
@@ -6090,31 +6200,36 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       const ok=await Promise.race([ completar(), new Promise(r=>setTimeout(()=>r(false),5000)) ]);
       if(ok){ try{ localStorage.removeItem('quiz_avance_'+CUENTA+'_'+ENVIO+'_'+CARTA); }catch(e){} }
     } }catch(e){}
-    // (15-sep) si arranca DESDE CERO (sin punto de control ni aviso pendiente), el tiempo
-    // de actividad vuelve a 0: el Diario enseña el tiempo de este intento, no la suma.
-    try{ if(ENVIO && CUENTA && CARTA && window.SuiteTiempo && window.SuiteTiempo.reset
-          && !localStorage.getItem('quiz_avance_'+CUENTA+'_'+ENVIO+'_'+CARTA)
-          && !(PEND_KEY && localStorage.getItem(PEND_KEY))) window.SuiteTiempo.reset(); }catch(e){}
     const hit=buscarCarta(CARTA);
     if(!hit){ console.warn('[suite-quiz] carta no encontrada:', CARTA);
+      resetSiDesdeCero();
       try{ banner('ⓘ No encuentro la carta «'+String(CARTA).replace(/</g,'&lt;')+'» de este quiz. Vuelve al portal y abre el quiz desde la campana; si sigue pasando, avisa a Iago.','err'); }catch(e){}
       return; }
     // (15-sep) enlace incompleto (sin envío o sin cuenta): el quiz se puede hacer, pero NO se registra
     if(!ENVIO || !CUENTA){ try{ banner('ⓘ Este enlace no lleva tu cuenta: el quiz se puede hacer, pero <b>no quedará registrado</b>. Para que cuente, ábrelo desde la campana del portal.','err'); }catch(e){} }
     // FASE 7.1 · traer las capturas del libro del envío ANTES de lanzar
     // (van dentro del cfg que viaja a las fases; máx. 2,5 s de espera)
+    // (27-sep-2026) y, A LA VEZ (mismo tope de 2,5 s), el punto de control del servidor
     if(ENVIO && CUENTA){
       try{
         const c=await Promise.race([ sb(), new Promise(r=>setTimeout(()=>r(null),2500)) ]);
         if(c){
-          const { data } = await Promise.race([
-            c.rpc('suite_quiz_lecciones_de',{ p_envio_id:ENVIO }),
-            new Promise(r=>setTimeout(()=>r({data:null}),2500))
+          const tope=new Promise(r=>setTimeout(()=>r(null),2500));
+          const res=await Promise.all([
+            Promise.race([ c.rpc('suite_quiz_lecciones_de',{ p_envio_id:ENVIO }), tope.then(()=>({data:null})) ]),
+            Promise.race([ estadoLeer(), tope ])
           ]);
+          const data=res[0] && res[0].data;
           if(data && data.ok===true && Array.isArray(data.lecciones)) window.__SUITE_QUIZ_LECCIONES=data.lecciones;
+          if(res[1]) window.__SUITE_QUIZ_ESTADO_SRV={ carta:CARTA, estado:res[1] };
+          // (27-sep-2026) «HECHO MANDA»: si el servidor dice que este quiz ya consta como hecho (aquí o en
+          // otro dispositivo), el punto de control que quede en este es de antes de terminarlo: se descarta
+          // y no se retoma. Sin servidor (RPC inexistente) no se sabe, y todo sigue como hasta ahora.
+          if(_estadoHecho){ try{ localStorage.removeItem('quiz_avance_'+CUENTA+'_'+ENVIO+'_'+CARTA); }catch(e){} }
         }
       }catch(e){ console.warn('[suite-quiz] lecciones', e); }
     }
+    resetSiDesdeCero();
     // lanza el quiz directamente sobre lo que haya (overlay a pantalla completa)
     setTimeout(()=>{ try{
       if(hit.custom && window.launchEquivQuiz) window.launchEquivQuiz(hit.c);
@@ -6139,7 +6254,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       if(error) throw error; return true;
     }catch(e){ console.warn('[suite-quiz] progreso', e); return false; }
   }
-  window.SuiteQuizRitmo={ completar: completar, progreso: progreso };
+  window.SuiteQuizRitmo={ completar: completar, progreso: progreso, estadoGuardar: estadoGuardar };   // (27-sep-2026) + estadoGuardar
   /* 3-ago-2026 · quiz-fix H4: ?introCarta=X (botón «Ver explicación interactiva» del portal)
      abre directamente la INTRO de esa carta. Si la carta no tiene INTRO definida, aviso suave. */
   function autoIntro(){

@@ -265,6 +265,20 @@ function setSounding(on){ const b=document.getElementById('playBtn').querySelect
 // por mal colocados: sus X se pintan en ROJO para que el alumno sepa cuáles
 // tiene que quitar y volver a poner, en vez de un «hay algún error» a ciegas.
 let solution=[], pool=[], placed=[], clickCursor=0, round={hits:0,score:0,firstFailUsed:false,malos:[]};
+/* (27-sep-2026) RETOMAR · igual que en la fase 1: en el quiz de tareas, al terminar la ronda se
+   avisa al padre (quizPhaseState) y, con &resume=…, se sigue en la ronda que tocaba. Esta fase
+   tiene UNA sola ronda (PUZZLES=1): si se sale a medias, el puzzle vuelve a empezar (como hasta
+   ahora); si ya estaba resuelto, la fase se da por superada con el mismo final. */
+const _RESUME=(function(){ try{
+  if(window.top===window.self) return null;
+  const r=new URLSearchParams(location.search).get('resume'); if(!r) return null;
+  const e=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(r)))));
+  const ent=(x,a,b)=>typeof x==='number' && (x|0)===x && x>=a && x<=b;
+  if(!e || e.v!==1 || e.atlasId!==((_CFG&&_CFG.atlasId)||'') || e.total!==PUZZLES || !ent(e.ronda,0,PUZZLES)) return null;
+  return e; }catch(err){ return null; } })();
+if(_RESUME){ round.hits=_RESUME.ronda; round.score=Math.min(100, round.hits*(100/PUZZLES)); }
+function enviarEstado(){ try{ if(window.top!==window.self) parent.postMessage({type:'quizPhaseState', estado:{v:1, atlasId:(_CFG&&_CFG.atlasId)||'',
+  ronda:round.hits, total:PUZZLES, etiqueta:'ronda'}},'*'); }catch(e){} }
 
 function cellSlot(cell){
   /* 3-ago-2026 · quiz-fix H1: contenido del hueco = unidad característica si existe (tuplets con
@@ -462,7 +476,7 @@ function check(){
   const malos = [];
   placed.forEach((p,i)=>{ if(solution[i] && solution[i].cubierto) return; if(!p || tokKey(p.toks)!==tokKey(solution[i].toks)) malos.push(i); });
   const ok = malos.length===0;
-  if(ok){ round.malos=[]; round.hits++; round.score=Math.min(100,round.score+(100/PUZZLES)); toast('¡Correcto!','ok'); burst(); setBar();
+  if(ok){ round.malos=[]; round.hits++; round.score=Math.min(100,round.score+(100/PUZZLES)); enviarEstado(); toast('¡Correcto!','ok'); burst(); setBar();
     document.getElementById('checkBtn').disabled=true;                            // sin reproducir: solo confirma
     setTimeout(()=>{ if(round.hits>=PUZZLES){ document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 1300);
   } else {
@@ -505,6 +519,10 @@ document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin')
 setBar();
 window.addEventListener('load', ()=>{ newRound(); setTimeout(newRound, 60); });
 newRound();
+// (27-sep-2026) si al volver ya estaba resuelta la ronda, la fase se da por superada con el mismo
+// final (cuando ya está el puente, que es quien avisa al padre al verse el cartel)
+if(_RESUME && round.hits>=PUZZLES){ const fin=()=>{ setBar(); document.getElementById('ovWin').classList.add('show'); burst(); };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', fin); else setTimeout(fin, 0); }
 </script>
 <!--__quiz_bridge_done__-->
 <script>

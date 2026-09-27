@@ -689,6 +689,31 @@ function frame(){ if(!running) return; const now=ac().currentTime, mp=musPos(now
   raf=requestAnimationFrame(frame);
 }
 let intentos=0;   // (22-sep) pasadas del modo normal en esta visita (va en el punto de control del padre)
+/* (27-sep-2026) RETOMAR · Esta fase NO tiene rondas que partir: es UNA sola pasada continua
+   (base, puntuación y dificultad son de la pasada entera). La «unidad» es el ejercicio completo
+   (total 1), que se da por hecho al sacar ≥ 50 %; una pasada que se quedó a medias vuelve a empezar.
+   Al acabar cada pasada normal, si está embebida, manda al padre
+     {type:'quizPhaseState', estado:{v:1, atlasId, ronda:0|1, total:1, etiqueta:'ejercicio', intentos, mejor, ultimo}}
+   (ronda 1 = ya superada; intentos = los mismos que van en quizPhaseProgress; mejor/último = % de precisión).
+   Al volver con &resume= válido: sigue contando los intentos y recuerda el mejor porcentaje; si ya estaba
+   superada, sale el mismo final. Sin resume, o si no vale, o suelta: todo igual que antes. */
+let mejorPct=-1, faseHecha=false;
+const ATLAS_ID=(_CFG&&_CFG.atlasId)?String(_CFG.atlasId):'';
+const RESUME=(function(){ try{
+  if(window.top===window.self) return null;
+  const r=new URLSearchParams(location.search).get('resume'); if(!r) return null;
+  const R=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(r)))));
+  if(!R||typeof R!=='object'||R.v!==1||String(R.atlasId==null?'':R.atlasId)!==ATLAS_ID) return null;
+  const pct=x=>Number.isInteger(x)&&x>=0&&x<=100;
+  if(R.total!==1||!Number.isInteger(R.ronda)||R.ronda<0) return null;
+  if(!Number.isInteger(R.intentos)||R.intentos<0||R.intentos>9999) return null;
+  if(R.mejor!=null&&R.mejor!==-1&&!pct(R.mejor)) return null;
+  if(R.ronda>=1&&!(pct(R.ultimo)&&R.ultimo>=50)) return null;   // «superada» sin su porcentaje: no cuadra
+  return R;
+}catch(e){ return null; } })();
+function enviarEstado(s){ if(s.gp>mejorPct) mejorPct=s.gp; if(s.gp>=50) faseHecha=true;
+  try{ if(window.top!==window.self) parent.postMessage({type:'quizPhaseState',
+    estado:{v:1, atlasId:ATLAS_ID, ronda:faseHecha?1:0, total:1, etiqueta:'ejercicio', intentos:intentos, mejor:mejorPct, ultimo:s.gp}},'*'); }catch(e){} }
 function onTap(){
   if(!running) return; tapSound(); const now=ac().currentTime; const sp=effSecPerPulse();
   tapTimes.push(now); while(tapTimes.length && now-tapTimes[0] > sp) tapTimes.shift();   // golpes dentro del último pulso
@@ -773,7 +798,7 @@ function informarProgreso(s){
 }
 function finishQuiz(){ running=false; if(raf)cancelAnimationFrame(raf); if(schedTimer){clearInterval(schedTimer);schedTimer=null;} setStartBtn(false); killAudio();
   if(extremeMode){ showExtremeResult(); return; }
-  const s=aggScore(); informarProgreso(s);
+  const s=aggScore(); informarProgreso(s); enviarEstado(s);   // (27-sep-2026) + punto de control para retomar
   if(s.gp>70) showWin(s,'alto'); else if(s.gp>=50) showWin(s,'medio'); else showLow(s);
 }
 function mkBtn(txt,cls,fn){ const b=document.createElement('button'); b.className='cbtn'+(cls?' '+cls:''); b.innerHTML=txt; b.onclick=fn; return b; }
@@ -955,6 +980,15 @@ window.addEventListener('resize',()=>{ drawStaff(); if(!running) document.getEle
 
 /* init */
 resetSegs(); drawStaff(); updateBar();
+if(RESUME){   // (27-sep-2026) retomar: los intentos siguen contando y se recuerda el mejor porcentaje
+  intentos=RESUME.intentos; if(RESUME.mejor!=null) mejorPct=RESUME.mejor;
+  if(RESUME.ronda>=1){                                // ya superada → el mismo final (el puente avisa al padre)
+    faseHecha=true; const s={gp:RESUME.ultimo};
+    const fin=()=>{ informarProgreso(s); showWin(s, s.gp>70?'alto':'medio'); };
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fin); else setTimeout(fin,0);
+  } else document.getElementById('hint').textContent='Seguimos donde lo dejaste: intento '+(intentos+1)+
+    (mejorPct>=0?' · tu mejor marca, '+mejorPct+' %':'')+'. Pulsa «Empezar» o la barra espaciadora.';
+}
 </script>
 <!--__quiz_bridge_done__-->
 <script>

@@ -288,6 +288,27 @@ let target=[], written=[], roundIdx=0, score=0, failUsedThisRound=false, order=[
 let targetBeats=[], givenBeats=[durQ(GIVEN)], givenTup=null, CAP_Q=PULSE_Q;   // 3-ago: cabida REAL del hueco a escribir
 const PER=100/ROUNDS, HALF=PER/2;
 
+/* (27-sep-2026) RETOMAR EN LA RONDA DONDE IBA (quiz de tareas).
+   · Al terminar cada ronda, si está embebida, manda al padre
+       {type:'quizPhaseState', estado:{v:1, atlasId, ronda:<rondas hechas>, total:ROUNDS, etiqueta:'ronda', orden:[célula de cada ronda]}}
+     («orden» = el barajado de esta visita, para que las rondas que faltan sean las mismas).
+   · Al volver, el padre la devuelve en &resume= (mismo formato que cfg). Si es válida (v 1, misma carta,
+     mismo nº de rondas, orden sano) se sigue en la ronda siguiente con los mismos puntos; si ya estaban
+     todas, sale el mismo final. Si no hay resume, o no vale, o la fase va suelta: todo igual que antes. */
+const ATLAS_ID=(_CFG&&_CFG.atlasId)?String(_CFG.atlasId):'';
+const RESUME=(function(){ try{
+  if(window.top===window.self) return null;
+  const r=new URLSearchParams(location.search).get('resume'); if(!r) return null;
+  const R=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(r)))));
+  if(!R||typeof R!=='object'||R.v!==1||String(R.atlasId==null?'':R.atlasId)!==ATLAS_ID) return null;
+  if(R.total!==ROUNDS||!Number.isInteger(R.ronda)||R.ronda<0) return null;
+  const o=R.orden; if(!Array.isArray(o)||o.length!==ROUNDS||!o.every(c=>Number.isInteger(c)&&c>=0&&c<NVAR)) return null;
+  if(NVAR>1 && new Set(o).size!==NVAR) return null;     // con varias variaciones, cada una una vez
+  return R;
+}catch(e){ return null; } })();
+function enviarEstado(){ try{ if(window.top!==window.self) parent.postMessage({type:'quizPhaseState',
+  estado:{v:1, atlasId:ATLAS_ID, ronda:roundIdx, total:ROUNDS, etiqueta:'ronda', orden:order.map(o=>o.cell)}},'*'); }catch(e){} }
+
 function buildEditor(){
   const notes=[['w','redonda'],['h','blanca'],['q','negra'],['8','corchea'],['16','semicorchea'],['32','fusa']];
   const nh=document.getElementById('figNotes'), rh=document.getElementById('figRests'); nh.innerHTML=''; rh.innerHTML='';
@@ -315,6 +336,7 @@ function check(){
   if(ok){ score=Math.min(100,score+PER); setBar(); renderMeasure(written,true);
     document.getElementById('staffPanel').classList.add('ok'); toast('¡Correcto!','ok'); burst(); playMeasure();
     roundIdx++;
+    enviarEstado();   // (27-sep-2026) ronda terminada → punto de control al padre
     setTimeout(()=>{ document.getElementById('staffPanel').classList.remove('ok');
       if(roundIdx>=ROUNDS){ document.getElementById('ovWin').classList.add('show'); burst(); } else roundTransition(newRound); }, 2200);
   } else {
@@ -359,13 +381,23 @@ document.getElementById('delBtn').onclick=()=>delLast();
 document.getElementById('checkBtn').onclick=()=>check();
 document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); roundIdx=0; score=0; startGame(); };
 
-function startGame(){
-  const idxs=CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5);
+function startGame(orden){   // (27-sep-2026) orden: el de la visita anterior al retomar; sin él, barajado como siempre
+  const idxs=orden?orden.slice():CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5);
   const swapFor=i=>!!CELL_TUP[i];   // 3-ago: GVE (tresillo…) no se puede escribir con la paleta → se escribe el pulso dado
   order = (CARD.cells.length===1) ? [{cell:0,swap:swapFor(0)},{cell:0,swap:true}] : idxs.map(i=>({cell:i,swap:swapFor(i)}));
   buildEditor(); newRound();
 }
-startGame();
+if(RESUME){   // (27-sep-2026) retomar: mismas rondas pendientes, mismos puntos y barra que al acertar las ya hechas
+  const hechas=Math.min(RESUME.ronda,ROUNDS);
+  for(let i=0;i<hechas;i++) score=Math.min(100,score+PER);
+  roundIdx=Math.min(hechas,ROUNDS-1);                 // si ya estaban todas, de fondo queda la última
+  startGame(RESUME.orden);
+  if(hechas>=ROUNDS){                                 // fase ya terminada → el mismo final (el puente avisa al padre)
+    roundIdx=ROUNDS; setBar();
+    const fin=()=>{ document.getElementById('ovWin').classList.add('show'); burst(); };
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fin); else setTimeout(fin,0);
+  } else document.getElementById('hint').textContent='Seguimos donde lo dejaste: ronda '+(hechas+1)+' de '+ROUNDS+'. Escucha y escribe.';
+} else startGame();
 </script>
 <!--__quiz_bridge_done__-->
 <script>

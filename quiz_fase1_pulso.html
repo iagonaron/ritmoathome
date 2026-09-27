@@ -117,6 +117,8 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 .cbtn{font:inherit;font-size:16px;font-weight:900;color:#16132b;cursor:pointer;border:none;padding:12px 28px;border-radius:14px;
   background:var(--grad);background-size:200% 100%;box-shadow:0 12px 36px rgba(169,116,255,.5);transition:transform .07s,filter .15s;animation:slide 20s linear infinite}
 .cbtn:hover{filter:brightness(1.08)} .cbtn:active{transform:translateY(1px)}
+/* (27-sep-2026) al retomar el quiz de tareas: línea discreta en la ventana inicial */
+.ini-resume{margin:-8px 0 18px;font-size:13.5px;font-weight:800;color:var(--c1);white-space:nowrap}
 /* aviso de nueva ronda */
 .round-notice{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%) scale(.88);z-index:75;opacity:0;
   padding:14px 32px;border-radius:16px;font-weight:900;font-size:21px;color:#16132b;
@@ -369,6 +371,24 @@ function ritmoSound(t0,durSec,gain,dest){
 // jugadas, no aciertos. Cada ronda tiene 2 escuchas y 2 intentos; fallar no resta.
 const RONDAS = 3;
 let round=null, score=0, hits=0, jugadas=0, intento=0, answered=false, targetCellIdx=-1, lastTargetPulse=-1;
+/* (27-sep-2026) RETOMAR · en el quiz de tareas, al terminar cada ronda se avisa al padre
+   (quizPhaseState) de por dónde va; al volver, el padre abre esta fase con &resume=… y se
+   sigue en la ronda siguiente con la barra y los contadores como estaban. Fuera del iframe,
+   o con un resume que no vale (otra carta, otra versión, estropeado…), todo igual que antes. */
+const _RESUME=(function(){ try{
+  if(window.top===window.self) return null;
+  const r=new URLSearchParams(location.search).get('resume'); if(!r) return null;
+  const e=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(r)))));
+  const ent=(x,a,b)=>typeof x==='number' && (x|0)===x && x>=a && x<=b;
+  if(!e || e.v!==1 || e.atlasId!==((_CFG&&_CFG.atlasId)||'') || e.total!==RONDAS || !ent(e.ronda,0,RONDAS)) return null;
+  e.aciertos=ent(e.aciertos,0,e.ronda)?e.aciertos:0;
+  e.celula=ent(e.celula,-1,CARD.cells.length-1)?e.celula:-1;
+  e.pulso=ent(e.pulso,-1,N_PULSES-1)?e.pulso:-1;
+  return e; }catch(err){ return null; } })();
+if(_RESUME){ jugadas=_RESUME.ronda; score=Math.min(100, jugadas*(100/RONDAS)); hits=_RESUME.aciertos;
+  targetCellIdx=_RESUME.celula; lastTargetPulse=_RESUME.pulso; }
+function enviarEstado(){ try{ if(window.top!==window.self) parent.postMessage({type:'quizPhaseState', estado:{v:1, atlasId:(_CFG&&_CFG.atlasId)||'',
+  ronda:jugadas, total:RONDAS, etiqueta:'ronda', aciertos:hits, celula:targetCellIdx, pulso:lastTargetPulse}},'*'); }catch(e){} }
 const spq = _CFG ? _CFG.spq : (COMPOUND ? (60/CARD.bpmComp)/1.5 : 60/CARD.bpmSimple);   // seg por negra
 const secPerPulse = PULSE_Q*spq;
 
@@ -520,6 +540,7 @@ function onPick(idx,g){
   if(good){ g.classList.add('ok'); hits++; toast('¡Correcto!','ok'); burst(); }
   else { g.classList.add('bad'); toast('Era este','no'); }
   setBar();
+  enviarEstado();   // (27-sep-2026) ronda terminada: el padre apunta por dónde va
   // (23-sep-2026) al acertar NO se vuelve a reproducir el ritmo: se pasa a la
   // siguiente ronda y suena el nuevo. Al fallar dos veces se enseña el correcto
   // un instante (sin sonar) y también se avanza.
@@ -557,8 +578,16 @@ setBar();
 (function(){
   const k=document.getElementById('iniKicker'); if(k && CARD.kicker) k.textContent='Quiz · '+String(CARD.kicker).replace(/^Carta\s*/i,'');
   const b=document.getElementById('iniBtn');
+  // (27-sep-2026) al retomar, la ventana inicial se mantiene (el toque desbloquea el audio en
+  // iPad) con una línea que dice en qué ronda se sigue
+  if(_RESUME && jugadas<RONDAS){ const l=document.createElement('p'); l.className='ini-resume';
+    l.textContent='Seguimos donde lo dejaste: ronda '+(jugadas+1)+' de '+RONDAS; b.parentNode.insertBefore(l,b); }
   b.onclick=()=>{ ac(); document.getElementById('ovIni').classList.remove('show'); firstRound=true; newRound(); };
 })();
+// (27-sep-2026) si al volver ya estaban jugadas todas las rondas, la fase se da por superada con
+// el mismo final (cuando ya está el puente, que es quien avisa al padre al verse el cartel)
+if(_RESUME && jugadas>=RONDAS){ const fin=()=>{ document.getElementById('ovIni').classList.remove('show'); document.getElementById('ovWin').classList.add('show'); burst(); };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', fin); else setTimeout(fin, 0); }
 </script>
 <!--__quiz_bridge_done__-->
 <script>
