@@ -7509,19 +7509,21 @@ D['1.3']={spq:0.8,slides:function(card){ return [
     {q:'El ingrediente nuevo',a:'Una <b>fusión</b>: dos corcheas se funden en una negra… dentro del pulso ternario.'},
     /* (29-sep-2026, Iago) «En la ficha de ritmo, en ¿de qué lo conoces?, sustituiría las 3 corcheas por negra + corchea
        y añadiría corchea + negra. Y a la derecha, las 6 semicorcheas.» (antes: figs:[A3C,A6S]) */
-    {q:'¿De qué lo conoces?',a:'De los ritmos básicos de siempre:',figs:[NC13,CN13,A6S]}]},
+    {q:'¿De qué lo conoces?',a:'De los ritmos básicos de siempre:',figs:[CN13,NC13,A6S]}]},   /* mismo orden que los ritmos nuevos: la negra coincide */
   /* (29-sep-2026, Iago) «En el crafteo, que parta de negra + corchea y que lo único que haga sea el tajo; y luego
      corchea + negra y el tajo. Creo que tiene más sentido así.» Antes: tres corcheas → tajo → ligadura → fusión (y la
      inversa). Para volver atrás: recuperar este bloque de la versión anterior (commit 6880864). */
-  {type:'genesis',mode:'tajo',kicker:'EL CRAFTEO — del ritmo base al ritmo nuevo',title:'Un tajo en la corchea',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['q','8']},steps:[
-    {notes:['q','8'],caption:'Partimos de <b>negra + corchea</b>: un ritmo que ya conoces.'},
-    {notes:['q','16','16'],beams:[[1,2]],mark:[1,2],cut:1,anim:'tajo',btn:'⚡ TAJO en la corchea',caption:'La corchea recibe el tajo: <b>negra + dos semicorcheas</b>.'},
-    {notes:['8','q'],anim:'melt',btn:'↔ Ahora al revés: corchea + negra',caption:'Le damos la vuelta: <b>corchea + negra</b>.'},
-    {notes:['16','16','q'],beams:[[0,1]],mark:[0,1],cut:0,anim:'tajo',btn:'⚡ TAJO en la corchea',caption:'El mismo tajo: <b>dos semicorcheas + negra</b>.'}]},
+  /* (29-sep-2026, Iago) «que coincida el orden con el de cuando se presenta el ritmo nuevo; la negra tiene que
+     coincidir»: primero corchea + negra (→ dos semicorcheas + negra) y después negra + corchea (→ negra + dos semicorcheas). */
+  {type:'genesis',mode:'tajo',kicker:'EL CRAFTEO — del ritmo base al ritmo nuevo',title:'Un tajo en la corchea',loopBeats:1.5,pulse:{notes:['qd']},timbre:'clave',base:{notes:['8','q']},steps:[
+    {notes:['8','q'],caption:'Partimos de <b>corchea + negra</b>: un ritmo que ya conoces.'},
+    {notes:['16','16','q'],beams:[[0,1]],mark:[0,1],cut:0,anim:'tajo',btn:'⚡ TAJO en la corchea',caption:'La corchea recibe el tajo: <b>dos semicorcheas + negra</b>.'},
+    {notes:['q','8'],anim:'melt',btn:'↔ Ahora al revés: negra + corchea',caption:'Le damos la vuelta: <b>negra + corchea</b>.'},
+    {notes:['q','16','16'],beams:[[1,2]],mark:[1,2],cut:1,anim:'tajo',btn:'⚡ TAJO en la corchea',caption:'El mismo tajo: <b>negra + dos semicorcheas</b>.'}]},
   {type:'tree',spq:0.8,loopBeats:1.5,rows:[
     {label:'el pulso',nodes:[{id:'root',notes:['qd'],label:'negra con puntillo',timbre:'drum',loopBeats:1.5,stretch:2.4}]},
     /* (29-sep-2026) «de dónde vienes» = los mismos tres de «¿De qué lo conoces?» */
-    {label:'de dónde vienes',nodes:[Object.assign({},NC13,{id:'a1',timbre:'wood',loopBeats:1.5}),Object.assign({},CN13,{id:'a3',timbre:'marimba',loopBeats:1.5}),Object.assign({},A6S,{id:'a2',timbre:'shaker',loopBeats:1.5})]},
+    {label:'de dónde vienes',nodes:[Object.assign({},CN13,{id:'a1',timbre:'wood',loopBeats:1.5}),Object.assign({},NC13,{id:'a3',timbre:'marimba',loopBeats:1.5}),Object.assign({},A6S,{id:'a2',timbre:'shaker',loopBeats:1.5})]},
     {label:'los ritmos de la carta',nodes:leaves(card,1.5)}]}];}};
 
 D['1.4']={spq:0.75,slides:function(card){ return [
