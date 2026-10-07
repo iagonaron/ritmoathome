@@ -178,12 +178,39 @@ const CARD = _CFG ? { bpmComp:_CFG.bpmComp, bpmSimple:_CFG.bpmSimple, spq:_CFG.s
 // ritmos característicos de la carta (si son tres, los tres) y el resto de la
 // frase se completa con rellenos. Antes eran dos puzzles con dos ritmos cada uno.
 const PUZZLES = 1;
-const COMPOUND=_CFG?_CFG.compound:true, MEAS=_CFG?_CFG.meas:"6/8", PULSES_PER_MEAS=_CFG?_CFG.pulsesPerMeas:2, PULSE_Q=_CFG?_CFG.pulseQ:1.5;
+/* (7-oct-2026, Iago: la síncopa doble en el quiz «sustituyendo otras, no añadiendo. Incluso también con las
+   variantes») MEZCLA · solo en las cartas que la traen en su configuración (hoy, la 1.4). La carta tiene más ritmos de
+   los que el quiz trabaja: se eligen `n`, repartidos por familias (fam) por turnos. basePrimero = dentro de cada
+   familia entra antes su ritmo base (el primero) y después una variante al azar; si no, cualquiera al azar. */
+const MIX = (_CFG && _CFG.mezcla && typeof _CFG.mezcla==='object' && _CFG.mezcla.n>0) ? _CFG.mezcla : null;
+function barajar(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function elegirCelulas(n, basePrimero){
+  const cs=(_CFG&&_CFG.cells)||[]; const fams=[], porFam={};
+  cs.forEach((c,i)=>{ const f=(c&&c.fam)||('#'+i); if(!porFam[f]){ porFam[f]=[]; fams.push(f); } porFam[f].push(i); });
+  fams.forEach(f=>{ const L=porFam[f]; porFam[f]= basePrimero ? [L[0]].concat(barajar(L.slice(1))) : barajar(L.slice()); });
+  const out=[]; let hubo=true;
+  while(out.length<n && hubo){ hubo=false; for(const f of fams){ if(out.length>=n) break; if(porFam[f].length){ out.push(porFam[f].shift()); hubo=true; } } }
+  return out;
+}
+/* con MEZCLA el puzzle va en el compás que diga la carta (3/4 en la 1.4: caben la estándar y la doble) y con los
+   ritmos elegidos: el base de cada familia y una variante hasta completar `n` */
+const _MIXC=(function(){ if(!MIX || !MIX.compas) return null; const p=String(MIX.compas).split('/').map(Number);
+  return (p[0]>0 && p[1]===4 && _CFG && _CFG.pulseQ===1) ? {meas:MIX.compas, ppm:p[0]} : null; })();
+const SEL = (MIX && _MIXC) ? elegirCelulas(MIX.n, true) : null;            // índices de las células de este puzzle
+const CELDAS = SEL ? SEL.map(i=>CARD.cells[i]) : CARD.cells;
+const COMPOUND=_CFG?_CFG.compound:true, MEAS=_MIXC?_MIXC.meas:(_CFG?_CFG.meas:"6/8"), PULSES_PER_MEAS=_MIXC?_MIXC.ppm:(_CFG?_CFG.pulsesPerMeas:2), PULSE_Q=_CFG?_CFG.pulseQ:1.5;
 // (22-sep-2026) La frase tiene nMeas compases (4 en 2/4 y 6/8), pero si los ritmos de la
 // carta son de compás entero y no caben todos (p. ej. 1.4: cinco síncopas de dos pulsos),
 // se alarga lo justo para que quepan TODOS, que es la regla de esta fase.
 const N_MEAS=(function(){ const base=_CFG?_CFG.nMeas:4;
-  try{ const need=CARD.cells.reduce((a,ce)=>{ const sl=cellSlot(ce); return a+Math.max(1,Math.ceil((sl.beats||[]).reduce((x,y)=>x+y,0)/PULSE_Q-1e-6)); },0);
+  try{ const need=CELDAS.reduce((a,ce)=>{ const sl=cellSlot(ce); return a+Math.max(1,Math.ceil((sl.beats||[]).reduce((x,y)=>x+y,0)/PULSE_Q-1e-6)); },0);
+    if(SEL){   /* (7-oct-2026) MEZCLA: los compases justos para que quepan todos SIN cruzar la barra (se comprueba colocándolos) */
+      const spans=CELDAS.map(ce=>{ const sl=cellSlot(ce); return Math.min(PULSES_PER_MEAS, Math.max(1,Math.ceil((sl.beats||[]).reduce((x,y)=>x+y,0)/PULSE_Q-1e-6))); }).sort((a,b)=>b-a);
+      for(let nm=Math.max(2, Math.ceil(need/PULSES_PER_MEAS)); nm<=need+2; nm++){
+        const libre=new Array(nm).fill(PULSES_PER_MEAS); let cabe=true;
+        for(const sp of spans){ let k=-1, mejor=1e9; for(let i=0;i<nm;i++){ if(libre[i]>=sp && libre[i]<mejor){ mejor=libre[i]; k=i; } } if(k<0){ cabe=false; break; } libre[k]-=sp; }
+        if(cabe) return nm; }
+      return Math.max(2, need); }
     return Math.max(base, Math.ceil(need/PULSES_PER_MEAS)); }catch(e){ return base; } })();
 const N_PULSES=N_MEAS*PULSES_PER_MEAS;
 const FILLERS=_CFG?_CFG.fillers:[ ["qd"], ["8","8","8"], ["q","8"], ["8","q"] ];   // rellenos más sencillos
@@ -290,7 +317,28 @@ function cellSlot(cell){
           beats:(cell.beatsReal&&cell.beatsReal.slice())||toks.map(durQ),
           tup:(cell.tuplets&&cell.tuplets[0])?{idx:cell.tuplets[0].idx.slice(),num:cell.tuplets[0].num,occ:cell.tuplets[0].occ}:null};
 }
+/* (7-oct-2026) MEZCLA: los ritmos elegidos, cada uno una vez, SIN cruzar la barra de compás: primero los que más
+   ocupan (la síncopa doble llena un compás de 3/4), cada uno en un hueco al azar de los que le valen. */
+function buildSolutionMix(){
+  const spanDe=sl=>Math.min(PULSES_PER_MEAS, Math.max(1, Math.ceil((sl.beats||[]).reduce((a,b)=>a+b,0)/PULSE_Q - 1e-6)));
+  for(let intento=0; intento<60; intento++){
+    const sol=new Array(N_PULSES).fill(null);
+    const piezas=CELDAS.map(ce=>{ const sl=cellSlot(ce); sl.target=true; return {sl:sl, sp:spanDe(sl), r:Math.random()}; }).sort((a,b)=>(b.sp-a.sp)||(a.r-b.r));
+    let bien=true;
+    for(const pz of piezas){
+      const libres=[]; for(let p=0;p+pz.sp<=N_PULSES;p++){ if((p%PULSES_PER_MEAS)+pz.sp>PULSES_PER_MEAS) continue; let ok=true; for(let k=0;k<pz.sp;k++){ if(sol[p+k]){ ok=false; break; } } if(ok) libres.push(p); }
+      if(!libres.length){ bien=false; break; }
+      const pos=libres[Math.floor(Math.random()*libres.length)];
+      sol[pos]=pz.sl; for(let k=1;k<pz.sp;k++) sol[pos+k]={cubierto:true,toks:[],beams:[],beats:[],tup:null};
+    }
+    if(!bien) continue;
+    for(let i=0;i<N_PULSES;i++){ if(sol[i])continue; const f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; sol[i]={toks:f.slice(),beams:autoBeam(f),beats:f.map(durQ),tup:null}; }
+    return sol;
+  }
+  return null;
+}
 function buildSolution(){
+  if(SEL){ const sm=buildSolutionMix(); if(sm) return sm; }
   // (22-sep-2026) TODAS las células de la carta, cada una una vez, en orden
   // aleatorio; lo que quede libre se rellena con patrones sencillos.
   // (Iago 15-sep-2026) Un ritmo objetivo de compás entero (síncopas) ocupa varios
@@ -317,7 +365,7 @@ function ensureXGrad(svg){ if(svg.querySelector('#xgrad'))return; const defs=doc
   defs.appendChild(lg); svg.appendChild(defs); }
 function renderPhrase(){
   const host=document.getElementById('staffHost'); host.innerHTML=''; arrowEls={};
-  const PAD_L=10, MW=210, FIRST=44; const xs=[]; let x=PAD_L; const ws=[];
+  const PAD_L=10, MW=(_MIXC ? Math.round(105*PULSES_PER_MEAS) : 210), FIRST=44; const xs=[]; let x=PAD_L; const ws=[];   /* (7-oct) con MEZCLA, el mismo ancho por pulso */
   for(let i=0;i<N_MEAS;i++){ const w=MW+(i===0?FIRST:0); ws.push(w); xs.push(x); x+=w; }
   const CW=x+14, CH=230, SY=46;
   const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(CW,CH); const ctx=r.getContext();
@@ -517,6 +565,9 @@ document.getElementById('checkBtn').onclick=()=>{ if(!document.getElementById('c
 document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); round={hits:0,score:0,firstFailUsed:false,malos:[]}; newRound(); };
 
 setBar();
+/* (7-oct-2026) MEZCLA: en el puzzle no están TODOS los ritmos de la carta, sino los elegidos */
+if(SEL){ try{ const bs=document.querySelectorAll('.fase-sub b'); const b=[].slice.call(bs).find(x=>/todos los ritmos de esta carta/.test(x.textContent));
+  if(b) b.textContent=(({2:'dos',3:'tres',4:'cuatro',5:'cinco',6:'seis',7:'siete'})[SEL.length]||String(SEL.length))+' ritmos de esta carta'; }catch(e){} }
 window.addEventListener('load', ()=>{ newRound(); setTimeout(newRound, 60); });
 newRound();
 // (27-sep-2026) si al volver ya estaba resuelta la ronda, la fase se da por superada con el mismo

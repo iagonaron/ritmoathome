@@ -225,12 +225,37 @@ const CARD = _CFG ? { kicker:"Carta "+(_CFG.atlasId||''), bpmSimple:_CFG.bpmSimp
   ]
 };
 const COMPOUND = _CFG ? _CFG.compound : (CARD.cells[0].beat===8);
-const MEAS = _CFG ? _CFG.meas : (COMPOUND ? "6/8" : "2/4");
-const PULSES_PER_MEAS = _CFG ? _CFG.pulsesPerMeas : 2;
+let MEAS = _CFG ? _CFG.meas : (COMPOUND ? "6/8" : "2/4");            /* (7-oct-2026) `let`: con MEZCLA cambian por ronda */
+let PULSES_PER_MEAS = _CFG ? _CFG.pulsesPerMeas : 2;
 // (Iago 14-sep-2026) La fase 2 usa una frase MÁS CORTA que el resto del quiz
 // (nMeas2 = nMeas-1): se le estaba haciendo largo a los chavales.
-const N_MEAS = _CFG ? (_CFG.nMeas2 || _CFG.nMeas) : 3;
-const N_PULSES = N_MEAS*PULSES_PER_MEAS;
+let N_MEAS = _CFG ? (_CFG.nMeas2 || _CFG.nMeas) : 3;
+let N_PULSES = N_MEAS*PULSES_PER_MEAS;
+/* (7-oct-2026, Iago: la síncopa doble en el quiz «sustituyendo otras, no añadiendo. Incluso también con las
+   variantes») MEZCLA · solo en las cartas que la traen en su configuración (hoy, la 1.4). La carta tiene más ritmos de
+   los que el quiz trabaja: se eligen `n`, repartidos por familias (fam) por turnos. basePrimero = dentro de cada
+   familia entra antes su ritmo base (el primero) y después una variante al azar; si no, cualquiera al azar. */
+const MIX = (_CFG && _CFG.mezcla && typeof _CFG.mezcla==='object' && _CFG.mezcla.n>0) ? _CFG.mezcla : null;
+function barajar(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function elegirCelulas(n, basePrimero){
+  const cs=(_CFG&&_CFG.cells)||[]; const fams=[], porFam={};
+  cs.forEach((c,i)=>{ const f=(c&&c.fam)||('#'+i); if(!porFam[f]){ porFam[f]=[]; fams.push(f); } porFam[f].push(i); });
+  fams.forEach(f=>{ const L=porFam[f]; porFam[f]= basePrimero ? [L[0]].concat(barajar(L.slice(1))) : barajar(L.slice()); });
+  const out=[]; let hubo=true;
+  while(out.length<n && hubo){ hubo=false; for(const f of fams){ if(out.length>=n) break; if(porFam[f].length){ out.push(porFam[f].shift()); hubo=true; } } }
+  return out;
+}
+/* el compás de la ronda: el de la carta, salvo que el ritmo a encontrar traiga el suyo (la síncopa doble es de 3/4).
+   (7-oct, tarde · Iago: «yo pondría cuatro compases, porque dos compases es demasiado poco») la frase de esa ronda tiene
+   los compases que diga la carta (mezcla.compasesExtra: 4 → doce pulsos; la doble puede empezar en el 1, el 4, el 7 o
+   el 10). Sin ese dato, los mismos pulsos que las demás rondas (seis: dos compases de 3/4). */
+const MEAS0=MEAS, PPM0=PULSES_PER_MEAS, N_PULSES0=N_PULSES;
+function compasDeRonda(cell){
+  MEAS=MEAS0; PULSES_PER_MEAS=PPM0; let nm=0;
+  if(cell && cell.extra && cell.ts){ const p=String(cell.ts).split('/').map(Number);
+    if(p[0]>0 && p[1]===4){ MEAS=cell.ts; PULSES_PER_MEAS=p[0]; nm=(MIX && MIX.compasesExtra>0) ? Math.min(8, MIX.compasesExtra|0) : 0; } }
+  N_MEAS=nm || Math.max(1, Math.round(N_PULSES0/PULSES_PER_MEAS)); N_PULSES=N_MEAS*PULSES_PER_MEAS;
+}
 const PULSE_Q = _CFG ? _CFG.pulseQ : (COMPOUND ? 1.5 : 1);
 
 /* rellenos: patrones de UN pulso (en negras), más sencillos que el objetivo */
@@ -295,15 +320,27 @@ function renderMiniMeasure(m, noTS){
 const NS='http://www.w3.org/2000/svg';
 function renderPhrase(onPick){
   const host=document.getElementById('staffHost'); host.innerHTML='';
-  const PAD_L=10, MW=170, GAP=0, FIRST_EXTRA=42;   // 1er compás más ancho (clave+compás)
+  const PAD_L=10, MW=(MIX ? Math.round(170*PULSES_PER_MEAS/PPM0) : 170), GAP=0, FIRST_EXTRA=42;   // 1er compás más ancho (clave+compás) · (7-oct) con MEZCLA, el mismo ancho por pulso
+  /* (7-oct, tarde) Solo con MEZCLA (carta 1.4); con una fila y sin encoger (todas las demás cartas) las cuentas de
+     abajo dan exactamente lo mismo que antes.
+       · frase larga en pantalla estrecha (los cuatro compases de 3/4 de la síncopa doble en un móvil o en una tableta
+         de pie): en DOS pentagramas;
+       · y si la frase no cabe a lo ancho, se encoge hasta caber (antes se salía y había que arrastrarla) y los números
+         se dibujan más grandes para que sigan pudiéndose tocar con el dedo. */
+  const _disp=(host.clientWidth||0), _una=PAD_L+N_MEAS*MW+FIRST_EXTRA+14;
+  const FILAS=(MIX && N_MEAS>=4 && N_MEAS%2===0 && _disp>0 && _disp<_una*0.66) ? 2 : 1, PORFILA=N_MEAS/FILAS;
   const xs=[]; let x=PAD_L;
-  const widths=[]; for(let i=0;i<N_MEAS;i++){ const w=MW+(i===0?FIRST_EXTRA:0); widths.push(w); xs.push(x); x+=w+GAP; }
-  const CANVAS_W=x+14, CANVAS_H=170, STAVE_Y=30;
+  const widths=[]; for(let i=0;i<N_MEAS;i++){ if(i%PORFILA===0) x=PAD_L; const w=MW+(i%PORFILA===0?FIRST_EXTRA:0); widths.push(w); xs.push(x); x+=w+GAP; }
+  const CANVAS_W=x+14;
+  const _esc=(MIX && _disp>0 && _disp<CANVAS_W) ? (_disp/CANVAS_W) : 1;                      /* lo que se encoge (1 = nada) */
+  const BT=(_esc<1) ? Math.max(30, Math.min(50, Math.round(27/_esc))) : 30, BEX=BT-30;       /* lado del botón de cada pulso */
+  const ALTO_FILA=132+BEX, CANVAS_H=170+BEX+(FILAS-1)*ALTO_FILA, STAVE_Y=30;
   try{
     const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(CANVAS_W,CANVAS_H); const ctx=r.getContext();
     const staves=[];
-    for(let i=0;i<N_MEAS;i++){ const st=new VF.Stave(xs[i],STAVE_Y,widths[i]);
+    for(let i=0;i<N_MEAS;i++){ const st=new VF.Stave(xs[i],STAVE_Y+Math.floor(i/PORFILA)*ALTO_FILA,widths[i]);
       if(i===0){ st.addClef('treble').addTimeSignature(MEAS); }
+      else if(i%PORFILA===0){ st.addClef('treble'); try{ st.setNoteStartX(staves[0].getNoteStartX()); }catch(e){} }   /* 2.º pentagrama: clave, y los pulsos alineados con los de arriba */
       if(i===N_MEAS-1) st.setEndBarType(VF.Barline.type.END);
       st.setContext(ctx).draw(); staves.push(st); }
     const svg=host.querySelector('svg');
@@ -312,16 +349,18 @@ function renderPhrase(onPick){
     let pulseIdx=0;
     for(let i=0;i<N_MEAS;i++){ const st=staves[i];
       const x0=st.getNoteStartX(), x1=st.getX()+st.getWidth()-8; const span=x1-x0;
+      const yN=yNum+BEX/2+Math.floor(i/PORFILA)*ALTO_FILA;
       for(let p=0;p<PULSES_PER_MEAS;p++){ const cx=x0+span*((p+0.5)/PULSES_PER_MEAS); const idx=pulseIdx++;
         const g=document.createElementNS(NS,'g'); g.setAttribute('class','pnum'); g.dataset.idx=idx;
-        const rEl=document.createElementNS(NS,'rect'); rEl.setAttribute('class','pnum-bg'); rEl.setAttribute('x',(cx-15).toFixed(1)); rEl.setAttribute('y',(yNum-15).toFixed(1)); rEl.setAttribute('width','30'); rEl.setAttribute('height','30'); rEl.setAttribute('rx','8');
-        const tEl=document.createElementNS(NS,'text'); tEl.setAttribute('class','pnum-tx'); tEl.setAttribute('x',cx.toFixed(1)); tEl.setAttribute('y',(yNum+1).toFixed(1)); tEl.textContent=String(idx+1);
+        const rEl=document.createElementNS(NS,'rect'); rEl.setAttribute('class','pnum-bg'); rEl.setAttribute('x',(cx-BT/2).toFixed(1)); rEl.setAttribute('y',(yN-BT/2).toFixed(1)); rEl.setAttribute('width',String(BT)); rEl.setAttribute('height',String(BT)); rEl.setAttribute('rx',String(Math.round(8*BT/30)));
+        const tEl=document.createElementNS(NS,'text'); tEl.setAttribute('class','pnum-tx'); tEl.setAttribute('x',cx.toFixed(1)); tEl.setAttribute('y',(yN+1).toFixed(1)); tEl.textContent=String(idx+1); if(BT!==30) tEl.style.fontSize=Math.round(15*BT/30)+'px';
         g.appendChild(rEl); g.appendChild(tEl); g.addEventListener('click',()=>onPick(idx,g)); svg.appendChild(g);
       }
     }
     // viewBox ajustado
-    svg.setAttribute('viewBox',`0 0 ${CANVAS_W} ${yNum+30}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+    svg.setAttribute('viewBox',`0 0 ${CANVAS_W} ${yNum+BEX+(FILAS-1)*ALTO_FILA+30}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet');
     svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.maxWidth=CANVAS_W+'px';
+    if(_esc<1){ svg.style.width='100%'; svg.style.height='auto'; }   /* (7-oct) encogida hasta caber */
     return svg;
   }catch(e){ host.textContent='(error al dibujar la frase)'; return null; }
 }
@@ -383,22 +422,45 @@ const _RESUME=(function(){ try{
   if(!e || e.v!==1 || e.atlasId!==((_CFG&&_CFG.atlasId)||'') || e.total!==RONDAS || !ent(e.ronda,0,RONDAS)) return null;
   e.aciertos=ent(e.aciertos,0,e.ronda)?e.aciertos:0;
   e.celula=ent(e.celula,-1,CARD.cells.length-1)?e.celula:-1;
-  e.pulso=ent(e.pulso,-1,N_PULSES-1)?e.pulso:-1;
+  e.pulso=ent(e.pulso,-1,(MIX?48:N_PULSES)-1)?e.pulso:-1;   /* (7-oct) con MEZCLA hay rondas con más pulsos (la doble: doce) */
   return e; }catch(err){ return null; } })();
+/* (7-oct-2026) MEZCLA: el plan de la fase (un ritmo de cada familia, en orden al azar) se decide al entrar y viaja en
+   el punto de control, para que al retomar las rondas que faltan sean las mismas */
+let PLAN=null;
+if(MIX){ const p=_RESUME && _RESUME.plan;
+  PLAN = (Array.isArray(p) && p.length===RONDAS && p.every(x=>typeof x==='number' && (x|0)===x && x>=0 && x<CARD.cells.length)) ? p.slice() : barajar(elegirCelulas(RONDAS,false));
+  while(PLAN.length && PLAN.length<RONDAS) PLAN.push(PLAN[PLAN.length-1]);
+  if(!PLAN.length) PLAN=null; }
 if(_RESUME){ jugadas=_RESUME.ronda; score=Math.min(100, jugadas*(100/RONDAS)); hits=_RESUME.aciertos;
   targetCellIdx=_RESUME.celula; lastTargetPulse=_RESUME.pulso; }
 function enviarEstado(){ try{ if(window.top!==window.self) parent.postMessage({type:'quizPhaseState', estado:{v:1, atlasId:(_CFG&&_CFG.atlasId)||'',
-  ronda:jugadas, total:RONDAS, etiqueta:'ronda', aciertos:hits, celula:targetCellIdx, pulso:lastTargetPulse}},'*'); }catch(e){} }
+  ronda:jugadas, total:RONDAS, etiqueta:'ronda', aciertos:hits, celula:targetCellIdx, pulso:lastTargetPulse, plan:(PLAN||undefined)}},'*'); }catch(e){} }
 const spq = _CFG ? _CFG.spq : (COMPOUND ? (60/CARD.bpmComp)/1.5 : 60/CARD.bpmSimple);   // seg por negra
 const secPerPulse = PULSE_Q*spq;
+/* (7-oct-2026, tarde · Iago: «tiene que aclararse muy bien que hay que indicar el pulso en el que empieza») Si la carta
+   tiene algún ritmo de más de un pulso (las síncopas: 2 o 3; los ritmos de compás entero), la cabecera y la ventana
+   inicial lo dicen bien claro; SPAN_R = los pulsos que ocupa el ritmo de la ronda en curso (lo usan las pistas). */
+let SPAN_R=1;
+const T_ELIGE=()=> SPAN_R>1 ? 'Pulsa ▶ y luego elige el pulso en el que EMPIEZA.' : 'Pulsa ▶ y luego elige el pulso.';
+const _spanDe=c=>{ try{ return Math.max(1, Math.ceil(cellBeatsQ(c).reduce((a,b)=>a+b,0)/PULSE_Q - 1e-6)); }catch(e){ return 1; } };
+const VARIOS=(CARD.cells||[]).some(c=>_spanDe(c)>1);
+if(VARIOS){ try{
+  const _fs=document.querySelector('.fase-sub');
+  if(_fs) _fs.innerHTML='Escucha la frase y di <b>en qué pulso EMPIEZA</b> el ritmo de la tarjeta. Pulsa el número de ese pulso. <b>3 rondas</b> · 2 escuchas y 2 intentos en cada una.';
+  const _is=document.querySelector('#ovIni .sub');
+  if(_is) _is.innerHTML='Primero suena el <b>ritmo de la tarjeta</b>. Después pulsa ▶ para oír la frase y toca el <b>número del pulso en el que EMPIEZA</b> ese ritmo.<br>Ojo: hay ritmos que ocupan más de un pulso. Se marca <b>solo el pulso en el que empiezan</b>.<br>Tres rondas, dos escuchas y dos intentos en cada una. Nada resta.';
+}catch(e){} }
 
 function newRound(){
   answered=false; playing=false; listensLeft=2; intento=0; clearLive();
   const pb=document.getElementById('playBtn'); pb.classList.remove('spent'); updateReps();
-  document.getElementById('hint').textContent='Pulsa ▶ y luego elige el pulso.';
+  document.getElementById('hint').textContent=T_ELIGE();
   // objetivo: rota entre células, distinto al de la ronda anterior
-  let ti; do{ ti=Math.floor(Math.random()*CARD.cells.length); }while(CARD.cells.length>1 && ti===targetCellIdx);
+  let ti;
+  if(PLAN){ ti=PLAN[Math.max(0,Math.min(jugadas,PLAN.length-1))]; }   /* (7-oct-2026) MEZCLA: el ritmo de esta ronda ya está decidido */
+  else do{ ti=Math.floor(Math.random()*CARD.cells.length); }while(CARD.cells.length>1 && ti===targetCellIdx);
   targetCellIdx=ti; const target=CARD.cells[ti];
+  if(MIX) compasDeRonda(target);
   document.getElementById('targetPaper').innerHTML=renderTarget(target);
   // construir pulsos: uno es el objetivo, el resto relleno (que NO clone al objetivo)
   const targetTokens=cellTokens(target);
@@ -408,8 +470,17 @@ function newRound(){
   // no se le monte encima, y se coloca donde quepa antes del final de la frase.
   const tgtQ=cellBeatsQ(CARD.cells[targetCellIdx]);
   const spanP=Math.max(1, Math.ceil(tgtQ.reduce((a,b)=>a+b,0)/PULSE_Q - 1e-6));
+  SPAN_R=spanP;
+  try{ const _tx=document.querySelector('#targetCard .t-txt');   /* (7-oct-2026) el texto de la tarjeta, según lo que ocupa el ritmo */
+    if(_tx) _tx.innerHTML=(spanP>1)?('Este ritmo ocupa <b>'+spanP+' pulsos</b>. Toca el número del pulso en el que <b>EMPIEZA</b>.')
+                                   :'Este ritmo está escondido en <b>un</b> pulso de la frase.'; }catch(e){}
   const maxStart=Math.max(1, N_PULSES-spanP+1);
-  let targetPulse; do{ targetPulse=Math.floor(Math.random()*maxStart); }while(maxStart>1 && targetPulse===lastTargetPulse);
+  let targetPulse;
+  if(MIX){   /* (7-oct-2026) MEZCLA: un ritmo de varios pulsos no cruza la barra de compás */
+    const sitios=[]; for(let p=0;p+spanP<=N_PULSES;p++){ if((p%PULSES_PER_MEAS)+spanP<=PULSES_PER_MEAS) sitios.push(p); }
+    const cand=(sitios.length>1)?sitios.filter(p=>p!==lastTargetPulse):sitios;
+    targetPulse=cand.length?cand[Math.floor(Math.random()*cand.length)]:0;
+  } else { do{ targetPulse=Math.floor(Math.random()*maxStart); }while(maxStart>1 && targetPulse===lastTargetPulse); }
   lastTargetPulse=targetPulse;
   const pulses=[];
   for(let i=0;i<N_PULSES;i++){
@@ -457,7 +528,7 @@ function playPhrase(){
   const totalMs=baseMs+N_PULSES*secPerPulse*1000+150;
   liveTimers.push(setTimeout(()=>{ clearLiveOnly(); playing=false; phraseBus=null; setSounding(false);
     if(listensLeft<=0){ document.getElementById('playBtn').classList.add('spent'); } }, totalMs));
-  document.getElementById('hint').textContent='¿En qué pulso sonó el ritmo de la tarjeta?';
+  document.getElementById('hint').textContent=(SPAN_R>1 ? '¿En qué pulso EMPEZÓ el ritmo de la tarjeta?' : '¿En qué pulso sonó el ritmo de la tarjeta?');
 }
 
 function playOnePulse(idx){
@@ -502,7 +573,7 @@ function playTargetCard(force){
   setTimeout(()=>{ targetPlaying=false;
     if(btn){ btn.classList.remove('suena'); btn.innerHTML='🔊 Escuchar'; }
     // si respondió mientras sonaba, el foco lo gestiona el revelado
-    if(!answered){ hideSpotlight(); document.getElementById('hint').textContent='Pulsa ▶ y luego elige el pulso.'; }
+    if(!answered){ hideSpotlight(); document.getElementById('hint').textContent=T_ELIGE(); }
   }, ms);
 }
 function pedirEscucha(){
@@ -526,9 +597,11 @@ function onPick(idx,g){
      siguiente ronda. La barra avanza por rondas jugadas, aciertes o no. */
   if(!good && intento===0){
     intento=1; stopPhrase();
-    g.classList.add('bad'); toast('Ese no · te queda un intento','no');
+    /* (7-oct-2026) tocó un pulso en el que el ritmo YA estaba sonando (el 2.º o el 3.º de los que ocupa): se le dice */
+    const _dentro=(SPAN_R>1 && idx>round.targetPulse && idx<round.targetPulse+SPAN_R);
+    g.classList.add('bad'); toast(_dentro?'Ahí ya estaba sonando · toca donde EMPIEZA':'Ese no · te queda un intento','no',_dentro?2300:0);
     if(listensLeft<=0){ listensLeft=1; updateReps(); document.getElementById('playBtn').classList.remove('spent'); }
-    document.getElementById('hint').textContent='Vuelve a escuchar la frase y elige otro pulso.';
+    document.getElementById('hint').textContent=_dentro ? 'El ritmo ya había empezado antes de ese pulso. Vuelve a escuchar y toca el pulso en el que EMPIEZA.' : (SPAN_R>1 ? 'Vuelve a escuchar la frase y elige el pulso en el que EMPIEZA.' : 'Vuelve a escuchar la frase y elige otro pulso.');
     setTimeout(()=>{ g.classList.remove('bad'); }, 900);
     return;
   }
@@ -554,7 +627,7 @@ function onPick(idx,g){
 function roundTransition(cb){ stopPhrase(); const ov=document.getElementById('roundOv'); ov.classList.add('show');
   setTimeout(()=>{ cb(); }, 720); setTimeout(()=>{ ov.classList.remove('show'); }, 1320); }
 
-function toast(txt,kind){ const t=document.getElementById('toast'); t.textContent=txt; t.className='toast '+kind; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1100); }
+function toast(txt,kind,ms){ const t=document.getElementById('toast'); t.textContent=txt; t.className='toast '+kind; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),ms||1100); }
 const PAL=['#34d399','#5bd0ff','#ff9a3c','#ff5ccd','#a974ff','#ffd678'];
 function burst(){ const host=document.getElementById('confetti'); const cx=innerWidth/2, cy=innerHeight*0.4;
   for(let i=0;i<28;i++){ const p=document.createElement('i'); const ang=Math.random()*Math.PI*2, dist=120+Math.random()*240;
@@ -564,7 +637,7 @@ function burst(){ const host=document.getElementById('confetti'); const cx=inner
 
 /* ===== eventos ===== */
 document.getElementById('playBtn').onclick=()=>{ ac();
-  if(playing){ stopPhrase(); document.getElementById('hint').textContent='Pulsa ▶ y luego elige el pulso.'; return; }
+  if(playing){ stopPhrase(); document.getElementById('hint').textContent=T_ELIGE(); return; }
   if(answered) return;
   if(listensLeft<=0){ document.getElementById('playBtn').classList.add('spent'); return; }
   playPhrase();

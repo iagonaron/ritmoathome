@@ -610,12 +610,16 @@ footer .lock{color:var(--gold1);}
 /* (7-oct-2026) 1.4 con tres ramas: las cuatro hojas de la estándar van de dos en dos para que quepan las tres columnas… */
 .itree-row.i14-2x2 .itree-rowin{display:grid;grid-template-columns:repeat(2,auto);justify-content:center;justify-items:stretch;align-items:stretch;gap:8px;}
 /* …y en pantallas bajas (clase i14c, la pone la propia intro) todo va un poco más apretado */
-.itree-row.i14c + .itree-link{height:12px;}
+.itree-row.i14c + .itree-link{height:9px;}
 .itree-row.i14c .itnode{padding:6px 9px 5px;}
 .itree-row.i14c .itnode-lab{margin-top:3px;}
 .itree-row.i14c .itree-rowlab{margin-bottom:5px;}
 .itree-cols{display:flex;gap:26px;align-items:flex-start;justify-content:center;flex:1 1 auto;min-width:0;}
 .itree-main.sep{border-left:1px dashed var(--line);padding-left:26px;}
+/* (7-oct-2026, tarde) tableta tumbada (961–1179 px): las tres ramas más juntas y todo más apretado (clase i14m) */
+@media(min-width:961px) and (max-width:1179px){ .itree-cols{gap:10px;} .itree-main.sep{padding-left:10px;} }
+.itree-row.i14m .itnode{padding:5px 6px 4px;} .itree-row.i14m .itnode .ipaper{padding:3px 5px;} .itree-row.i14m.i14-2x2 .itree-rowin{gap:6px;}
+.itree-row.i14m .itnode-lab{font-size:9px;margin-top:2px;} .itree-row.i14m .itree-rowlab{font-size:9.5px;letter-spacing:.12em;}
 /* (7-oct-2026) en un móvil o una tableta de pie no caben tres ramas lado a lado: van una debajo de otra */
 @media(max-width:960px){
   .itree-cols{flex-direction:column;align-items:stretch;gap:14px;}
@@ -635,7 +639,12 @@ footer .lock{color:var(--gold1);}
              linear-gradient(180deg,#0b1f4d 0%,#0a1430 32%,#060a18 70%,#02030a 100%);color:var(--ink);}
 .intro-ov.show{display:flex;}
 .intro-bar{flex:0 0 56px;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid rgba(255,255,255,.07);}
-.intro-brand{font-size:15px;font-weight:900;letter-spacing:.06em;color:var(--gold-soft);white-space:nowrap;}
+.intro-brand{font-size:15px;font-weight:900;letter-spacing:.06em;color:var(--gold-soft);white-space:nowrap;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;}   /* (7-oct-2026) en un móvil de pie el nombre largo de la carta empujaba fuera de la pantalla los puntos, «Siguiente» y la ✕: ahora se recorta con «…» */
+.intro-dots,.intro-nav{flex:0 0 auto;}
+@media(max-width:560px){ .intro-bar{gap:8px;padding:0 10px;} .intro-dots{gap:4px;} .idot{width:7px;height:7px;} .intro-nav{gap:6px;} .intro-nav .ibtn.primary{padding:9px 11px;} #introBarName{display:none;} }
+@media(max-width:400px){ .intro-brand{display:none;} }
+@media(max-width:720px){ .intro-hint{display:none;} }   /* «barra espaciadora o →…»: en un móvil no hay teclado y la línea tapaba el botón */
 .intro-brand span{color:var(--muted);font-weight:600;letter-spacing:0;}
 .intro-dots{display:flex;gap:7px;margin:0 auto;}
 .idot{width:9px;height:9px;border-radius:50%;background:#26325e;cursor:pointer;transition:all .2s;}
@@ -758,6 +767,25 @@ footer .lock{color:var(--gold1);}
 .igen-cap{font-size:15px;color:var(--muted);text-align:center;max-width:620px;line-height:1.6;min-height:48px;margin:0;}
 .igen-cap b{color:var(--gold-soft);}
 .igen-controls{display:flex;gap:12px;align-items:center;}
+/* (7-oct-2026) génesis MÚLTIPLE: varias tarjetas a la vez y un mismo gesto en todas (carta 1.4) */
+.igenN-grid{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,auto));gap:12px 16px;justify-content:center;justify-items:center;align-items:start;width:100%;}
+.igenN-grid.porcol{grid-auto-flow:column;grid-template-rows:repeat(var(--filas,4),auto);}
+.igenN-cell{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;max-width:100%;}
+.igenN-hold{position:relative;display:flex;align-items:center;justify-content:center;border-radius:14px;max-width:100%;min-width:0;}
+.igenN-cell.vacia .igenN-hold{outline:1.5px dashed var(--line);outline-offset:-2px;background:rgba(255,255,255,.03);}
+.igenN-lab{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);font-weight:800;margin:0;text-align:center;line-height:1.3;}
+.igenN-cell.vacia .igenN-lab{opacity:.55;}
+.igenN-hold .ipaper{position:relative;transition:opacity .72s ease,transform .72s ease;max-width:100%;min-width:0;}
+.igenN-hold .ipaper svg{min-width:0;}
+.igenN-hold .ipaper.big{padding:10px 14px;}
+.igenN-hold .ipaper.bye{position:absolute;opacity:0;pointer-events:none;}
+.igenN-hold .ipaper.sprout{animation:isprout .55s cubic-bezier(.2,1.4,.4,1);}
+.igenN-hold .ipaper.melt{animation:imelt .8s ease;}
+.igenN-hold .ipaper.clickable{cursor:pointer;}
+.igenN .igen-cap{max-width:780px;min-height:44px;}
+.igenN.estrecha .igenN-grid{gap:9px 10px;}
+.igenN.estrecha .igenN-hold .ipaper.big{padding:7px 9px;}
+.igenN.estrecha .igenN-lab{font-size:9.5px;letter-spacing:.08em;}
 
 /* iluminación de cabezas */
 .ihit,.ihit *{fill:#0ea36f !important;stroke:#0ea36f !important;}
@@ -1344,13 +1372,23 @@ const GE_WORLDS=[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","q"],"beams":[[0,1]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["q","16","16"],"beams":[[1,2]]}
       ] },
-      { id:"c1_4", atlasId:"1.4", name:"Síncopas (s.binaria) · todas las variantes", lecs:"25–28", ref:"pág. 18", note:"Síncopa estándar (de pulso), síncopa breve (de fracción) y combinaciones con corchea + negra + dos semicorcheas y similares.",
+      { id:"c1_4", atlasId:"1.4", name:"Síncopas (s.binaria) · todas las variantes", lecs:"25–28", ref:"pág. 18", note:"Síncopa estándar y síncopa doble (de pulso), síncopa breve (de fracción) y sus variantes: dos semicorcheas en lugar de la primera corchea, de la última o de las dos.",
+        /* (7-oct-2026, Iago: «la síncopa doble presente en todo») la doble y sus tres variantes. Ocupan TRES pulsos, así
+           que son de 3/4: «extra» = no cambian el compás de la carta (sigue siendo de 2/4; el generador las mete donde
+           caben, en 3/4 y 4/4) y «fam» = familia, para que el quiz reparta sin alargarse (ver quiz:). */
+        /* compasesExtra (7-oct, tarde · Iago: «yo pondría cuatro compases, porque dos compases es demasiado poco»): en
+           «Identifica el pulso», la frase de la ronda de la doble tiene cuatro compases de 3/4 (doce pulsos). */
+        quiz:{n:5, compas:"3/4", compasesExtra:4},
         cells:[
-        {"ts":"2/4","notes":["8","q","8"],"label":"estándar"},
-        {"ts":"2/4","notes":["16","8","16","16","8","16"],"beams":[[0,1,2],[3,4,5]],"label":"breve"},
-        {"ts":"2/4","notes":["8","q","16","16"],"beams":[[2,3]]},
-        {"ts":"2/4","notes":["16","16","q","8"],"beams":[[0,1]]},
-        {"ts":"2/4","notes":["16","16","q","16","16"],"beams":[[0,1],[3,4]]}
+        {"ts":"2/4","notes":["8","q","8"],"label":"estándar","fam":"estandar"},
+        {"ts":"3/4","notes":["8","q","q","8"],"label":"doble","fam":"doble","extra":true},
+        {"ts":"2/4","notes":["16","8","16","16","8","16"],"beams":[[0,1,2],[3,4,5]],"label":"breve","fam":"breve"},
+        {"ts":"2/4","notes":["8","q","16","16"],"beams":[[2,3]],"fam":"estandar"},
+        {"ts":"2/4","notes":["16","16","q","8"],"beams":[[0,1]],"fam":"estandar"},
+        {"ts":"2/4","notes":["16","16","q","16","16"],"beams":[[0,1],[3,4]],"fam":"estandar"},
+        {"ts":"3/4","notes":["8","q","q","16","16"],"beams":[[3,4]],"fam":"doble","extra":true},
+        {"ts":"3/4","notes":["16","16","q","q","8"],"beams":[[0,1]],"fam":"doble","extra":true},
+        {"ts":"3/4","notes":["16","16","q","q","16","16"],"beams":[[0,1],[4,5]],"fam":"doble","extra":true}
       ] },
       { id:"c1_5", atlasId:"1.5", name:"Silencio de semicorchea (s.binaria)", lecs:"29–32", ref:"pág. 20", note:"El silencio de semicorchea en sus cuatro posiciones dentro del pulso de cuatro semicorcheas.",
         cells:[
@@ -1631,14 +1669,35 @@ function genMeasureFromCards(time, activeCards, pick, opts={}){
   }
   // si hay células de COMPÁS ENTERO (síncopas binarias, blanca, GVE, fusas...), con buena prob soltar una
   // (3-ago · PROPUESTA: solo se añade la etiqueta _cell para el filtro anti-repetición; la probabilidad NO cambia)
-  if(barCells.length && (!pulseCells.length || pick([true,true,false]))){
+  /* (7-oct-2026, Iago: «la síncopa doble presente en todo») Las células «extra» (la síncopa doble de la 1.4, de 3/4)
+     no son el compás propio de su carta: si en este compás solo hay de esas, sale una de cada tres veces y el resto
+     se monta por pulsos como siempre (con las síncopas de dos pulsos). Sin células «extra» todo es igual que antes:
+     mismas tiradas, mismas lecciones. */
+  const extraBar=barCells.filter(c=>c.extra), plainBar=barCells.filter(c=>!c.extra);
+  if(plainBar.length && (!pulseCells.length || pick([true,true,false]))){
     const mm=geCellToMeasure(pick(barCells), cap); mm._cell=true; return mm;
   }
+  if(!plainBar.length && extraBar.length && pick([true,false,false])){
+    const mm=geCellToMeasure(pick(extraBar), cap); mm._cell=true; return mm;
+  }
+  // BLOQUES de 3 pulsos: células «extra» de compás de OTRA métrica del mismo pulso que ocupan 3 pulsos (la síncopa
+  // doble, de 3/4, dentro de un 4/4)
+  const threePulseBeats = 3*(mk.pulseBeats||1);
+  const block3=[]; activeCards.forEach(c=>(c.cells||[]).forEach(cell=>{ if(cell.equiv || !cell.extra) return;
+    if(geCellScope(cell)==='bar' && cell.ts!==time && sameKind(cell.ts) && Math.abs(geCellBeats(cell)-threePulseBeats)<1e-6) block3.push(cell);
+  }));
   // TILE por pulsos: bloque de 2 pulsos (síncopa de otra métrica), célula de pulso (dificultad) o relleno neutro
   const notes=[],beams=[],tuplets=[]; let groupInfo=null, placedTuplet=false;
   const P=mk.pulses||Math.round(cap/(mk.pulseBeats||1));
   let p=0;
   while(p<P){
+    // (7-oct-2026) ¿un BLOQUE de 3 pulsos? (la síncopa doble dentro de un 4/4): una de cada tres veces que quepa
+    if(block3.length && (P-p)>=3 && pick([true,false,false])){
+      const cell=pick(block3); const base=notes.length;
+      cell.notes.forEach(n=>notes.push(geNoteFrom(n)));
+      (cell.beams||[]).forEach(b=>beams.push(b.map(i=>i+base)));
+      p+=3; continue;
+    }
     // ¿colocar un BLOQUE de 2 pulsos? (síncopa binaria en 3/4·4/4, o célula 6/8 en 9/8·12/8)
     if(blockCells.length && (P-p)>=2 && pick([true,true,false])){   /* 3-ago (Iago·G2): 50%→67%, más materia en compases de 3-4 pulsos */
       const cell=pick(blockCells);
@@ -3163,7 +3222,7 @@ function gp1Config(worldId, cards){
   const disp=usable.some(c=>c.disp);
   // meterPool: compases (ts) de las células usables; si está vacío, el del mundo
   const ms=new Set();
-  usable.forEach(c=>(c.cells||[]).forEach(cell=>{ if(cell.ts && !cell.equiv) ms.add(cell.ts); }));
+  usable.forEach(c=>(c.cells||[]).forEach(cell=>{ if(cell.ts && !cell.equiv && !cell.extra) ms.add(cell.ts); }));   /* (7-oct-2026) las «extra» no deciden el compás */
   let meterPool=[...ms];
   if(clave) meterPool=['4/4'];
   if(!meterPool.length) meterPool=(W.meterPool&&W.meterPool.length)?W.meterPool.slice():['2/4'];
@@ -3486,7 +3545,7 @@ function gp1CombConfig(worldIds){
   worldIds.forEach(wid=>{ const W=gp1World(wid); if(!W) return; W.cards.forEach(c=>{ if(gp1CombUsableCard(c)) cardObjs.push(c); }); });
   // pool de compases PONDERADO: cada compás pesa según cuántas cartas aportan células en él
   const ms=new Set(); const msW=[];
-  cardObjs.forEach(c=>{ const own=new Set(); (c.cells||[]).forEach(cell=>{ if(cell.ts && !cell.equiv) own.add(cell.ts); }); own.forEach(t=>{ ms.add(t); msW.push(t); }); });
+  cardObjs.forEach(c=>{ const own=new Set(); (c.cells||[]).forEach(cell=>{ if(cell.ts && !cell.equiv && !cell.extra) own.add(cell.ts); }); own.forEach(t=>{ ms.add(t); msW.push(t); }); });   /* (7-oct-2026) las «extra» no deciden el compás */
   let meterPool=[...ms]; if(!meterPool.length){ meterPool=['2/4']; msW.push('2/4'); }
   const hasFusas=cardObjs.some(c=>c.slow);
   const disp=cardObjs.some(c=>c.disp);
@@ -3539,6 +3598,7 @@ function cellFitsTime(cell,time){
   if(cell.ts===time) return true;
   if(geCellScope(cell)==='pulse' && sameKind) return true;
   if(geCellScope(cell)==='bar' && sameKind && Math.abs(geCellBeats(cell)-2*(mk.pulseBeats||1))<1e-6) return true;   // bloque de 2 pulsos
+  if(cell.extra && geCellScope(cell)==='bar' && sameKind && (mk.pulses||0)>=4 && Math.abs(geCellBeats(cell)-3*(mk.pulseBeats||1))<1e-6) return true;   // (7-oct-2026) bloque de 3 pulsos
   return false;
 }
 function cardCanSound(card, times){ return (card.cells||[]).some(cell=>times.some(t=>cellFitsTime(cell,t))); }
@@ -4045,7 +4105,9 @@ function cardExampleMeasure(world, card, variant){
     const notes=cell.notes.map(noteOf);
     const beams=(cell.beams||[]).map(b=>b.slice());
     const tuplets=(cell.tuplets||[]).map(t=>{ const info=geTupletOcc(cell,t); return {idx:t.idx.slice(), group:{ratioNum:info.ratioNum, ratioDen:info.ratioDen}}; });
-    return {time:cell.ts, notes, tuplets, beams, ties:(cell.ties||[]).map(t=>t.slice()), clef:cell.clef||null};
+    const mEj={time:cell.ts, notes, tuplets, beams, ties:(cell.ties||[]).map(t=>t.slice()), clef:cell.clef||null};
+    if(cell.extra) mEj._extra=true;   /* (7-oct-2026) para la cinta del mundo */
+    return mEj;
   }
 
   // célula de PULSO → compás de dos pulsos
@@ -4208,7 +4270,7 @@ function worldTapeMeasures(Wd){
   const runFor=t=>{ const den=parseInt((t.split('/')[1]||'4'),10); return den===2 ? 4 : 3; };   // blanca (/2): frases de 4 compases
   const out=[];
   if(order.length===1){ const b=buckets[order[0]]; const n=Math.max(runFor(order[0]), Math.min(7, b.length)); for(let i=0;i<n;i++) out.push(b[i%b.length]); }
-  else { order.forEach(t=>{ const b=buckets[t], R=runFor(t); for(let i=0;i<R;i++) out.push(b[i%b.length]); }); }
+  else { order.forEach(t=>{ const b=buckets[t], R=(b.every(m=>m._extra) ? b.length : runFor(t)); for(let i=0;i<R;i++) out.push(b[i%b.length]); }); }   /* (7-oct-2026) un compás que solo traen células «extra» (la síncopa doble) pasa una vez, sin repetirse */
   return out.slice(0, 12);
 }
 
@@ -5889,6 +5951,9 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       // (Iago 14-sep-2026) ¿entró desde la campana de tareas o por su cuenta?
       // Si vino de tareas, al acabar el quiz le toca volver a SUS lecciones,
       // no al generador de ejercicios.
+      /* (7-oct-2026, Iago: la síncopa doble en el quiz «sustituyendo otras, no añadiendo») MEZCLA: la carta tiene más
+         ritmos de los que el quiz trabaja; cada fase elige `n`, repartidos por familias. Solo las cartas con quiz:{…} */
+      mezcla: (card.quiz && card.quiz.n>0) ? {n:card.quiz.n, compas:card.quiz.compas||null, compasesExtra:card.quiz.compasesExtra||undefined} : undefined,
       deTareas: (function(){ try{ const q=new URLSearchParams(location.search);
         return !!(q.get('envio') && q.get('cuenta')); }catch(e){ return false; } })(),
       /* 3-ago-2026 · quiz-fix: tokens normalizados (clave de Do → solo ritmo), tuplets con
@@ -5923,7 +5988,8 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
         }
         return {ts:ce.ts, beat:ce.beat, beats:ce.beats, scope:scope, notes:toks,
                 beams:(ce.beams||[]).map(b=>b.slice()), ties:(ce.ties||[]).map(t=>t.slice()),
-                tuplets:tup?[tup]:[], beatsReal:beatsReal, unit:unit, label:ce.label||undefined};
+                tuplets:tup?[tup]:[], beatsReal:beatsReal, unit:unit, label:ce.label||undefined,
+                fam:ce.fam||undefined, extra:ce.extra?true:undefined};   /* (7-oct-2026) familia y «extra»: solo las cartas con MEZCLA */
       })
     };
   }
@@ -7034,6 +7100,140 @@ SLIDE_TYPES.genesis=function(host,s){
   return function(){ clearTimeout(sonarT); pararUno(); Loop.clear(); };
 };
 
+/* --- génesis MÚLTIPLE (7-oct-2026): varias tarjetas a la vez y un mismo gesto en todas ---
+   Iago: «pueden aparecer todas las variantes a la vez de una tacada. Es decir, que se vean varios pentagramas y que
+   se haga la animación de tajos, de fusiones a la vez.»
+   s.cells : [{id,label,g}]   casillas fijas de la rejilla (g = grupo: de él salen el pulso y el timbre, s.voces[g])
+   s.steps : [{caption, btn, anim, put:{id:{notes,beams,ties,join,cut,de}}, escucha:[ids]}]
+             put  = lo que cambia en ese paso (lo demás se queda como estaba)
+             join = parejas que se funden (anim 'fusion') · de + cut = nace de la casilla «de» con un tajo en «cut» (anim 'tajo')
+   Una casilla sin nada todavía se ve como un hueco con su rótulo y YA ocupa su sitio: al llenarse no se mueve nada.
+   Al aparecer, las tarjetas del paso suenan una detrás de otra (una vuelta cada una, con su pulso debajo). */
+SLIDE_TYPES.genesisN=function(host,s){
+  Loop.setTempo(Loop.baseSpq||Loop.spq);
+  const an=(window.innerWidth||1200);
+  const estrecha=an<(s.estrechaHasta||900);
+  const c=el('div','igenesis igenN'+(estrecha?' estrecha':''));
+  const movil=an<600;
+  c.appendChild(el('p','ikicker',(movil&&s.kickerMovil)||s.kicker||'¿DE DÓNDE VIENEN?'));
+  if(s.title) c.appendChild(el('h2','ititle2',(movil&&s.titleMovil)||s.title));
+  const grid=el('div','igenN-grid'+((estrecha&&s.filasMovil)?' porcol':''));
+  grid.style.setProperty('--cols',String(estrecha?(s.colsMovil||1):(s.cols||s.cells.length)));
+  if(estrecha&&s.filasMovil) grid.style.setProperty('--filas',String(s.filasMovil));
+  c.appendChild(grid);
+  const cap=el('p','igen-cap',''); c.appendChild(cap);
+  const controls=el('div','igen-controls');
+  const btn=el('button','ibtn action','');
+  const replay=el('button','ibtn ghost','↺ desde el principio'); replay.style.display='none';
+  controls.appendChild(btn); controls.appendChild(replay); c.appendChild(controls);
+  c.appendChild(el('p','igen-hint',s.hint||'🔊 Al aparecer suenan una detrás de otra · pulsa una tarjeta para volver a escucharla'));
+  host.appendChild(c);
+
+  const T=s.talla||{};
+  const op=Object.assign({cls:'big',noPlay:true}, estrecha?(movil?(T.movil||{height:76,stretch:0.9,minInner:26}):(T.tableta||T.media||{height:92,stretch:1.05,minInner:34}))
+                                                          :(an<1280?(T.media||{height:92,stretch:1.05,minInner:34}):((an>=1500&&T.grande)?T.grande:(T.ancha||{height:104,stretch:1.25,minInner:40}))));
+  const C={};
+  s.cells.forEach(d=>{ const cell=el('div','igenN-cell vacia'); const hold=el('div','igenN-hold'); cell.appendChild(hold);
+    cell.appendChild(el('p','igenN-lab',d.label||'')); grid.appendChild(cell); C[d.id]={cell:cell,hold:hold,chip:null,pre:null,spec:null,def:d}; });
+  /* el sitio de cada casilla se reserva con la tarjeta más grande que va a tener */
+  s.cells.forEach(d=>{ let w=0,h=0; const k=C[d.id];
+    s.steps.forEach(st=>{ const sp=st.put&&st.put[d.id]; if(!sp) return;
+      /* se mide colgada de la diapositiva (ancho de sobra), no de su casilla, que todavía no mide nada */
+      try{ const m=el('div','igenN-hold'); m.style.cssText='position:absolute;left:0;top:0;visibility:hidden;max-width:none;'; const t=paperChip(sp,op); t.style.maxWidth='none'; m.appendChild(t); grid.appendChild(m);
+        w=Math.max(w,t.offsetWidth); h=Math.max(h,t.offsetHeight); m.remove(); }catch(e){} });
+    if(w){ k.cell.style.width=w+'px'; k.hold.style.width='100%'; k.hold.style.aspectRatio=w+' / '+h; } });   /* la casilla se encoge con la pantalla (max-width:100%) y el hueco guarda la proporción */
+  stagger([].slice.call(c.children),60,120);
+
+  let step=-1, busy=false, seqT=null, seqN=0, vivo=true; const esperas=[];
+  const luego=(fn,ms)=>{ const t=setTimeout(()=>{ if(vivo) fn(); },ms); esperas.push(t); return t; };
+  const vozDe=id=>(s.voces&&s.voces[C[id].def.g])||{};
+  function sonarUna(id){ const k=C[id]; if(!k||!k.chip||!k.spec) return 0; const v=vozDe(id);
+    tocarUnaVez(k.chip,k.spec,null,{timbre:v.timbre||'clave',freq:v.freq||523,gain:1,pulse:v.pulse,loopBeats:v.loopBeats});
+    return (v.loopBeats||iOnsets(k.spec).total)*(Loop.spq||0.8)*1000; }
+  function pararSeq(){ clearTimeout(seqT); seqT=null; seqN++; }
+  function secuencia(ids,espera){ pararSeq(); const mio=seqN; let i=0;
+    const paso=()=>{ if(!vivo||mio!==seqN||i>=ids.length) return; const ms=sonarUna(ids[i++]); seqT=setTimeout(paso,ms+(s.pausa||360)); };
+    seqT=setTimeout(paso,espera||320); }
+  /* la tarjeta se queda con su ancho natural apuntado: la app convierte en «fluidos» (width:100%) los dibujos de 300 px
+     o más (17-sep, «pentagramas que caben») y, sin un ancho en la tarjeta, ese 100 % no tendría de dónde salir */
+  function fija(ch){ try{ const w=ch.offsetWidth; if(w>0){ ch.style.boxSizing='border-box'; ch.style.width=w+'px'; } }catch(e){} }   /* offsetWidth: sin la escala de la animación de entrada */
+  function pon(id,spec,animCls){ const k=C[id];
+    const nu=paperChip(spec,op); nu.classList.add('ipaper-play','clickable'); if(animCls) nu.classList.add(animCls);
+    if(k.chip){ const old=k.chip; old.classList.add('bye'); setTimeout(()=>{try{old.remove();}catch(e){}},520); }
+    k.hold.appendChild(nu); fija(nu); k.chip=nu; k.spec=spec; k.cell.classList.remove('vacia');
+    nu.onclick=()=>{ const sonaba=!!(_uno&&_uno.el===nu); pararSeq(); pararUno(); if(!sonaba) sonarUna(id); };
+    return nu; }
+  /* la cuchillada sobre la(s) nota(s) que se dividen, dentro de su casilla */
+  function tajoEn(id,cut){ const k=C[id], hold=k.hold, chip=k.pre||k.chip; if(!chip) return;
+    const idxs=(cut==null)?[null]:(Array.isArray(cut)?cut:[cut]); const hr=hold.getBoundingClientRect();
+    idxs.forEach(ix=>{ const sl=el('div','islash'); hold.appendChild(sl); let puesto=false;
+      try{ const e=(ix!=null)&&chip.__drawn&&chip.__drawn.els[ix];
+        if(e){ const r=e.getBoundingClientRect(); sl.style.left=(r.left+r.width/2-hr.left)+'px'; sl.style.top=(r.top+r.height/2-hr.top)+'px'; puesto=true; } }catch(e){}
+      const w=Math.max(64,Math.min(150,hr.width*0.6)); sl.style.width=w+'px'; sl.style.marginLeft=(-w/2)+'px';
+      if(!puesto){ sl.style.left='50%'; sl.style.top='50%'; }
+      void sl.offsetWidth; sl.classList.add('go'); setTimeout(()=>{try{sl.remove();}catch(e){}},700); });
+    const fl=el('div','iflash'); hold.appendChild(fl); void fl.offsetWidth; fl.classList.add('go'); setTimeout(()=>{try{fl.remove();}catch(e){}},700); }
+  /* la fusión: las cabezas viajan la una hacia la otra (lo mismo que en la génesis de una tarjeta) */
+  function fundeEn(id,pairs){ const chip=C[id].chip; let ok=false;
+    try{
+      const svg=chip&&chip.querySelector('svg');
+      const scale=svg?(svg.getBoundingClientRect().width/(svg.width.baseVal.value||svg.getBoundingClientRect().width)):1;
+      pairs.forEach(p=>{ const els=p.map(i=>chip.__drawn.els[i]).filter(Boolean);
+        if(els.length===2){ const r0=els[0].getBoundingClientRect(), r1=els[1].getBoundingClientRect();
+          const dx=((r1.left+r1.width/2)-(r0.left+r0.width/2))/2/(scale||1);
+          els[0].style.transition='transform .5s cubic-bezier(.5,0,.5,1)'; els[1].style.transition='transform .5s cubic-bezier(.5,0,.5,1)';
+          els[0].style.transform='translate('+dx.toFixed(1)+'px,0)'; els[1].style.transform='translate('+(-dx).toFixed(1)+'px,0)';
+          els.forEach(e=>e.classList.add('imark')); ok=true; } });
+      if(ok&&svg){
+        const zones=pairs.map(p=>{ const es=p.map(i=>chip.__drawn.els[i]).filter(Boolean); if(es.length!==2) return null;
+          const r0=es[0].getBoundingClientRect(), r1=es[1].getBoundingClientRect();
+          return {l:Math.min(r0.left,r1.left)-6,r:Math.max(r0.right,r1.right)+6,dxpx:Math.abs((r1.left+r1.width/2)-(r0.left+r0.width/2))/2}; }).filter(Boolean);
+        svg.querySelectorAll('.vf-beam').forEach(b=>{ try{ const rb=b.getBoundingClientRect();
+          const inside=zones.find(z=> rb.left>=z.l && rb.right<=z.r);
+          if(inside){ const sc=Math.max(0.3,(rb.width-2*inside.dxpx)/rb.width);
+            b.style.transformBox='fill-box'; b.style.transformOrigin='center'; b.style.transition='transform .5s cubic-bezier(.5,0,.5,1)'; b.style.transform='scaleX('+sc.toFixed(2)+')'; }
+          else if(zones.some(z=> rb.right>z.l && rb.left<z.r)){ b.style.transition='opacity .5s ease'; b.style.opacity='0.15'; }
+        }catch(e){} });
+      }
+    }catch(e){}
+    return ok; }
+  function labelFor(){ if(step>=s.steps.length-1) return null; const nx=s.steps[step+1];
+    return nx.btn||(({tajo:'⚡ ¡TAJO!',fusion:'✨ Fusionar'})[nx.anim]||'Siguiente paso'); }
+  function paintBtns(){ const lb=labelFor();
+    if(lb){ btn.textContent=lb; btn.style.display=''; replay.style.display='none'; } else { btn.style.display='none'; replay.style.display=''; } }
+  function advance(){
+    if(busy||step>=s.steps.length-1) return;
+    const nxt=s.steps[step+1]; const anim=(step<0)?null:(nxt.anim||null); const ids=Object.keys(nxt.put||{});
+    const termina=()=>{ step++; const pie=(movil&&nxt.captionMovil!=null)?nxt.captionMovil:nxt.caption; if(pie!=null) cap.innerHTML=pie; paintBtns(); busy=false; btn.disabled=false;
+      secuencia((nxt.escucha||ids).filter(id=>C[id]&&C[id].chip), step<=0?650:420); };
+    pararSeq(); pararUno();
+    if(anim==='fusion'){
+      busy=true; btn.disabled=true; let alguno=false;
+      ids.forEach(id=>{ const sp=nxt.put[id]; if(sp.join&&C[id].chip){ if(fundeEn(id,Array.isArray(sp.join[0])?sp.join:[sp.join])) alguno=true; } });
+      try{ fusionSound(); }catch(e){}
+      luego(()=>{ ids.forEach(id=>{ const fl=el('div','iflash'); C[id].hold.appendChild(fl); void fl.offsetWidth; fl.classList.add('go','green'); setTimeout(()=>{try{fl.remove();}catch(e){}},700);
+        pon(id,nxt.put[id],'melt'); }); termina(); }, alguno?540:0);
+    } else if(anim==='tajo'){
+      busy=true; btn.disabled=true;
+      /* 1) en cada hueco aparece una copia de la síncopa de la que nace… */
+      ids.forEach(id=>{ const sp=nxt.put[id], k=C[id]; const origen=sp.de&&C[sp.de]&&C[sp.de].spec;
+        if(origen&&!k.chip){ const pre=paperChip(origen,op); pre.classList.add('melt'); k.hold.appendChild(pre); fija(pre); k.pre=pre; k.cell.classList.remove('vacia'); } });
+      if(nxt.captionPre!=null) cap.innerHTML=nxt.captionPre;
+      /* 2) …los tajos, todos a la vez… */
+      luego(()=>{ ids.forEach(id=>tajoEn(id,nxt.put[id].cut)); try{ slashSound(); setTimeout(()=>{ try{ slashSound(); }catch(e){} },110); }catch(e){}
+        /* 3) …y la consecuencia */
+        luego(()=>{ ids.forEach(id=>{ const k=C[id]; if(k.pre){ const p=k.pre; k.pre=null; p.classList.add('bye'); setTimeout(()=>{try{p.remove();}catch(e){}},520); } pon(id,nxt.put[id],'sprout'); }); termina(); }, 360);
+      }, 820);
+    } else { ids.forEach(id=>pon(id,nxt.put[id], step<0?null:'melt')); termina(); }
+  }
+  btn.onclick=advance;
+  replay.onclick=()=>{ pararSeq(); pararUno(); step=-1; busy=false;
+    s.cells.forEach(d=>{ const k=C[d.id]; if(k.chip){ try{k.chip.remove();}catch(e){} } if(k.pre){ try{k.pre.remove();}catch(e){} } k.chip=null; k.pre=null; k.spec=null; k.cell.classList.add('vacia'); });
+    advance(); };
+  advance();
+  return function(){ vivo=false; esperas.forEach(clearTimeout); pararSeq(); pararUno(); Loop.clear(); };
+};
+
 /* --- cambio de talla (m2) --- */
 SLIDE_TYPES.talla=function(host,s){
   /* el pulso (negra antes, blanca después) dura LO MISMO en toda la intro del mundo 2 */
@@ -7542,11 +7742,17 @@ D['1.4']={spq:0.75,slides:function(card){
   /* (7-oct-2026) árbol de tres ramas: en pantallas bajas (un portátil) o no muy anchas (una tableta), nodos algo
      más pequeños para que quepa entero; hasta 960 px de ancho las ramas van una debajo de otra (ver
      los estilos) y no hace falta encoger nada */
-  const an=(window.innerWidth||1200), bajo=(an>960 && ((window.innerHeight||900)<880 || an<1100)), C14=bajo?'i14c':'', H0=bajo?58:88, H1=bajo?66:88,
-        HL=bajo?{h:52,stretch:0.85,minInner:26}:{h:60,stretch:0.95,minInner:30};
+  /* (7-oct, tarde) con las variantes de la doble el árbol es más ancho: tres tallas. «medio» (de 961 a 1179 px: una
+     tableta tumbada) = todo más pequeño para que quepan las tres ramas; «bajo» (portátil, o menos de 1320 px) = como
+     esta mañana; y la grande, solo en pantallas anchas y altas. */
+  const an=(window.innerWidth||1200), al=(window.innerHeight||900), medio=(an>960 && an<1180), bajo=(an>960 && (al<880 || an<1320)), C14=bajo?('i14c'+(medio?' i14m':'')):'',
+        /* H1 no baja de 66 ni en «medio»: con menos, a las «6 corcheas ligadas» se les cortan las ligaduras por abajo */
+        H0=medio?50:(bajo?58:88), H1=bajo?66:88, SB=medio?0.9:1.35,
+        HL=medio?{h:44,stretch:0.7,minInner:22}:(bajo?{h:52,stretch:0.85,minInner:26}:{h:60,stretch:0.95,minInner:30}),
+        HLD=medio?{h:44,stretch:0.66,minInner:22}:(bajo?{h:52,stretch:0.8,minInner:26}:{h:60,stretch:0.9,minInner:30});   /* las hojas de la doble: una figura más, un pelín más apretadas */
   return [
   {type:'cover',kicker:'INTRO · CARTA 1.4',title:card.name,sub:'La nota importante cae donde NO la esperas: a contratiempo. Tres ramas: la síncopa estándar y la doble (de pulso) y la breve (de fracción).',
-   cells:[{notes:['8','q','8']},{notes:['8','q','q','8']},{notes:['16','8','16'],beams:[[0,1,2]]},{notes:['8','q','16','16'],beams:[[2,3]]},{notes:['16','16','q','16','16'],beams:[[0,1],[3,4]]}],ref:card.ref||''},
+   cells:[{notes:['8','q','8']},{notes:['8','q','q','8']},{notes:['16','8','16'],beams:[[0,1,2]]},{notes:['8','q','16','16'],beams:[[2,3]]},{notes:['16','16','q','q','16','16'],beams:[[0,1],[4,5]]}],ref:card.ref||''},
   {type:'facts',blocks:[
     {q:'¿Cuánto ocupa la síncopa ESTÁNDAR?',fig:{notes:['h']},a:'Una <b>blanca</b> — dos pulsos completos.'},
     {q:'¿Y la síncopa DOBLE?',fig:{notes:['hd']},a:'Una <b>blanca con puntillo</b> — tres pulsos completos.'},
@@ -7554,43 +7760,67 @@ D['1.4']={spq:0.75,slides:function(card){
     {q:'¿Dónde viven?',meters:BIN,a:'✓ En los tres. Ojo: la <b>doble</b> ocupa tres pulsos, así que solo cabe en 3/4 y 4/4.'},
     {q:'¿De qué las conoces?',a:'De las subdivisiones directas: <b>4 corcheas</b> (rama estándar), <b>6 corcheas</b> (rama doble) y <b>4 semicorcheas</b> (rama breve).',
      figs:[{notes:['8','8','8','8'],beams:[[0,1],[2,3]]},{notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]]},{notes:['16','16','16','16'],beams:[[0,1,2,3]]}]}]},
-  {type:'genesis',mode:'fusion',title:'La síncopa estándar: nace de cuatro corcheas',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',steps:[
-    {notes:['8','8','8','8'],beams:[[0,1],[2,3]],caption:'De la blanca pasamos DIRECTAMENTE a cuatro corcheas: la síncopa vive en la subdivisión.'},
-    {notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Liga las dos del medio',caption:'Ya SUENA la síncopa — la escritura todavía no se ha enterado.'},
-    {notes:['8','q','8'],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Corchea – <b>NEGRA</b> – corchea. La negra cae a contratiempo: eso es la síncopa estándar.'}]},
-  {type:'genesis',mode:'tajo',title:'Las variantes: el tajo vuelve',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',base:{notes:['8','q','8']},steps:[
-    {notes:['8','q','8'],caption:'La síncopa base. Ahora, el tajo sobre sus corcheas.'},
-    {notes:['8','q','16','16'],beams:[[2,3]],mark:[2,3],cut:2,btn:'⚡ TAJO en la última corchea',caption:'La corchea final se divide en dos semicorcheas.'},
-    {notes:['16','16','q','8'],beams:[[0,1]],mark:[0,1],cut:0,viaBase:true,btn:'⚡ TAJO en la primera',caption:'Ahora la del principio.'},
-    {notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],mark:[0,1,3,4],cut:[0,2],viaBase:true,btn:'⚡ ¡TAJO DOBLE!',caption:'Las dos divididas a la vez: la variante completa.'}]},
-  {type:'genesis',mode:'fusion',title:'La síncopa DOBLE: la misma fusión, dos veces',loopBeats:3,pulse:{notes:['q','q','q']},timbre:'marimba',steps:[
-    {notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]],caption:'De la blanca con puntillo pasamos DIRECTAMENTE a seis corcheas: tres parejas.'},
-    {notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]],ties:[[1,2],[3,4]],mark:[1,2,3,4],btn:'✨ Liga todas menos la primera y la última',caption:'Dos ligaduras, una en cada cambio de pulso: ya SUENA la síncopa doble — la escritura todavía no se ha enterado.'},
-    {notes:['8','q','q','8'],mark:[1,2],join:[[1,2],[3,4]],btn:'✨ Consuma las dos fusiones',caption:'Corchea – <b>NEGRA – NEGRA</b> – corchea. Dos negras seguidas a contratiempo: eso es la síncopa doble.'}]},
-  {type:'genesis',mode:'fusion',title:'La síncopa BREVE: la misma película, un piso más abajo',loopBeats:1,pulse:{notes:['q']},timbre:'bell',steps:[
-    {notes:['16','16','16','16'],beams:[[0,1,2,3]],caption:'Rama aparte: de la NEGRA pasamos directamente a cuatro semicorcheas.'},
-    {notes:['16','16','16','16'],beams:[[0,1,2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Liga las dos del medio',caption:'El mismo gesto de antes… a mitad de tamaño.'},
-    {notes:['16','8','16'],beams:[[0,1,2]],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Semicorchea – <b>CORCHEA</b> – semicorchea: la síncopa breve. Cabe entera en un pulso.'}]},
-  /* (7-oct-2026) TRES ramas: estándar · doble · breve. Las cuatro hojas de la estándar van de dos en dos para que quepan
-     las tres columnas; en pantallas bajas (portátil de 768 de alto) los nodos se encogen un poco para que se vea entero. */
+  /* (7-oct-2026, tarde) Iago: «la síncopa doble presente en todo […] Y en la intro también. Puede ser una intro que tenga
+     más sobrecarga. Quizá en el momento este en el que se hacen los tajos y las fusiones pueden aparecer todas las
+     variantes a la vez de una tacada. Es decir, que se vean varios pentagramas y que se haga la animación de tajos, de
+     fusiones a la vez.»  →  dos diapositivas con varias tarjetas: LA FUSIÓN (estándar, doble y breve a la vez) y EL
+     TAJO (las seis variantes de un golpe). Sustituyen a las cuatro de antes (fusión estándar · tajo de la estándar ·
+     fusión doble · fusión breve), que quedan en el historial (commit 3a207a8). */
+  {type:'genesisN',mode:'fusion',kicker:'LA FUSIÓN — unir · las tres síncopas a la vez',kickerMovil:'LA FUSIÓN — unir · las tres a la vez',title:'Tres síncopas, una misma fusión',cols:3,colsMovil:1,estrechaHasta:820,
+   talla:{grande:{height:150,stretch:2.0,minInner:52},ancha:{height:130,stretch:1.7,minInner:46},media:{height:104,stretch:1.2,minInner:40},tableta:{height:112,stretch:1.45,minInner:40},movil:{height:78,stretch:1.05,minInner:32}},
+   voces:{e:{loopBeats:2,pulse:{notes:['q','q']},timbre:'clave'},d:{loopBeats:3,pulse:{notes:['q','q','q']},timbre:'marimba'},b:{loopBeats:1,pulse:{notes:['q']},timbre:'bell'}},
+   /* (7-oct, tarde) Iago: «pondría la síncopa breve a la izquierda y así estaría ordenado por duración: negra, blanca,
+      blanca con puntillo» → breve · estándar · doble, aquí y en el árbol (y suenan en ese orden: 1, 2 y 3 pulsos). */
+   cells:[{id:'b',g:'b',label:'breve · 1 pulso'},{id:'e',g:'e',label:'estándar · 2 pulsos'},{id:'d',g:'d',label:'doble · 3 pulsos'}],
+   steps:[
+    {caption:'De la negra, de la blanca y de la blanca con puntillo pasamos DIRECTAMENTE a su subdivisión: cuatro semicorcheas, cuatro corcheas y seis corcheas.',
+     captionMovil:'Cada figura, DIRECTAMENTE a su subdivisión: 4 semicorcheas, 4 corcheas y 6 corcheas.',
+     put:{b:{notes:['16','16','16','16'],beams:[[0,1,2,3]]},e:{notes:['8','8','8','8'],beams:[[0,1],[2,3]]},d:{notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]]}}},
+    {btn:'✨ Liga todas menos la primera y la última',caption:'Ya SUENAN las tres síncopas — la escritura todavía no se ha enterado.',
+     put:{b:{notes:['16','16','16','16'],beams:[[0,1,2,3]],ties:[[1,2]]},e:{notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]]},d:{notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]],ties:[[1,2],[3,4]]}}},
+    {btn:'✨ Consuma las fusiones',anim:'fusion',caption:'Breve: semicorchea – <b>CORCHEA</b> – semicorchea. Estándar: corchea – <b>NEGRA</b> – corchea. Doble: corchea – <b>NEGRA – NEGRA</b> – corchea. La nota larga cae siempre a contratiempo.',
+     put:{b:{notes:['16','8','16'],beams:[[0,1,2]],join:[1,2]},e:{notes:['8','q','8'],join:[1,2]},d:{notes:['8','q','q','8'],join:[[1,2],[3,4]]}}}]},
+  {type:'genesisN',mode:'tajo',kicker:'EL TAJO — dividir · las seis variantes de una tacada',kickerMovil:'EL TAJO — dividir · seis de una tacada',title:'Las variantes: el mismo tajo en las dos síncopas',titleMovil:'El mismo tajo en las dos síncopas',cols:4,colsMovil:2,filasMovil:4,estrechaHasta:900,
+   talla:{grande:{height:114,stretch:1.4,minInner:44},ancha:{height:100,stretch:1.2,minInner:40},media:{height:86,stretch:0.92,minInner:30},tableta:{height:96,stretch:1.15,minInner:36},movil:{height:62,stretch:0.78,minInner:24}},
+   voces:{e:{loopBeats:2,pulse:{notes:['q','q']},timbre:'clave'},d:{loopBeats:3,pulse:{notes:['q','q','q']},timbre:'marimba'}},
+   cells:[{id:'e0',g:'e',label:'síncopa estándar'},{id:'e1',g:'e',label:'variante final'},{id:'e2',g:'e',label:'variante inicial'},{id:'e3',g:'e',label:'variante completa'},
+          {id:'d0',g:'d',label:'síncopa doble'},{id:'d1',g:'d',label:'doble · variante final'},{id:'d2',g:'d',label:'doble · variante inicial'},{id:'d3',g:'d',label:'doble · variante completa'}],
+   steps:[
+    {caption:'Las dos síncopas de pulso, cada una con tres huecos esperando. Ahora, el tajo sobre sus corcheas.',
+     captionMovil:'Dos síncopas de pulso y tres huecos para cada una. Ahora, el tajo.',
+     put:{e0:{notes:['8','q','8']},d0:{notes:['8','q','q','8']}}},
+    {btn:'⚡ ¡TAJOS! Las seis variantes de una tacada',anim:'tajo',captionPre:'<i>cada síncopa, tres copias…</i>',
+     caption:'El mismo tajo en las dos síncopas: en la <b>última</b> corchea, en la <b>primera</b>… o en <b>las dos</b>. Seis variantes de un solo golpe.',
+     put:{e1:{notes:['8','q','16','16'],beams:[[2,3]],de:'e0',cut:2},e2:{notes:['16','16','q','8'],beams:[[0,1]],de:'e0',cut:0},e3:{notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],de:'e0',cut:[0,2]},
+          d1:{notes:['8','q','q','16','16'],beams:[[3,4]],de:'d0',cut:3},d2:{notes:['16','16','q','q','8'],beams:[[0,1]],de:'d0',cut:0},d3:{notes:['16','16','q','q','16','16'],beams:[[0,1],[4,5]],de:'d0',cut:[0,3]}},
+     escucha:['e1','e2','e3','d1','d2','d3']}]},
+  /* (7-oct-2026) TRES ramas: breve · estándar · doble (por duración). Las hojas de la estándar y de la doble (la síncopa y sus tres
+     variantes) van de dos en dos para que quepan las tres columnas; en pantallas bajas (portátil de 768 de alto) los
+     nodos se encogen un poco para que se vea entero. (7-oct, tarde: «en el árbol no veo las variantes» → la doble, con
+     las suyas; y la cuarta de la estándar deja de llamarse «variante doble» para no confundirla: «variante completa».) */
   {type:'tree',spq:0.75,loopBeats:2,kicker:'EL ÁRBOL — tres ramas separadas que encajan (la breve gira el doble de rápido)',cols:[
+    /* (7-oct, tarde) Iago: la rama breve, a la IZQUIERDA → por duración: negra · blanca · blanca con puntillo */
+    {rows:[
+      {label:'rama BREVE · la negra',lvl:0,cls:C14,nodes:[{id:'rQ',notes:['q'],label:'negra',timbre:'drumHi',loopBeats:1,stretch:2.4,h:H0}]},
+      {lvl:1,cls:C14,nodes:[{id:'s4s',notes:['16','16','16','16'],beams:[[0,1,2,3]],label:'4 semicorcheas',timbre:'shaker',loopBeats:1,h:H1,stretch:SB}]},
+      {lvl:2,cls:C14,nodes:[{id:'l5',notes:['16','8','16'],beams:[[0,1,2]],label:'síncopa breve',timbre:'bell',loopBeats:1,h:H1,stretch:SB}]}]},
     {rows:[
       {label:'rama ESTÁNDAR · la blanca',lvl:0,cls:C14,nodes:[{id:'rH',notes:['h'],label:'blanca',timbre:'drum',loopBeats:2,stretch:2.4,h:H0}]},
-      {lvl:1,cls:C14,nodes:[{id:'s4c',notes:['8','8','8','8'],beams:[[0,1],[2,3]],label:'4 corcheas',timbre:'wood',loopBeats:2,h:H1}]},
-      {label:'los ritmos de la carta',lvl:2,cls:'wrap2 i14-2x2 '+C14,nodes:[
+      {lvl:1,cls:C14,nodes:[{id:'s4c',notes:['8','8','8','8'],beams:[[0,1],[2,3]],label:'4 corcheas',timbre:'wood',loopBeats:2,h:H1,stretch:SB}]},
+      {label:'la estándar y sus variantes',lvl:2,cls:'wrap2 i14-2x2 '+C14,nodes:[
         {id:'l1',notes:['8','q','8'],label:'síncopa estándar',timbre:'clave',loopBeats:2},
         {id:'l2',notes:['8','q','16','16'],beams:[[2,3]],label:'variante final',timbre:'marimba',loopBeats:2},
         {id:'l3',notes:['16','16','q','8'],beams:[[0,1]],label:'variante inicial',timbre:'blip',loopBeats:2},
-        {id:'l4',notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],label:'variante doble',timbre:'conga',loopBeats:2}].map(n=>Object.assign(n,HL))}]},
+        {id:'l4',notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],label:'variante completa',timbre:'conga',loopBeats:2}].map((n,k)=>Object.assign(n,HL,(k===0&&medio)?{stretch:1.05}:null))}]},
     {rows:[
       {label:'rama DOBLE · la blanca con puntillo',lvl:0,cls:C14,nodes:[{id:'rHd',notes:['hd'],label:'blanca con puntillo',timbre:'drum',loopBeats:3,stretch:2.4,h:H0}]},
-      {lvl:1,cls:C14,nodes:[{id:'s6c',notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]],ties:[[1,2],[3,4]],label:'6 corcheas ligadas',timbre:'wood',loopBeats:3,h:H1,stretch:1.15}]},
-      {lvl:2,cls:C14,nodes:[{id:'l6',notes:['8','q','q','8'],label:'síncopa doble',timbre:'tick',loopBeats:3,h:H1}]}]},
-    {rows:[
-      {label:'rama BREVE · la negra',lvl:0,cls:C14,nodes:[{id:'rQ',notes:['q'],label:'negra',timbre:'drumHi',loopBeats:1,stretch:2.4,h:H0}]},
-      {lvl:1,cls:C14,nodes:[{id:'s4s',notes:['16','16','16','16'],beams:[[0,1,2,3]],label:'4 semicorcheas',timbre:'shaker',loopBeats:1,h:H1}]},
-      {lvl:2,cls:C14,nodes:[{id:'l5',notes:['16','8','16'],beams:[[0,1,2]],label:'síncopa breve',timbre:'bell',loopBeats:1,h:H1}]}]}],
-   foot:'Enciende la blanca y la negra a la vez y escucha cómo la rama breve gira el doble de rápido — y aún así, todo encaja. La rama doble tarda tres pulsos en dar la vuelta.'}];}};
+      {lvl:1,cls:C14,nodes:[{id:'s6c',notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]],ties:[[1,2],[3,4]],label:'6 corcheas ligadas',timbre:'wood',loopBeats:3,h:H1,stretch:(medio?0.85:1.15)}]},
+      {label:'la doble y sus variantes',lvl:2,cls:'wrap2 i14-2x2 '+C14,nodes:[
+        {id:'l6',notes:['8','q','q','8'],label:'síncopa doble',timbre:'tick',loopBeats:3},
+        {id:'l7',notes:['8','q','q','16','16'],beams:[[3,4]],label:'doble · variante final',timbre:'marimba',loopBeats:3},
+        {id:'l8',notes:['16','16','q','q','8'],beams:[[0,1]],label:'doble · variante inicial',timbre:'blip',loopBeats:3},
+        {id:'l9',notes:['16','16','q','q','16','16'],beams:[[0,1],[4,5]],label:'doble · variante completa',timbre:'conga',loopBeats:3}].map((n,k)=>Object.assign(n,HLD,(k===0&&medio)?{stretch:0.92}:null))}]}],
+   foot:'Enciende la negra y la blanca a la vez y escucha cómo la rama breve gira el doble de rápido — y aún así, todo encaja. La rama doble tarda tres pulsos en dar la vuelta.'}];}};
 
 D['1.5']={spq:0.8,slides:function(card){ return [
   cover(card),

@@ -153,7 +153,28 @@ const CARD = _CFG ? { bpmComp:_CFG.bpmComp, spq:_CFG.spq, cells:_CFG.cells.map(c
   ["16","16","8","8"],["8","16","16","8"],["8","8","16","16"]
 ]};
 const COMPOUND=_CFG?_CFG.compound:true, MEAS=_CFG?_CFG.meas:"6/8", PULSE_Q=_CFG?_CFG.pulseQ:1.5, GIVEN=_CFG?_CFG.given:(COMPOUND?"qd":"q");
-const NVAR=CARD.cells.length; const ROUNDS = NVAR===1 ? 2 : NVAR;   // tantas rondas como variaciones (si solo hay 1 → 2, alternando el pulso dado)
+/* (7-oct-2026, Iago: la síncopa doble en el quiz «sustituyendo otras, no añadiendo. Incluso también con las
+   variantes») MEZCLA · solo en las cartas que la traen en su configuración (hoy, la 1.4). La carta tiene más ritmos de
+   los que el quiz trabaja: se eligen `n`, repartidos por familias (fam) por turnos. basePrimero = dentro de cada
+   familia entra antes su ritmo base (el primero) y después una variante al azar; si no, cualquiera al azar. */
+const MIX = (_CFG && _CFG.mezcla && typeof _CFG.mezcla==='object' && _CFG.mezcla.n>0) ? _CFG.mezcla : null;
+function barajar(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function elegirCelulas(n, basePrimero){
+  const cs=(_CFG&&_CFG.cells)||[]; const fams=[], porFam={};
+  cs.forEach((c,i)=>{ const f=(c&&c.fam)||('#'+i); if(!porFam[f]){ porFam[f]=[]; fams.push(f); } porFam[f].push(i); });
+  fams.forEach(f=>{ const L=porFam[f]; porFam[f]= basePrimero ? [L[0]].concat(barajar(L.slice(1))) : barajar(L.slice()); });
+  const out=[]; let hubo=true;
+  while(out.length<n && hubo){ hubo=false; for(const f of fams){ if(out.length>=n) break; if(porFam[f].length){ out.push(porFam[f].shift()); hubo=true; } } }
+  return out;
+}
+const NVAR=CARD.cells.length; const ROUNDS = MIX ? Math.max(1, Math.min(MIX.n, NVAR)) : (NVAR===1 ? 2 : NVAR);   // tantas rondas como variaciones (si solo hay 1 → 2, alternando el pulso dado) · (7-oct) con MEZCLA, las `n` elegidas
+/* el compás de cada ronda: el de la carta, salvo que el ritmo traiga el suyo (la síncopa doble es de 3/4) */
+let MEAS_R=MEAS, PPM_R=(_CFG&&_CFG.pulsesPerMeas)||2;
+function compasDeRonda(ci){
+  MEAS_R=MEAS; PPM_R=(_CFG&&_CFG.pulsesPerMeas)||2;
+  const ce=MIX && _CFG.cells[ci];
+  if(ce && ce.extra && ce.ts){ const p=String(ce.ts).split('/').map(Number); if(p[0]>0 && p[1]===4){ MEAS_R=ce.ts; PPM_R=p[0]; } }
+}
 const HAS_TIES=false;   // 1.1 no usa ligaduras
 /* 3-ago-2026 · quiz-fix: duración REAL por célula (tuplets comprimidos) y su grupo, si lo hay */
 const CELL_BEATS=_CFG?_CFG.cells.map(c=>(c.unit?c.unit.beats:(c.beatsReal||c.notes.map(durQ))).slice()):CARD.cells.map(cs=>cs.map(durQ));
@@ -212,7 +233,7 @@ function renderMeasure(written, correct){
   const PAD_L=10, STAVE_W=460, CW=PAD_L+STAVE_W+16, CH=170, SY=46;
   try{
     const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(CW,CH); const ctx=r.getContext();
-    const st=new VF.Stave(PAD_L,SY,STAVE_W); st.addClef('treble').addTimeSignature(MEAS); st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw();
+    const st=new VF.Stave(PAD_L,SY,STAVE_W); st.addClef('treble').addTimeSignature(MEAS_R); st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw();
     const mk=(tok,opt)=>{ const isRest=tok.endsWith('r'); const base=tok.replace('d','').replace('r','');
       const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:base+(isRest?'r':'')}); if(tok.replace('r','').endsWith('d'))VF.Dot.buildAndAttach([sn]);
       if(opt&&opt.color) sn.setStyle({fillStyle:opt.color,strokeStyle:opt.color}); return sn; };
@@ -303,7 +324,7 @@ const RESUME=(function(){ try{
   if(!R||typeof R!=='object'||R.v!==1||String(R.atlasId==null?'':R.atlasId)!==ATLAS_ID) return null;
   if(R.total!==ROUNDS||!Number.isInteger(R.ronda)||R.ronda<0) return null;
   const o=R.orden; if(!Array.isArray(o)||o.length!==ROUNDS||!o.every(c=>Number.isInteger(c)&&c>=0&&c<NVAR)) return null;
-  if(NVAR>1 && new Set(o).size!==NVAR) return null;     // con varias variaciones, cada una una vez
+  if(NVAR>1 && new Set(o).size!==Math.min(ROUNDS,NVAR)) return null;     // con varias variaciones, cada una una vez
   return R;
 }catch(e){ return null; } })();
 function enviarEstado(){ try{ if(window.top!==window.self) parent.postMessage({type:'quizPhaseState',
@@ -360,12 +381,13 @@ function burst(){ const host=document.getElementById('confetti'); const cx=inner
 /* ronda */
 function newRound(){ stopPhrase(); failUsedThisRound=false; written=[]; idleLabel='▶ Escuchar'; setSounding(false);
   const spec=order[roundIdx]; const variation=CARD.cells[spec.cell].slice();
+  compasDeRonda(spec.cell);
   const vBeats=CELL_BEATS[spec.cell].slice(); const vTup=CELL_TUP[spec.cell];
   if(spec.swap){ writeSlot=1; givenToks=variation; givenBeats=vBeats; givenTup=vTup; target=[GIVEN]; targetBeats=[durQ(GIVEN)]; CAP_Q=durQ(GIVEN); }   // escribe la figura de pulso; suena la variación (real)
   else { writeSlot=0; givenToks=[GIVEN]; givenBeats=[durQ(GIVEN)]; givenTup=null; target=variation; targetBeats=vBeats; CAP_Q=vBeats.reduce((a,b)=>a+b,0);
     // (Iago 15-sep-2026) si el ritmo objetivo ya llena el compás entero (síncopas de compás),
     // no se le añade el pulso dado: el compás sonaba y se escribía con un pulso de más.
-    const _ppm=(_CFG&&_CFG.pulsesPerMeas)||2;
+    const _ppm=PPM_R;   /* (7-oct-2026) el compás de ESTA ronda */
     if(CAP_Q >= _ppm*PULSE_Q - 1e-6){ givenToks=[]; givenBeats=[]; }
   }
   renderMeasure(written,false); setBar(); document.getElementById('hint').textContent='Escucha y escribe.';
@@ -382,7 +404,7 @@ document.getElementById('checkBtn').onclick=()=>check();
 document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); roundIdx=0; score=0; startGame(); };
 
 function startGame(orden){   // (27-sep-2026) orden: el de la visita anterior al retomar; sin él, barajado como siempre
-  const idxs=orden?orden.slice():CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5);
+  const idxs=orden?orden.slice():(MIX ? barajar(elegirCelulas(ROUNDS,true)) : CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5));   /* (7-oct) MEZCLA: el base de cada familia y una variante */
   const swapFor=i=>!!CELL_TUP[i];   // 3-ago: GVE (tresillo…) no se puede escribir con la paleta → se escribe el pulso dado
   order = (CARD.cells.length===1) ? [{cell:0,swap:swapFor(0)},{cell:0,swap:true}] : idxs.map(i=>({cell:i,swap:swapFor(i)}));
   buildEditor(); newRound();
