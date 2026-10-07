@@ -97,7 +97,7 @@ body.fire .bar-seg{display:none}
 body.touch .pads{display:flex}
 .pad{flex:1;min-height:170px;border-radius:24px;border:none;cursor:pointer;font:inherit;color:#16132b;
   background:var(--grad);background-size:200% 100%;box-shadow:0 16px 42px rgba(169,116,255,.5);animation:slide 20s linear infinite;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .05s,filter .1s}
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;transition:transform .05s,filter .1s}
 .pad:active{transform:scale(.97);filter:brightness(1.12)}
 .pad .pad-ic{font-size:44px;font-weight:900;line-height:1}
 .pad .pad-tx{font-size:18px;font-weight:900;letter-spacing:.04em}
@@ -416,16 +416,44 @@ function drumSoft(t,pRel){ if(DRUM_VOL<=0) return; const pr=((pRel%PPM)+PPM)%PPM
    (t = ahora, el AudioContext ya está desbloqueado por el gesto de empezar) y va
    directo al master, no al bus de la base, para que se oiga por encima. */
 let REF_FREQ=110, TAPBUS=null;
+/* (7-oct-2026, Iago: «quiero que la fase 4 mantenga el sonido largo mientras se mantiene pulsado la barra espaciadora o
+   el pad… El sonido se compone de una mezcla entre un sonido percutido (ese va a ser siempre breve) pero tiene una base
+   grave y esa base me gustaría que se alargue tanto como tiempo pulsado… No quiero que afecte al sistema de puntuación,
+   tal y como está ahora está bien, pero quiero que el alumno tenga ese feedback sonoro si mantiene»)
+   El ATAQUE no cambia. El CUERPO grave ya no dura 0,13 s fijos: se queda sonando, al mismo nivel de siempre, mientras
+   siga pulsada la barra o el pad, y al soltar se apaga con la misma caída corta de antes (65 ms, sin chasquido).
+     · un toque corto (se suelta antes de 65 ms) suena EXACTAMENTE como antes: mismos tiempos y mismas rampas;
+     · cada pulsación tiene su propia voz (tapVoces: 'kbd' la barra, 'p'+pointerId cada dedo): no se pisan;
+     · TAP_TOPE: si el «soltar» no llega nunca, la voz se apaga sola a los 8 s;
+     · TAP_MANT: el nivel al que se queda el cuerpo mientras se mantiene, respecto al de siempre. 1 = el mismo (así va).
+       Es el ÚNICO mando por si al oído el cuerpo mantenido tapa la base: con 0.7, por ejemplo, a partir de los 65 ms
+       baja suavemente al 70 % y ahí se queda. Un toque corto suena igual valga lo que valga.
+   onTap() NO SE TOCA: quien percute deja en tapQuien quién es, justo antes de llamarlo, y tapSound() lo recoge. */
+const TAP_SUST=0.13, TAP_TOPE=8, TAP_TAU=0.12;
+let TAP_MANT=1, tapQuien=null, tapVoces={};
 function tapSound(){ const c=ac(); if(!c)return; if(!TAPBUS){ TAPBUS=c.createGain(); TAPBUS.gain.value=1; TAPBUS.connect(master()); }
-  const out=TAPBUS, t0=c.currentTime, peak=0.5, sustain=0.13;
+  const out=TAPBUS, t0=c.currentTime, peak=0.5, sustain=TAP_SUST;
   const aLen=Math.floor(c.sampleRate*0.012); const ab=c.createBuffer(1,aLen,c.sampleRate); const ad=ab.getChannelData(0);
   for(let i=0;i<aLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/aLen,2.0);
   const as=c.createBufferSource(); as.buffer=ab; const af=c.createBiquadFilter(); af.type='bandpass'; af.frequency.value=850; af.Q.value=.6;
   const ag=c.createGain(); ag.gain.value=peak; as.connect(af); af.connect(ag); ag.connect(out); as.start(t0); as.stop(t0+0.03);
   const o=c.createOscillator(); o.type='sine'; o.frequency.value=REF_FREQ; const g=c.createGain(); o.connect(g); g.connect(out);
   g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.008);
-  g.gain.setValueAtTime(peak*0.42,t0+sustain*0.5); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
-  o.start(t0); o.stop(t0+sustain+0.03); }
+  o.start(t0);
+  const v={o:o, g:g, t0:t0, nivel:peak*0.42, mant:1, fin:false, tope:0}, id=tapQuien;
+  if(id==null){ tapApaga(v); return; }                       // nadie lo mantiene: el golpe corto de siempre
+  if(tapVoces[id]) tapSuelta(id);                            // por si no llegó el «soltar» de la pulsación anterior
+  if(TAP_MANT>0 && TAP_MANT<1){ v.mant=TAP_MANT; g.gain.setTargetAtTime(v.nivel*v.mant, t0+sustain*0.5, TAP_TAU); }   // (solo si se baja el mando) mantenido, algo más bajo
+  tapVoces[id]=v; v.tope=setTimeout(()=>{ if(tapVoces[id]===v) tapSuelta(id); }, TAP_TOPE*1000); }
+/* apaga una voz: el cuerpo se mantiene hasta t0+65 ms como mínimo (lo que duraba antes) y cae en otros 65 ms, desde el
+   nivel en el que esté en ese momento (sin salto: sin chasquido) */
+function tapApaga(v){ const c=AC; if(!c || v.fin) return; v.fin=true; clearTimeout(v.tope);
+  const cola=TAP_SUST*0.5, tA=Math.max(c.currentTime+0.005, v.t0+cola);
+  let lv=v.nivel; if(v.mant<1) lv=v.nivel*(v.mant+(1-v.mant)*Math.exp(-(tA-(v.t0+cola))/TAP_TAU));
+  try{ if(v.mant<1) v.g.gain.cancelScheduledValues(tA-1e-4);
+    v.g.gain.setValueAtTime(lv,tA); v.g.gain.exponentialRampToValueAtTime(0.0001,tA+cola); v.o.stop(tA+cola+0.03); }catch(e){} }
+function tapSuelta(id){ const v=tapVoces[id]; if(!v) return; delete tapVoces[id]; tapApaga(v); }
+function tapSueltaTodo(){ Object.keys(tapVoces).forEach(tapSuelta); }
 /* groove suave del MODO NORMAL (bajo + acorde cálido tenue, muy por debajo del extremo) */
 function softNote(t,freq,dur,vol,type){ const c=ac(); if(!c)return; const m=BUS||master(); const o=c.createOscillator(),g=c.createGain();
   o.type=type||'sine'; o.frequency.value=freq; o.connect(g); g.connect(m);
@@ -751,7 +779,8 @@ function onTap(){
   } else { roundExtra++; extraTotal++; lineRed(); }   // figura de más
 }
 function showRedMsg(t){ const el=document.getElementById('redmsg'); if(!el)return; el.textContent=t; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
-function killAudio(){ if(!BUS)return; const now=ac().currentTime; try{ BUS.gain.cancelScheduledValues(now); BUS.gain.setValueAtTime(BUS.gain.value,now); BUS.gain.linearRampToValueAtTime(0, now+0.03);}catch(e){} }
+function killAudio(){ tapSueltaTodo();   /* (7-oct-2026) ninguna base grave se queda sonando al parar o terminar */
+  if(!BUS)return; const now=ac().currentTime; try{ BUS.gain.cancelScheduledValues(now); BUS.gain.setValueAtTime(BUS.gain.value,now); BUS.gain.linearRampToValueAtTime(0, now+0.03);}catch(e){} }
 function stopRun(){ running=false; if(raf)cancelAnimationFrame(raf); if(schedTimer){clearInterval(schedTimer);schedTimer=null;} killAudio();
   setStartBtn(false); document.getElementById('track').style.transform='translateX(0px)'; document.getElementById('hint').textContent='Detenido. Pulsa «Empezar» o Espacio para empezar de nuevo.'; }
 
@@ -963,12 +992,21 @@ function resetSegs(){ buildSeg(); }
 document.getElementById('startBtn').onclick=()=>startQuiz();
 const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints||0)>0;
 if(isTouch) document.body.classList.add('touch');
-function padHit(e){ e.preventDefault(); ac(); onTap(); }
+function padHit(e){ e.preventDefault(); ac(); tapQuien='p'+e.pointerId; onTap(); tapQuien=null;   /* (7-oct-2026) la base grave de este dedo dura hasta que lo levante */
+  try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){} }
 document.getElementById('padL').addEventListener('pointerdown',padHit);
 document.getElementById('padR').addEventListener('pointerdown',padHit);
+/* (7-oct-2026) SOLTAR: se apaga la base grave de ESA pulsación (dedo levantado, gesto cancelado, o se pierde el foco o
+   la pestaña y el «soltar» ya no va a llegar). Mantener el dedo en un pad no debe abrir ningún menú. */
+function padSuelta(e){ tapSuelta('p'+e.pointerId); }
+window.addEventListener('pointerup',padSuelta,true); window.addEventListener('pointercancel',padSuelta,true);
+['padL','padR'].forEach(id=>{ const p=document.getElementById(id); p.addEventListener('lostpointercapture',padSuelta); p.addEventListener('contextmenu',e=>e.preventDefault()); });
+window.addEventListener('keyup',e=>{ if(e.code==='Space') tapSuelta('kbd'); });
+window.addEventListener('blur',tapSueltaTodo); window.addEventListener('pagehide',tapSueltaTodo);
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) tapSueltaTodo(); });
 function anyOvShown(){ return ['ovResult','ovWin','ovExtWarn','ovExtResult','ovStudy','ovLecciones','ovBasta'].some(id=>document.getElementById(id).classList.contains('show')); }
 window.addEventListener('keydown',e=>{ if(e.code!=='Space') return; e.preventDefault(); if(e.repeat) return; ac();   // (22-sep) mantener pulsada no es percutir
-  if(running){ onTap(); } else if(!anyOvShown()){ startQuiz(); } });
+  if(running){ tapQuien='kbd'; onTap(); tapQuien=null; } else if(!anyOvShown()){ startQuiz(); } });   /* (7-oct-2026) 'kbd': su base grave dura hasta el keyup */
 // win → los botones se montan en showWin() según el tramo (finalizar / extremo / otra vez)
 document.getElementById('extGoBtn').onclick=()=>startExtreme();
 document.getElementById('extNoBtn').onclick=()=>document.getElementById('ovExtWarn').classList.remove('show');

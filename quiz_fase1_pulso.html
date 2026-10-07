@@ -119,6 +119,52 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 .cbtn:hover{filter:brightness(1.08)} .cbtn:active{transform:translateY(1px)}
 /* (27-sep-2026) al retomar el quiz de tareas: línea discreta en la ventana inicial */
 .ini-resume{margin:-8px 0 18px;font-size:13.5px;font-weight:800;color:var(--c1);white-space:nowrap}
+/* (7-oct-2026, Iago: «Me gustaría que señale más claro en la primera ronda lo de que señale el pulso donde EMPIEZA.
+   Quizá puede haber un cartelito antes de empezar el primero») EL CARTELITO es la propia ventana inicial, y solo en las
+   cartas con algún ritmo de más de un pulso (VARIOS): fichas de pulso como las de la frase, un corchete sobre las que
+   ocupa el ritmo y la mano en la PRIMERA. Sin animación (prefers-reduced-motion) se ve el dibujo completo y quieto. */
+.ini-demo{--n:3;--k:6;--c:38px;display:grid;grid-template-columns:repeat(var(--k),var(--c));column-gap:8px;justify-content:center;align-items:center;
+  width:max-content;max-width:100%;margin:14px auto 14px;padding:12px 16px 10px;border-radius:14px;background:var(--paper);box-shadow:0 10px 26px rgba(0,0,0,.3)}
+.idm-cap{grid-row:1;grid-column:2 / span var(--n);justify-self:center;white-space:nowrap;margin-bottom:3px;font-size:13.5px;font-weight:800;color:#4a437a}
+.idm-cap b{color:#16132b;font-weight:900}
+.idm-br{grid-row:2;grid-column:2 / span var(--n);height:10px;margin:0 -3px 6px;border:3px solid #8a5cf6;border-bottom:none;border-radius:6px 6px 0 0;transform-origin:left center}
+.idm-n{grid-row:3;width:var(--c);height:var(--c);border-radius:9px;display:grid;place-items:center;background:#eceaff;border:1px solid #cdc6f5;color:#4a437a;font:700 17px var(--font)}
+.idm-n.in{background:#ddd0ff;border-color:#b39cf5}                 /* los pulsos que el ritmo sigue ocupando */
+.idm-n.on{background:#34d399;border-color:#16a86f;color:#06281b}  /* el pulso en el que EMPIEZA: el color del acierto */
+.idm-mano{grid-row:4;grid-column:2 / -1;display:flex;align-items:center;gap:5px;margin-top:5px;white-space:nowrap;text-align:left;font-size:13.5px;font-weight:800;color:#16132b}
+.idm-mano i{flex:0 0 var(--c);font-style:normal;font-size:25px;line-height:1;text-align:center}
+.idm-mano b{color:#0b8f5c;font-weight:900}
+@media (min-width:520px){ .ini-demo{--c:44px;column-gap:10px;padding:14px 20px 12px} .idm-cap{font-size:14.5px} .idm-n{font-size:19px} .idm-mano{font-size:14.5px} .idm-mano i{font-size:28px} }
+.ini-demo .idm-br{animation:idmBr 5s ease-in-out infinite}
+.ini-demo .idm-n.in{animation:idmIn 5s ease-in-out infinite}
+.ini-demo .idm-n.on{animation:idmOn 5s ease-in-out infinite}
+.ini-demo .idm-mano i{animation:idmMano 5s ease-in-out infinite}
+@keyframes idmBr{0%{opacity:0;transform:scaleX(.04)}14%,95%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
+@keyframes idmIn{0%,4%{background:#eceaff;border-color:#cdc6f5}16%,95%{background:#ddd0ff;border-color:#b39cf5}100%{background:#eceaff;border-color:#cdc6f5}}
+@keyframes idmMano{0%,18%{transform:translateY(7px)}26%{transform:translateY(-6px)}34%,56%{transform:translateY(2px)}64%{transform:translateY(-6px)}72%,100%{transform:translateY(2px)}}
+@keyframes idmOn{0%,24%{transform:scale(1);box-shadow:0 0 0 0 rgba(52,211,153,0)}27%{transform:scale(.9);box-shadow:0 0 0 0 rgba(52,211,153,.8)}36%{transform:scale(1.07);box-shadow:0 0 0 10px rgba(52,211,153,0)}
+  44%,62%{transform:scale(1);box-shadow:0 0 0 0 rgba(52,211,153,0)}65%{transform:scale(.9);box-shadow:0 0 0 0 rgba(52,211,153,.8)}74%{transform:scale(1.07);box-shadow:0 0 0 10px rgba(52,211,153,0)}82%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+.cartel .ini-grande{margin:0 0 9px;font-size:20px;line-height:1.3;font-weight:900;letter-spacing:-.2px;color:var(--text)}
+.cartel .ini-grande b{color:#34d399;font-size:1.14em;letter-spacing:.01em}
+.cartel .sub.ini-peq{font-size:12.5px;margin-bottom:16px;text-wrap:balance}
+/* la ventana inicial con cartelito es más alta: si no cabe (móvil tumbado), se puede deslizar y el botón no se pierde */
+.ov.ini-alta{overflow-y:auto;align-items:flex-start;padding:8px 0}
+.ov.ini-alta .cartel{margin:auto}
+@media (max-height:560px){
+  .ov.ini-alta .cartel{padding:14px 26px 14px}
+  .ov.ini-alta .cartel h1{font-size:21px;margin:2px 0 0}
+  .ini-demo{--c:30px;column-gap:8px;margin:7px auto 7px;padding:7px 16px 6px}
+  .idm-cap{font-size:12px} .idm-n{font-size:14px} .idm-mano{font-size:11.5px} .idm-mano i{font-size:19px}
+  .cartel .ini-grande{font-size:16.5px;margin-bottom:4px}
+  .cartel .sub.ini-peq{font-size:11.5px;line-height:1.35;margin-bottom:9px}
+  .cartel .sub.ini-peq br:first-of-type{display:none}
+}
+/* la pista de al lado del botón, resaltada en la PRIMERA ronda con un ritmo de más de un pulso (hasta que responde) */
+.hint.empieza{display:inline-block;padding:7px 13px;border-radius:11px;background:#ffd678;color:#2b1d00;font-size:14px;font-weight:800;text-wrap:balance;
+  box-shadow:0 6px 22px rgba(255,214,120,.38);animation:empLate 1.3s ease-in-out 3}
+.hint.empieza b{display:inline-block;padding:0 6px;border-radius:6px;background:#16132b;color:#ffd678;font-weight:900;letter-spacing:.03em}
+@keyframes empLate{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+@media (prefers-reduced-motion:reduce){ .ini-demo .idm-br,.ini-demo .idm-n.in,.ini-demo .idm-n.on,.ini-demo .idm-mano i,.hint.empieza{animation:none} }
 /* aviso de nueva ronda */
 .round-notice{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%) scale(.88);z-index:75;opacity:0;
   padding:14px 32px;border-radius:16px;font-weight:900;font-size:21px;color:#16132b;
@@ -448,8 +494,38 @@ if(VARIOS){ try{
   const _fs=document.querySelector('.fase-sub');
   if(_fs) _fs.innerHTML='Escucha la frase y di <b>en qué pulso EMPIEZA</b> el ritmo de la tarjeta. Pulsa el número de ese pulso. <b>3 rondas</b> · 2 escuchas y 2 intentos en cada una.';
   const _is=document.querySelector('#ovIni .sub');
-  if(_is) _is.innerHTML='Primero suena el <b>ritmo de la tarjeta</b>. Después pulsa ▶ para oír la frase y toca el <b>número del pulso en el que EMPIEZA</b> ese ritmo.<br>Ojo: hay ritmos que ocupan más de un pulso. Se marca <b>solo el pulso en el que empiezan</b>.<br>Tres rondas, dos escuchas y dos intentos en cada una. Nada resta.';
+  if(_is){
+    /* (7-oct-2026, Iago: «Me gustaría que señale más claro en la primera ronda lo de que señale el pulso donde EMPIEZA.
+       Quizá puede haber un cartelito antes de empezar el primero») La ventana inicial es el cartelito: un dibujo (fichas
+       de pulso, un corchete sobre las que ocupa el ritmo más largo de la carta y la mano en la PRIMERA), la frase en
+       grande y, ya en pequeño, el resto de la explicación. Ni una ventana ni un clic más que antes. */
+    const _n=Math.max.apply(null,(CARD.cells||[]).map(_spanDe)), _k=Math.max(6,_n+2);
+    let _ch=''; for(let i=1;i<=_k;i++) _ch+='<span class="idm-n'+(i===2?' on':((i>2&&i<2+_n)?' in':''))+'">'+i+'</span>';
+    const _d=document.createElement('div'); _d.className='ini-demo'; _d.id='iniDemo'; _d.setAttribute('aria-hidden','true');
+    _d.style.setProperty('--n',String(_n)); _d.style.setProperty('--k',String(_k));
+    if(_k>6) _d.style.setProperty('--c',Math.max(20,Math.floor((300-8*(_k-1))/_k))+'px');   // ritmos muy largos: fichas más pequeñas
+    _d.innerHTML='<div class="idm-cap">el ritmo ocupa <b>'+_n+' pulsos</b></div><div class="idm-br"></div>'+_ch+
+      '<div class="idm-mano"><i>👆</i><span>tocas este: donde <b>EMPIEZA</b></span></div>';
+    const _g=document.createElement('p'); _g.className='ini-grande'; _g.innerHTML='Toca el pulso en el que<br><b>EMPIEZA</b> el ritmo.';
+    _is.parentNode.insertBefore(_d,_is); _is.parentNode.insertBefore(_g,_is);
+    _is.classList.add('ini-peq');
+    _is.innerHTML='Primero suena el <b>ritmo de la tarjeta</b>; <br>después pulsa ▶ para oír la frase.<br>Tres rondas, dos escuchas y dos intentos en cada una. Nada resta.';
+    document.getElementById('ovIni').classList.add('ini-alta');
+  }
 }catch(e){} }
+/* (7-oct-2026) LA PISTA RESALTADA · en la PRIMERA ronda cuyo ritmo ocupa más de un pulso, el texto de al lado del botón
+   de escuchar va en una pastilla de color con «EMPIEZA» bien visible, hasta que el alumno responde; después vuelve a su
+   aspecto de siempre y ya no se repite. Los textos los siguen poniendo los mismos sitios de antes (con textContent): un
+   observador los viste cuando toca. En cartas de ritmos de un pulso no hace nada. */
+let _empRonda=false, _empHecho=false;
+const _hintEl=document.getElementById('hint');
+function _empPinta(){
+  const t=_hintEl.textContent, si=_empRonda && /EMPIEZA|EMPEZÓ/.test(t);
+  if(si){ if(!_hintEl.querySelector('b')){ _hintEl.classList.add('empieza');
+      _hintEl.innerHTML=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/(EMPIEZA|EMPEZÓ)/g,'<b>$1</b>'); } }
+  else if(_hintEl.classList.contains('empieza')){ _hintEl.classList.remove('empieza'); if(_hintEl.querySelector('b')) _hintEl.textContent=t; }
+}
+if(VARIOS){ try{ new MutationObserver(_empPinta).observe(_hintEl,{childList:true}); }catch(e){} }
 
 function newRound(){
   answered=false; playing=false; listensLeft=2; intento=0; clearLive();
@@ -471,6 +547,7 @@ function newRound(){
   const tgtQ=cellBeatsQ(CARD.cells[targetCellIdx]);
   const spanP=Math.max(1, Math.ceil(tgtQ.reduce((a,b)=>a+b,0)/PULSE_Q - 1e-6));
   SPAN_R=spanP;
+  if(spanP>1 && !_empHecho){ _empRonda=true; _empPinta(); }   /* (7-oct-2026) primera ronda con un ritmo largo: pista resaltada */
   try{ const _tx=document.querySelector('#targetCard .t-txt');   /* (7-oct-2026) el texto de la tarjeta, según lo que ocupa el ritmo */
     if(_tx) _tx.innerHTML=(spanP>1)?('Este ritmo ocupa <b>'+spanP+' pulsos</b>. Toca el número del pulso en el que <b>EMPIEZA</b>.')
                                    :'Este ritmo está escondido en <b>un</b> pulso de la frase.'; }catch(e){}
@@ -606,6 +683,7 @@ function onPick(idx,g){
     return;
   }
   answered=true;
+  if(_empRonda){ _empRonda=false; _empHecho=true; _empPinta(); }   /* (7-oct-2026) ya respondió: la pista vuelve a su aspecto normal */
   stopPhrase();                 // al responder se corta la vuelta
   document.querySelectorAll('.pnum').forEach(n=>n.classList.add('lock'));
   document.getElementById('playBtn').classList.add('spent');

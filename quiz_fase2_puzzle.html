@@ -83,6 +83,11 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
   transition:box-shadow .15s}
 .fcard:active{cursor:grabbing}
 .fcard.drag{box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 2px var(--c2);z-index:60}
+/* (7-oct-2026, Iago: «se pueda arrastrar un ritmo a un pulso. Hoy lo intenté y no me dejó») mientras la carta pisa el
+   pentagrama se vuelve algo transparente (debajo se ve dónde va a caer) y su borde dice si ahí cabe (verde) o no (rojo) */
+.fcard.drag.sobre{opacity:.82}
+.fcard.drag.cabe{box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 3px #34d399}
+.fcard.drag.nocabe{box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 3px #ff5c72}
 .fcard .fmini{display:flex;align-items:center;justify-content:center;overflow:visible}
 .fcard .fmini svg{max-width:100%;height:auto;pointer-events:none}
 /* (22-sep-2026) las cartas con un ritmo CARACTERÍSTICO de la carta llevan una estrellita: se ven de un vistazo */
@@ -337,8 +342,14 @@ function buildSolutionMix(){
   }
   return null;
 }
+/* (7-oct-2026 · OPCIONAL) Las cartas con algún ritmo de más de un pulso (2.1, 2.2, 2.3, 6.4) usan también el colocador
+   de la MEZCLA: primero los ritmos que más ocupan y cada uno DENTRO de un compás. Antes iban «donde cupieran»: más de
+   la mitad de las veces quedaban a caballo de la barra y, a menudo, algún ritmo de la carta ya no cabía y se quedaba
+   fuera. Con un triángulo en cada pulso (el alumno busca el sitio de oído) eso ya no se sostiene.
+   Las cartas de ritmos de un pulso no pasan por aquí: su solución sale igual que siempre. */
+const HAY_LARGOS=CELDAS.some(ce=>{ const sl=cellSlot(ce); return Math.ceil((sl.beats||[]).reduce((a,b)=>a+b,0)/PULSE_Q-1e-6)>1; });
 function buildSolution(){
-  if(SEL){ const sm=buildSolutionMix(); if(sm) return sm; }
+  if(SEL || HAY_LARGOS){ const sm=buildSolutionMix(); if(sm) return sm; }
   // (22-sep-2026) TODAS las células de la carta, cada una una vez, en orden
   // aleatorio; lo que quede libre se rellena con patrones sencillos.
   // (Iago 15-sep-2026) Un ritmo objetivo de compás entero (síncopas) ocupa varios
@@ -404,26 +415,88 @@ function renderPhrase(){
       }
     }
   }
-  const hl=document.createElementNS(NSv,'rect'); hl.setAttribute('id','pulseHL'); hl.setAttribute('fill','rgba(52,211,153,.18)'); hl.setAttribute('stroke','#34d399'); hl.setAttribute('stroke-width','2'); hl.setAttribute('rx','8'); hl.setAttribute('visibility','hidden'); svg.appendChild(hl);
+  const hl=document.createElementNS(NSv,'rect'); hl.setAttribute('id','pulseHL'); hl.setAttribute('fill','rgba(52,211,153,.18)'); hl.setAttribute('stroke','#34d399'); hl.setAttribute('stroke-width','2'); hl.setAttribute('rx','8'); hl.setAttribute('pointer-events','none'); hl.setAttribute('visibility','hidden'); svg.appendChild(hl);
   const vbH=pulseY+36;
   svg.setAttribute('viewBox',`0 0 ${CW} ${vbH}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.width='100%'; svg.style.maxWidth='100%';
   svgGeom={CW, vbH, staveTop, staveBot, pulseY};
+  /* (7-oct-2026) ahora una carta puede quedar en un sitio que no es el suyo, así que quitarla con su ✕ es parte del
+     juego: en móvil y tableta la ✕ se dibuja diminuta (5–10 px) y lleva alrededor una zona de toque INVISIBLE de hasta
+     18 px de radio, sin pisar la del pulso de al lado. No cambia nada de lo que se ve. */
+  try{ const en=encaje(), esc=(en&&en.k)||1, rz=Math.max(11, Math.min(18/esc, (measGeom[0].x1-measGeom[0].x0)/PULSES_PER_MEAS/2-1));
+    svg.querySelectorAll('circle.xcircle').forEach(c=>{ const z=document.createElementNS(NSv,'circle'); z.setAttribute('cx',c.getAttribute('cx')); z.setAttribute('cy',c.getAttribute('cy'));
+      z.setAttribute('r',rz.toFixed(1)); z.setAttribute('fill','transparent'); z.setAttribute('stroke','none'); c.parentNode.insertBefore(z,c); }); }catch(e){}
 }
 function lightPulse(idx){ Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6')); if(arrowEls[idx]) arrowEls[idx].setAttribute('fill','#34d399'); }
 function clearLight(){ const svg=document.querySelector('#staffHost svg'); if(svg){ const hl=svg.querySelector('#pulseHL'); if(hl) hl.setAttribute('visibility','hidden'); } Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6')); }
-function pulseAt(clientX,clientY){
-  const svg=document.querySelector('#staffHost svg'); if(!svg||!svgGeom)return null; const rect=svg.getBoundingClientRect();
-  const scale=rect.width/svgGeom.CW; const vx=(clientX-rect.left)/scale, vy=(clientY-rect.top)/scale;
-  if(vy<svgGeom.staveTop-32 || vy>svgGeom.pulseY+30) return null;
-  for(let i=0;i<N_MEAS;i++){ const g=measGeom[i]; if(vx>=g.x0-8 && vx<=g.x1+8){ const span=g.x1-g.x0;
-    const p=Math.max(0,Math.min(PULSES_PER_MEAS-1, Math.floor((vx-g.x0)/span*PULSES_PER_MEAS))); return i*PULSES_PER_MEAS+p; } }
-  return null;
+/* (7-oct-2026, Iago: «No haya los triangulitos limitados en base a los pulsos. Visualmente es demasiado fácil así.
+   Quiero que haya un triángulo por cada pulso y ya después, cuando se coloca el ritmo, que ocupe lo que tiene que
+   ocupar») Ya no se reservan de antemano los pulsos de los ritmos largos: al empezar TODOS los pulsos están libres,
+   cada uno con su triángulo, y una carta de N pulsos ocupa N pulsos seguidos desde donde se coloca.
+     · spanSol(i)  → los pulsos que ocupa en la solución el ritmo que empieza en el pulso i (él y sus «cubiertos»).
+     · SIN_CRUZAR  → la misma restricción con la que se generó la solución: con MEZCLA (carta 1.4) un ritmo no cruza la
+                     barra de compás; en las demás cartas buildSolution() no mira la barra y aquí tampoco se mira.
+     · cabeEn(p,n) → ¿hay n pulsos seguidos y libres empezando en el pulso p? */
+let SIN_CRUZAR=false;
+function spanSol(i){ let n=1; while(solution[i+n] && solution[i+n].cubierto) n++; return n; }
+function cabeEn(p,n){ if(p<0 || p+n>N_PULSES) return false;
+  if(SIN_CRUZAR && (p%PULSES_PER_MEAS)+n>PULSES_PER_MEAS) return false;
+  for(let k=0;k<n;k++){ if(placed[p+k]) return false; } return true; }
+/* bordes izquierdo y derecho de un pulso, en las unidades del dibujo (viewBox) */
+function pulsoX(idx){ const g=measGeom[Math.floor(idx/PULSES_PER_MEAS)], w=(g.x1-g.x0)/PULSES_PER_MEAS, p=idx%PULSES_PER_MEAS; return {l:g.x0+w*p, r:g.x0+w*(p+1)}; }
+/* cómo está encajado el dibujo en su caja: k = px de pantalla por unidad del dibujo; (x0,y0) = dónde cae en pantalla su
+   esquina (0,0). El dibujo se encaja entero y centrado (xMidYMid meet) en una caja de 230 px de alto: en las cartas de
+   pocos compases manda el alto y queda con márgenes a los lados (la cuenta de antes suponía que llenaba el ancho y, en
+   esas cartas —2.2, 2.3, 6.4—, daba un pulso que no era). */
+function encaje(){ const svg=document.querySelector('#staffHost svg'); if(!svg||!svgGeom) return null; const r=svg.getBoundingClientRect(); if(!(r.width>0&&r.height>0)) return null;
+  const k=Math.min(r.width/svgGeom.CW, r.height/svgGeom.vbH); return {svg:svg, r:r, k:k, x0:r.left+(r.width-svgGeom.CW*k)/2, y0:r.top+(r.height-svgGeom.vbH*k)/2}; }
+/* (7-oct-2026, Iago: «quiero que (y esto aplica a todos los Quiz) se pueda arrastrar un ritmo a un pulso. Hoy lo intenté
+   y no me dejó») DÓNDE CAE LA CARTA QUE SE ARRASTRA. Antes contaba la punta del dedo o del ratón dentro de una franja
+   estrecha y, si caía en un pulso reservado, la carta se iba flotando. Ahora:
+     · vale en cuanto la carta PISA el panel del pentagrama (PISA_MIN px), esté donde esté el puntero;
+     · manda el CENTRO de la carta, que se corresponde con el centro de los N pulsos que va a ocupar;
+     · de los sitios en los que cabe se elige el más cercano, siempre que el centro de la carta caiga dentro de esos N
+       pulsos o como mucho a TOL_PULSO de pulso de ellos (así no acaba en un sitio que el alumno no estaba señalando).
+   Devuelve {sobre, p, ideal}: sobre = pisa el panel · p = pulso en el que empezaría (null si ahí no cabe) · ideal = el
+   sitio que señala aunque no quepa (para pintarlo en rojo y explicar por qué). */
+const PISA_MIN=12, TOL_PULSO=0.4;
+function destinoDe(card){
+  const en=encaje(), panel=document.querySelector('.staff-panel');
+  if(!en||!panel||!measGeom.length) return {sobre:false,p:null,ideal:0};
+  const cr=card.el.getBoundingClientRect(), pr=panel.getBoundingClientRect();
+  if(Math.min(cr.bottom,pr.bottom)-Math.max(cr.top,pr.top)<PISA_MIN || Math.min(cr.right,pr.right)-Math.max(cr.left,pr.left)<PISA_MIN) return {sobre:false,p:null,ideal:0};
+  const n=card.ct.span||1;
+  const vx=Math.max(pulsoX(0).l, Math.min(pulsoX(N_PULSES-1).r, ((cr.left+cr.right)/2-en.x0)/en.k));   // sobre la clave o pasado el final: primer / último pulso
+  let p=null, dp=1e9, ideal=0, di=1e9;
+  for(let i=0;i+n<=N_PULSES;i++){ const L=pulsoX(i).l, R=pulsoX(i+n-1).r, d=Math.abs(vx-(L+R)/2);
+    if(d<di){ di=d; ideal=i; }
+    if(d<dp && d<=(R-L)/2+TOL_PULSO*(R-L)/n && cabeEn(i,n)){ dp=d; p=i; } }
+  return {sobre:true,p:p,ideal:ideal};
 }
-function showPulseHL(idx){ Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6'));
-  if(idx==null || placed[idx]) return; if(arrowEls[idx]) arrowEls[idx].setAttribute('fill','#5bd0ff'); }
-function hidePulseHL(){ Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6')); }
+/* mientras se arrastra: los triángulos de los pulsos que ocuparía y una columna (#pulseHL) de arriba abajo del papel
+   —así se ve aunque la carta y el dedo estén encima—, en verde si cabe y en rojo de trazos si ahí no cabe */
+function showPulseHL(d,n){ Object.values(arrowEls).forEach(a=>a.setAttribute('fill','#a9a3d6'));
+  const en=encaje(), hl=en&&en.svg.querySelector('#pulseHL');
+  if(!d || !d.sobre){ if(hl) hl.setAttribute('visibility','hidden'); return; }
+  const cabe=(d.p!=null), p0=cabe?d.p:d.ideal, col=cabe?'#34d399':'#ff5c72';
+  for(let k=0;k<n;k++){ const a=arrowEls[p0+k]; if(a) a.setAttribute('fill',col); }
+  if(!hl) return;
+  const L=pulsoX(p0).l, R=pulsoX(p0+n-1).r, y0=(en.r.top-en.y0)/en.k+4, y1=(en.r.bottom-en.y0)/en.k-4;
+  hl.setAttribute('x',(L+2).toFixed(1)); hl.setAttribute('width',Math.max(6,R-L-4).toFixed(1)); hl.setAttribute('y',y0.toFixed(1)); hl.setAttribute('height',Math.max(10,y1-y0).toFixed(1));
+  hl.setAttribute('fill',cabe?'rgba(52,211,153,.18)':'rgba(255,92,114,.13)'); hl.setAttribute('stroke',col); hl.setAttribute('stroke-dasharray',cabe?'none':'7 6'); hl.setAttribute('visibility','visible'); }
+function hidePulseHL(){ showPulseHL(null,1); }
+/* la carta no se ha podido colocar: aviso breve y, en el texto de ayuda, el porqué. d = destinoDe() si se soltó sobre el
+   pentagrama; null si se pulsó sin arrastrar y no le queda sitio en toda la frase */
+function avisaNoCabe(n,d){
+  const queda=(nextFreeFrom(0,n)!=null), fin=queda?' Búscale otro hueco.':' Quita alguna carta con su ✕ para hacerle sitio.';
+  let t;
+  if(!d) t='Ese ritmo ocupa '+n+' pulsos seguidos y ahora no hay '+n+' libres juntos'+(SIN_CRUZAR?' en un mismo compás':'')+'. Quita alguna carta con su ✕ para hacerle sitio.';
+  else if(n<=1) t='Ese pulso ya está ocupado. Suelta la carta en un pulso libre: los que tienen triángulo.';
+  else { let libres=true; for(let k=0;k<n;k++){ if(placed[d.ideal+k]){ libres=false; break; } }
+    t='Ese ritmo ocupa '+n+' pulsos seguidos y '+(libres?'no puede pasar de un compás a otro.':'ahí no los tiene libres.')+fin; }
+  toast(d?'Ahí no cabe':'No cabe en ningún hueco','no'); document.getElementById('hint').textContent=t;
+}
 function firstFreePulse(){ for(let i=0;i<N_PULSES;i++){ if(!placed[i]) return i; } return null; }
-function nextFreeFrom(start){ for(let i=Math.max(0,start);i<N_PULSES;i++){ if(!placed[i]) return i; } return null; }
+function nextFreeFrom(start,n){ for(let i=Math.max(0,start);i<N_PULSES;i++){ if(cabeEn(i,n||1)) return i; } return null; }   /* (7-oct-2026) el primer sitio en el que CABE (antes: el primer pulso libre) */
 
 /* ===== cartas flotantes ===== */
 let raf=null;
@@ -444,6 +517,7 @@ function spawnPool(){
   // especial (tup) y sus duraciones reales (beats) se perdían, así que un tresillo salía sin
   // corchete ni «3» y, una vez colocado, sonaba como corcheas normales.
   const contents=solution.filter(s=>!s.cubierto).map(s=>({toks:s.toks.slice(),beams:(s.beams||[]).map(b=>b.slice()),beats:(s.beats||[]).slice(),tup:s.tup?{idx:s.tup.idx.slice(),num:s.tup.num,occ:s.tup.occ}:null,target:!!s.target}));
+  { let k=0; solution.forEach((s,i)=>{ if(!s.cubierto) contents[k++].span=spanSol(i); }); }   /* (7-oct-2026) los pulsos que ocupa cada carta; el mazo y su orden, igual que antes */
   contents.sort(()=>Math.random()-.5);
   contents.forEach(ct=>makeFloatCard(ct));
   if(raf) cancelAnimationFrame(raf); let last=performance.now();
@@ -463,34 +537,49 @@ function spawnPool(){
   raf=requestAnimationFrame(tick);
 }
 function attachDrag(card){
-  const el=card.el; let sx,sy,ox,oy,moved;
-  el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); card.drag=true; moved=false; el.classList.add('drag');
+  /* (7-oct-2026) ARRASTRAR: manda el centro de la carta y lo que ocupa (destinoDe), no la punta del puntero; se ilumina
+     en vivo dónde caería. PULSAR sin arrastrar: al primer sitio en el que quepa a partir de clickCursor y, si desde ahí
+     no hay ninguno, al primero de la frase. `pid` = el puntero que la lleva (un segundo dedo no la descoloca). */
+  const el=card.el; let sx,sy,ox,oy,moved,pid=null;
+  el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); card.drag=true; moved=false; pid=e.pointerId; el.classList.add('drag');
     sx=e.clientX; sy=e.clientY; ox=card.x; oy=card.y; try{el.setPointerCapture(e.pointerId);}catch(_){} });
-  el.addEventListener('pointermove',(e)=>{ if(!card.drag)return; const dx=e.clientX-sx, dy=e.clientY-sy;
+  el.addEventListener('pointermove',(e)=>{ if(!card.drag || e.pointerId!==pid)return; const dx=e.clientX-sx, dy=e.clientY-sy;
     if(Math.abs(dx)+Math.abs(dy)>6) moved=true; card.x=ox+dx; card.y=oy+dy; el.style.left=card.x+'px'; el.style.top=card.y+'px';
-    showPulseHL(pulseAt(e.clientX,e.clientY)); });
-  const up=(e)=>{ if(!card.drag)return; card.drag=false; el.classList.remove('drag'); hidePulseHL();
-    const idx = moved ? pulseAt(e.clientX,e.clientY) : nextFreeFrom(clickCursor);
-    if(idx!=null && !placed[idx]){ placeCard(card, idx); }
-    else { const ang=Math.random()*Math.PI*2, sp=10+Math.random()*14; card.vx=Math.cos(ang)*sp; card.vy=Math.sin(ang)*sp; } };
+    const d=moved?destinoDe(card):null, so=!!(d&&d.sobre); showPulseHL(d, card.ct.span||1);
+    el.classList.toggle('sobre',so); el.classList.toggle('cabe',so&&d.p!=null); el.classList.toggle('nocabe',so&&d.p==null); });
+  const up=(e)=>{ if(!card.drag || e.pointerId!==pid)return; card.drag=false; pid=null; el.classList.remove('drag','sobre','cabe','nocabe'); hidePulseHL();
+    const n=card.ct.span||1;
+    if(moved){ const d=destinoDe(card);
+      if(d.sobre && d.p!=null){ placeCard(card, d.p); return; }
+      if(d.sobre) avisaNoCabe(n, d);                              // soltada sobre el pentagrama, pero ahí no cabe
+    } else { let idx=nextFreeFrom(clickCursor, n); if(idx==null) idx=nextFreeFrom(0, n);
+      if(idx!=null){ placeCard(card, idx); return; }
+      avisaNoCabe(n, null); }                                     // pulsada y no le queda sitio en toda la frase
+    { const bb=bounds(); if(card.y<bb.t){ card.y=bb.t; el.style.top=card.y+'px'; } }   // vuelve a su zona YA, sin esperar al siguiente fotograma (en un aparato lento se quedaba un momento encima de las ✕)
+    const ang=Math.random()*Math.PI*2, sp=10+Math.random()*14; card.vx=Math.cos(ang)*sp; card.vy=Math.sin(ang)*sp; };   // y sigue flotando
   el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
 }
 function placeCard(card, idx){
-  placed[idx]={toks:card.ct.toks.slice(),beams:(card.ct.beams||[]).map(b=>b.slice()),beats:(card.ct.beats||card.ct.toks.map(durQ)).slice(),tup:card.ct.tup?{idx:card.ct.tup.idx.slice(),num:card.ct.tup.num,occ:card.ct.tup.occ}:null,target:!!card.ct.target};
-  clickCursor=idx+1;                                   // las clicadas siguientes van a partir de aquí
+  /* (7-oct-2026) una carta de N pulsos ocupa N pulsos seguidos desde idx: los siguientes pasan a «cubiertos» AHORA (antes
+     venían reservados de antemano y delataban dónde iba cada ritmo largo) */
+  const n=card.ct.span||1; if(!cabeEn(idx,n)) return false;
+  placed[idx]={toks:card.ct.toks.slice(),beams:(card.ct.beams||[]).map(b=>b.slice()),beats:(card.ct.beats||card.ct.toks.map(durQ)).slice(),tup:card.ct.tup?{idx:card.ct.tup.idx.slice(),num:card.ct.tup.num,occ:card.ct.tup.occ}:null,target:!!card.ct.target,span:n};
+  for(let k=1;k<n;k++) placed[idx+k]={cubierto:true,toks:[],beams:[],beats:[],tup:null};
+  clickCursor=idx+n;                                   // las clicadas siguientes van a partir de aquí
   round.malos=(round.malos||[]).filter(i=>i!==idx);
   pool=pool.filter(c=>c!==card); card.el.remove();
-  renderPhrase(); updateCheck(); ping();
+  renderPhrase(); updateCheck(); ping(); return true;
 }
 function unplace(idx){
   if(placed[idx] && placed[idx].cubierto) return;
   const ct=placed[idx]; placed[idx]=null; clickCursor=Math.min(clickCursor,idx);
+  for(let k=idx+1;k<N_PULSES && placed[k] && placed[k].cubierto;k++) placed[k]=null;   /* (7-oct-2026) libera TODOS los pulsos que ocupaba */
   round.malos=(round.malos||[]).filter(i=>i!==idx);   // deja de estar señalado en cuanto lo quita
   renderPhrase(); updateCheck(); makeFloatCard(ct);
 }
 function updateCheck(){ const allFilled=placed.every(p=>p); document.getElementById('checkBtn').disabled=!allFilled; setBar();
   document.getElementById('hint').textContent = allFilled?'¡Listo! Pulsa Comprobar.':'Coloca todas las cartas para comprobar.'; }
-function clearAll(){ const back=[]; for(let i=0;i<N_PULSES;i++){ if(placed[i] && !placed[i].cubierto){ back.push(placed[i]); placed[i]=null; } } clickCursor=0; round.malos=[];
+function clearAll(){ const back=[]; for(let i=0;i<N_PULSES;i++){ if(placed[i] && !placed[i].cubierto) back.push(placed[i]); placed[i]=null; } clickCursor=0; round.malos=[];   /* (7-oct-2026) también se liberan los «cubiertos» */
   renderPhrase(); back.forEach(ct=>makeFloatCard(ct)); updateCheck(); }
 
 /* ===== audio de la frase (ilimitado) ===== */
@@ -515,14 +604,18 @@ function playPhrase(noClick){
 /* ===== comprobar ===== */
 /* (22-sep-2026) Con una sola ronda, la barra avanza con las cartas colocadas y se
    llena del todo solo cuando la comprobación es correcta. */
-function setBar(){ const libres=placed.filter(p=>!(p&&p.cubierto)).length; const puestas=placed.filter(p=>p&&!p.cubierto).length;
+function setBar(){ const libres=solution.filter(s=>s&&!s.cubierto).length; const puestas=placed.filter(p=>p&&!p.cubierto).length;   /* (7-oct-2026) cartas colocadas / cartas del puzzle (ya no hay pulsos reservados que descontar) */
   const pct = round.hits>=PUZZLES ? 100 : (libres? Math.round(puestas/libres*90) : 0);
   document.getElementById('barFill').style.width=Math.max(0,Math.min(100,pct))+'%';
   document.getElementById('barTag').textContent = round.hits>=PUZZLES?'¡Completado!':(puestas>=libres&&libres?'¡Comprueba!':`Cartas: ${puestas} de ${libres}`); }
 function flashBad(){ const f=document.getElementById('barFill'); f.classList.add('bad'); setTimeout(()=>f.classList.remove('bad'),650); }
 function check(){
   const malos = [];
-  placed.forEach((p,i)=>{ if(solution[i] && solution[i].cubierto) return; if(!p || tokKey(p.toks)!==tokKey(solution[i].toks)) malos.push(i); });
+  /* (7-oct-2026) sin pulsos reservados, se mira carta a carta: está bien si EMPIEZA en el mismo pulso que en la solución
+     y es el mismo ritmo. Las que no, se marcan en rojo como siempre (la ✕ del pulso en el que empiezan). */
+  placed.forEach((p,i)=>{ const s=solution[i];
+    if(p && !p.cubierto){ if(!s || s.cubierto || tokKey(p.toks)!==tokKey(s.toks)) malos.push(i); }
+    else if(!p && s && !s.cubierto) malos.push(i); });   // hueco sin carta (no debería: «Comprobar» solo se activa con todo colocado)
   const ok = malos.length===0;
   if(ok){ round.malos=[]; round.hits++; round.score=Math.min(100,round.score+(100/PUZZLES)); enviarEstado(); toast('¡Correcto!','ok'); burst(); setBar();
     document.getElementById('checkBtn').disabled=true;                            // sin reproducir: solo confirma
@@ -556,8 +649,17 @@ function ping(){ const c=ac(); if(!c)return; const t0=c.currentTime+0.01; const 
 /* ===== ronda ===== */
 function newRound(){
   stopPhrase(); round.firstFailUsed=false; round.malos=[]; idleLabel='▶ Escuchar la frase'; setSounding(false); placed=new Array(N_PULSES).fill(null); clickCursor=0;
-  solution=buildSolution(); solution.forEach((sl,i)=>{ if(sl.cubierto) placed[i]={cubierto:true,toks:[],beams:[],beats:[],tup:null}; }); renderPhrase(); spawnPool(); updateCheck(); setBar();
+  solution=buildSolution();
+  /* (7-oct-2026, Iago: «quiero que haya un triángulo por cada pulso») ya NO se rellenan de antemano los pulsos «cubiertos»:
+     todos empiezan libres. La barra de compás solo manda si la solución se generó sin cruzarla (MEZCLA, carta 1.4). */
+  SIN_CRUZAR=!!(SEL || HAY_LARGOS) && solution.every((s,i)=>s.cubierto || (i%PULSES_PER_MEAS)+spanSol(i)<=PULSES_PER_MEAS);
+  avisoLargos(solution.some(s=>s.cubierto));
+  renderPhrase(); spawnPool(); updateCheck(); setBar();
 }
+/* (7-oct-2026) si en este puzzle hay algún ritmo de más de un pulso, la cabecera lo avisa (en los demás, ni una letra más) */
+function avisoLargos(hay){ const fs=document.querySelector('.fase-sub'); let o=document.getElementById('subLargos');
+  if(hay && !o && fs){ o=document.createElement('span'); o.id='subLargos'; o.innerHTML=' <b>Ojo:</b> hay ritmos que ocupan más de un pulso.'; fs.appendChild(o); }
+  else if(!hay && o){ o.remove(); } }
 window.addEventListener('resize', ()=>{ renderPhrase(); });
 document.getElementById('playBtn').onclick=()=>{ ac(); playPhrase(); };
 document.getElementById('clearBtn').onclick=()=>{ clearAll(); };
