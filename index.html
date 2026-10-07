@@ -606,9 +606,21 @@ footer .lock{color:var(--gold1);}
 .imagic::before{content:"✧";position:absolute;left:-22px;top:-12px;font-size:18px;animation:imagicgo .9s .08s ease-out forwards;}
 .imagic::after{content:"✧";position:absolute;right:-20px;top:10px;font-size:14px;animation:imagicgo .9s .16s ease-out forwards;}
 @keyframes imagicgo{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-40deg);}30%{opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(10deg);}100%{opacity:0;transform:translate(-50%,-60%) scale(.9) rotate(30deg);}}
-/* árbol en dos columnas independientes (p. ej. 1.4: rama simple | rama breve) */
+/* árbol en columnas independientes (p. ej. 1.4: rama estándar | rama doble | rama breve) */
+/* (7-oct-2026) 1.4 con tres ramas: las cuatro hojas de la estándar van de dos en dos para que quepan las tres columnas… */
+.itree-row.i14-2x2 .itree-rowin{display:grid;grid-template-columns:repeat(2,auto);justify-content:center;justify-items:stretch;align-items:stretch;gap:8px;}
+/* …y en pantallas bajas (clase i14c, la pone la propia intro) todo va un poco más apretado */
+.itree-row.i14c + .itree-link{height:12px;}
+.itree-row.i14c .itnode{padding:6px 9px 5px;}
+.itree-row.i14c .itnode-lab{margin-top:3px;}
+.itree-row.i14c .itree-rowlab{margin-bottom:5px;}
 .itree-cols{display:flex;gap:26px;align-items:flex-start;justify-content:center;flex:1 1 auto;min-width:0;}
 .itree-main.sep{border-left:1px dashed var(--line);padding-left:26px;}
+/* (7-oct-2026) en un móvil o una tableta de pie no caben tres ramas lado a lado: van una debajo de otra */
+@media(max-width:960px){
+  .itree-cols{flex-direction:column;align-items:stretch;gap:14px;}
+  .itree-main.sep{border-left:none;padding-left:0;border-top:1px dashed var(--line);padding-top:14px;}
+}
 /* nº de carta: letra verde en recuadro, SIN relleno (el relleno verde es del botón INTRO) */
 .setup-card .c-num{background:transparent;border:1.5px solid var(--gold1);color:var(--gold-soft);padding:0 6px;}
 /* tarjeta de génesis pulsable: activar/desactivar el bucle */
@@ -1332,9 +1344,9 @@ const GE_WORLDS=[
         {"ts":"6/8","beats":3,"beat":8,"notes":["16","16","q"],"beams":[[0,1]]},
         {"ts":"6/8","beats":3,"beat":8,"notes":["q","16","16"],"beams":[[1,2]]}
       ] },
-      { id:"c1_4", atlasId:"1.4", name:"Síncopas (s.binaria) · todas las variantes", lecs:"25–28", ref:"pág. 18", note:"Síncopa simple (de pulso), síncopa breve (de fracción) y combinaciones con corchea + negra + dos semicorcheas y similares.",
+      { id:"c1_4", atlasId:"1.4", name:"Síncopas (s.binaria) · todas las variantes", lecs:"25–28", ref:"pág. 18", note:"Síncopa estándar (de pulso), síncopa breve (de fracción) y combinaciones con corchea + negra + dos semicorcheas y similares.",
         cells:[
-        {"ts":"2/4","notes":["8","q","8"],"label":"simple"},
+        {"ts":"2/4","notes":["8","q","8"],"label":"estándar"},
         {"ts":"2/4","notes":["16","8","16","16","8","16"],"beams":[[0,1,2],[3,4,5]],"label":"breve"},
         {"ts":"2/4","notes":["8","q","16","16"],"beams":[[2,3]]},
         {"ts":"2/4","notes":["16","16","q","8"],"beams":[[0,1]]},
@@ -7526,42 +7538,59 @@ D['1.3']={spq:0.8,slides:function(card){ return [
     {label:'de dónde vienes',nodes:[Object.assign({},CN13,{id:'a1',timbre:'wood',loopBeats:1.5}),Object.assign({},NC13,{id:'a3',timbre:'marimba',loopBeats:1.5}),Object.assign({},A6S,{id:'a2',timbre:'shaker',loopBeats:1.5})]},
     {label:'los ritmos de la carta',nodes:leaves(card,1.5)}]}];}};
 
-D['1.4']={spq:0.75,slides:function(card){ return [
-  {type:'cover',kicker:'INTRO · CARTA 1.4',title:card.name,sub:'La nota importante cae donde NO la esperas: a contratiempo. Dos ramas: la síncopa simple (de pulso) y la breve (de fracción).',
-   cells:[{notes:['8','q','8']},{notes:['16','8','16'],beams:[[0,1,2]]},{notes:['8','q','16','16'],beams:[[2,3]]},{notes:['16','16','q','16','16'],beams:[[0,1],[3,4]]}],ref:card.ref||''},
+D['1.4']={spq:0.75,slides:function(card){
+  /* (7-oct-2026) árbol de tres ramas: en pantallas bajas (un portátil) o no muy anchas (una tableta), nodos algo
+     más pequeños para que quepa entero; hasta 960 px de ancho las ramas van una debajo de otra (ver
+     los estilos) y no hace falta encoger nada */
+  const an=(window.innerWidth||1200), bajo=(an>960 && ((window.innerHeight||900)<880 || an<1100)), C14=bajo?'i14c':'', H0=bajo?58:88, H1=bajo?66:88,
+        HL=bajo?{h:52,stretch:0.85,minInner:26}:{h:60,stretch:0.95,minInner:30};
+  return [
+  {type:'cover',kicker:'INTRO · CARTA 1.4',title:card.name,sub:'La nota importante cae donde NO la esperas: a contratiempo. Tres ramas: la síncopa estándar y la doble (de pulso) y la breve (de fracción).',
+   cells:[{notes:['8','q','8']},{notes:['8','q','q','8']},{notes:['16','8','16'],beams:[[0,1,2]]},{notes:['8','q','16','16'],beams:[[2,3]]},{notes:['16','16','q','16','16'],beams:[[0,1],[3,4]]}],ref:card.ref||''},
   {type:'facts',blocks:[
-    {q:'¿Cuánto ocupa la síncopa SIMPLE?',fig:{notes:['h']},a:'Una <b>blanca</b> — dos pulsos completos.'},
+    {q:'¿Cuánto ocupa la síncopa ESTÁNDAR?',fig:{notes:['h']},a:'Una <b>blanca</b> — dos pulsos completos.'},
+    {q:'¿Y la síncopa DOBLE?',fig:{notes:['hd']},a:'Una <b>blanca con puntillo</b> — tres pulsos completos.'},
     {q:'¿Y la síncopa BREVE?',fig:{notes:['q']},a:'Una <b>negra</b> — un solo pulso. Es una ramificación aparte.'},
-    {q:'¿Dónde viven?',meters:BIN},
-    {q:'¿De qué las conoces?',a:'De las subdivisiones directas: <b>4 corcheas</b> (rama simple) y <b>4 semicorcheas</b> (rama breve).',
-     figs:[{notes:['8','8','8','8'],beams:[[0,1],[2,3]]},{notes:['16','16','16','16'],beams:[[0,1,2,3]]}]}]},
-  {type:'genesis',mode:'fusion',title:'La síncopa simple: nace de cuatro corcheas',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',steps:[
+    {q:'¿Dónde viven?',meters:BIN,a:'✓ En los tres. Ojo: la <b>doble</b> ocupa tres pulsos, así que solo cabe en 3/4 y 4/4.'},
+    {q:'¿De qué las conoces?',a:'De las subdivisiones directas: <b>4 corcheas</b> (rama estándar), <b>6 corcheas</b> (rama doble) y <b>4 semicorcheas</b> (rama breve).',
+     figs:[{notes:['8','8','8','8'],beams:[[0,1],[2,3]]},{notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]]},{notes:['16','16','16','16'],beams:[[0,1,2,3]]}]}]},
+  {type:'genesis',mode:'fusion',title:'La síncopa estándar: nace de cuatro corcheas',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',steps:[
     {notes:['8','8','8','8'],beams:[[0,1],[2,3]],caption:'De la blanca pasamos DIRECTAMENTE a cuatro corcheas: la síncopa vive en la subdivisión.'},
     {notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Liga las dos del medio',caption:'Ya SUENA la síncopa — la escritura todavía no se ha enterado.'},
-    {notes:['8','q','8'],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Corchea – <b>NEGRA</b> – corchea. La negra cae a contratiempo: eso es la síncopa simple.'}]},
+    {notes:['8','q','8'],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Corchea – <b>NEGRA</b> – corchea. La negra cae a contratiempo: eso es la síncopa estándar.'}]},
   {type:'genesis',mode:'tajo',title:'Las variantes: el tajo vuelve',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',base:{notes:['8','q','8']},steps:[
     {notes:['8','q','8'],caption:'La síncopa base. Ahora, el tajo sobre sus corcheas.'},
     {notes:['8','q','16','16'],beams:[[2,3]],mark:[2,3],cut:2,btn:'⚡ TAJO en la última corchea',caption:'La corchea final se divide en dos semicorcheas.'},
     {notes:['16','16','q','8'],beams:[[0,1]],mark:[0,1],cut:0,viaBase:true,btn:'⚡ TAJO en la primera',caption:'Ahora la del principio.'},
     {notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],mark:[0,1,3,4],cut:[0,2],viaBase:true,btn:'⚡ ¡TAJO DOBLE!',caption:'Las dos divididas a la vez: la variante completa.'}]},
+  {type:'genesis',mode:'fusion',title:'La síncopa DOBLE: la misma fusión, dos veces',loopBeats:3,pulse:{notes:['q','q','q']},timbre:'marimba',steps:[
+    {notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]],caption:'De la blanca con puntillo pasamos DIRECTAMENTE a seis corcheas: tres parejas.'},
+    {notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]],ties:[[1,2],[3,4]],mark:[1,2,3,4],btn:'✨ Liga todas menos la primera y la última',caption:'Dos ligaduras, una en cada cambio de pulso: ya SUENA la síncopa doble — la escritura todavía no se ha enterado.'},
+    {notes:['8','q','q','8'],mark:[1,2],join:[[1,2],[3,4]],btn:'✨ Consuma las dos fusiones',caption:'Corchea – <b>NEGRA – NEGRA</b> – corchea. Dos negras seguidas a contratiempo: eso es la síncopa doble.'}]},
   {type:'genesis',mode:'fusion',title:'La síncopa BREVE: la misma película, un piso más abajo',loopBeats:1,pulse:{notes:['q']},timbre:'bell',steps:[
     {notes:['16','16','16','16'],beams:[[0,1,2,3]],caption:'Rama aparte: de la NEGRA pasamos directamente a cuatro semicorcheas.'},
     {notes:['16','16','16','16'],beams:[[0,1,2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Liga las dos del medio',caption:'El mismo gesto de antes… a mitad de tamaño.'},
     {notes:['16','8','16'],beams:[[0,1,2]],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Semicorchea – <b>CORCHEA</b> – semicorchea: la síncopa breve. Cabe entera en un pulso.'}]},
-  {type:'tree',spq:0.75,loopBeats:2,kicker:'EL ÁRBOL — dos ramas separadas que encajan (la breve gira el doble de rápido)',cols:[
+  /* (7-oct-2026) TRES ramas: estándar · doble · breve. Las cuatro hojas de la estándar van de dos en dos para que quepan
+     las tres columnas; en pantallas bajas (portátil de 768 de alto) los nodos se encogen un poco para que se vea entero. */
+  {type:'tree',spq:0.75,loopBeats:2,kicker:'EL ÁRBOL — tres ramas separadas que encajan (la breve gira el doble de rápido)',cols:[
     {rows:[
-      {label:'rama SIMPLE · la blanca',lvl:0,nodes:[{id:'rH',notes:['h'],label:'blanca',timbre:'drum',loopBeats:2,stretch:2.4}]},
-      {lvl:1,nodes:[{id:'s4c',notes:['8','8','8','8'],beams:[[0,1],[2,3]],label:'4 corcheas',timbre:'wood',loopBeats:2}]},
-      {label:'los ritmos de la carta',lvl:2,nodes:[
-        {id:'l1',notes:['8','q','8'],label:'síncopa simple',timbre:'clave',loopBeats:2,h:60,stretch:0.95,minInner:30},
-        {id:'l2',notes:['8','q','16','16'],beams:[[2,3]],label:'variante final',timbre:'marimba',loopBeats:2,h:60,stretch:0.95,minInner:30},
-        {id:'l3',notes:['16','16','q','8'],beams:[[0,1]],label:'variante inicial',timbre:'blip',loopBeats:2,h:60,stretch:0.95,minInner:30},
-        {id:'l4',notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],label:'variante doble',timbre:'conga',loopBeats:2,h:60,stretch:0.95,minInner:30}]}]},
+      {label:'rama ESTÁNDAR · la blanca',lvl:0,cls:C14,nodes:[{id:'rH',notes:['h'],label:'blanca',timbre:'drum',loopBeats:2,stretch:2.4,h:H0}]},
+      {lvl:1,cls:C14,nodes:[{id:'s4c',notes:['8','8','8','8'],beams:[[0,1],[2,3]],label:'4 corcheas',timbre:'wood',loopBeats:2,h:H1}]},
+      {label:'los ritmos de la carta',lvl:2,cls:'wrap2 i14-2x2 '+C14,nodes:[
+        {id:'l1',notes:['8','q','8'],label:'síncopa estándar',timbre:'clave',loopBeats:2},
+        {id:'l2',notes:['8','q','16','16'],beams:[[2,3]],label:'variante final',timbre:'marimba',loopBeats:2},
+        {id:'l3',notes:['16','16','q','8'],beams:[[0,1]],label:'variante inicial',timbre:'blip',loopBeats:2},
+        {id:'l4',notes:['16','16','q','16','16'],beams:[[0,1],[3,4]],label:'variante doble',timbre:'conga',loopBeats:2}].map(n=>Object.assign(n,HL))}]},
     {rows:[
-      {label:'rama BREVE · la negra',lvl:0,nodes:[{id:'rQ',notes:['q'],label:'negra',timbre:'drumHi',loopBeats:1,stretch:2.4}]},
-      {lvl:1,nodes:[{id:'s4s',notes:['16','16','16','16'],beams:[[0,1,2,3]],label:'4 semicorcheas',timbre:'shaker',loopBeats:1}]},
-      {lvl:2,nodes:[{id:'l5',notes:['16','8','16'],beams:[[0,1,2]],label:'síncopa breve',timbre:'bell',loopBeats:1}]}]}],
-   foot:'Enciende la blanca y la negra a la vez y escucha cómo la rama breve gira el doble de rápido — y aún así, todo encaja.'}];}};
+      {label:'rama DOBLE · la blanca con puntillo',lvl:0,cls:C14,nodes:[{id:'rHd',notes:['hd'],label:'blanca con puntillo',timbre:'drum',loopBeats:3,stretch:2.4,h:H0}]},
+      {lvl:1,cls:C14,nodes:[{id:'s6c',notes:['8','8','8','8','8','8'],beams:[[0,1],[2,3],[4,5]],ties:[[1,2],[3,4]],label:'6 corcheas ligadas',timbre:'wood',loopBeats:3,h:H1,stretch:1.15}]},
+      {lvl:2,cls:C14,nodes:[{id:'l6',notes:['8','q','q','8'],label:'síncopa doble',timbre:'tick',loopBeats:3,h:H1}]}]},
+    {rows:[
+      {label:'rama BREVE · la negra',lvl:0,cls:C14,nodes:[{id:'rQ',notes:['q'],label:'negra',timbre:'drumHi',loopBeats:1,stretch:2.4,h:H0}]},
+      {lvl:1,cls:C14,nodes:[{id:'s4s',notes:['16','16','16','16'],beams:[[0,1,2,3]],label:'4 semicorcheas',timbre:'shaker',loopBeats:1,h:H1}]},
+      {lvl:2,cls:C14,nodes:[{id:'l5',notes:['16','8','16'],beams:[[0,1,2]],label:'síncopa breve',timbre:'bell',loopBeats:1,h:H1}]}]}],
+   foot:'Enciende la blanca y la negra a la vez y escucha cómo la rama breve gira el doble de rápido — y aún así, todo encaja. La rama doble tarda tres pulsos en dar la vuelta.'}];}};
 
 D['1.5']={spq:0.8,slides:function(card){ return [
   cover(card),
@@ -7599,7 +7628,7 @@ D['1.6']={spq:0.75,slides:function(card){ return [
       {id:'a2',notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],label:'8 semicorcheas',timbre:'shaker',loopBeats:2}]},
     {label:'los ritmos de la carta',nodes:[
       {id:'l1',notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]],label:'ligadura de fracción',timbre:'clave',loopBeats:2,
-       twin:{notes:['8','q','8'],label:'= síncopa simple'}},
+       twin:{notes:['8','q','8'],label:'= síncopa estándar'}},
       {id:'l2',notes:['q','8','8'],beams:[[1,2]],ties:[[0,1]],label:'sobre el pulso',timbre:'marimba',loopBeats:2,
        twin:{notes:['qd','8'],label:'= negra con puntillo'}},
       {id:'l3',notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],ties:[[3,4]],label:'entre semicorcheas',timbre:'bell',loopBeats:2}]}],
