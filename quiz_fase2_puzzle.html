@@ -78,7 +78,7 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 /* zona de cartas flotantes (sobre la nebulosa, transparente) */
 .pool-hint{font-size:11px;letter-spacing:.06em;color:var(--muted);text-align:center;margin:4px 0 0}
 #floatLayer{position:fixed;inset:0;z-index:40;pointer-events:none}
-.fcard{position:fixed;pointer-events:auto;cursor:grab;border-radius:14px;padding:9px 13px;background:var(--paper);
+.fcard{position:absolute;pointer-events:auto;cursor:grab;border-radius:14px;padding:9px 13px;background:var(--paper);
   box-shadow:0 10px 26px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.12);touch-action:none;user-select:none;
   transition:box-shadow .15s}
 .fcard:active{cursor:grabbing}
@@ -93,6 +93,16 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
 /* (22-sep-2026) las cartas con un ritmo CARACTERÍSTICO de la carta llevan una estrellita: se ven de un vistazo */
 .fcard.tgt::after{content:"★";position:absolute;top:-9px;right:-7px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
   font-size:12px;color:#16132b;background:linear-gradient(120deg,#ffd678,#ff9a3c);box-shadow:0 4px 12px rgba(255,154,60,.55);pointer-events:none}
+/* (13-oct-2026, Carla · 1.4: «no aparecen los ritmos flotando») BANDEJA · si las cartas no se ven flotando, van en fila
+   dentro de la página, debajo de los botones (se arrastran o se pulsan igual). Sola si no se ve ninguna; o con el botón. */
+.verbandeja{font:inherit;font-size:11.5px;font-weight:800;letter-spacing:.02em;color:var(--text);background:rgba(255,255,255,.1);
+  border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;align-self:center}
+.verbandeja:hover{background:rgba(255,255,255,.18)}
+#bandeja{display:none}
+body.bandeja{overflow:auto}
+body.bandeja #bandeja{display:flex;flex-wrap:wrap;gap:16px 14px;justify-content:center;align-items:flex-start;padding:12px 0 22px;position:relative;z-index:40}
+body.bandeja #bandeja .fcard{position:relative}
+body.bandeja .verbandeja{display:none}
 
 .toast{position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-20px);z-index:90;opacity:0;
   padding:11px 20px;border-radius:13px;font-weight:900;font-size:16px;color:#16132b;box-shadow:0 14px 40px rgba(0,0,0,.4);transition:opacity .2s,transform .2s;pointer-events:none}
@@ -136,7 +146,7 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
     <span class="brand"><span class="a">RITMO</span> <span class="h">at home · 4º GE</span></span>
     <span class="protlbl">fase 2 de 4</span>
   </div>
-  <div class="fase-head"><span class="fase-step">Fase 2 de 4</span><h2>Resuelve el puzzle</h2></div>
+  <div class="fase-head"><span class="fase-step">Fase 2 de 4</span><h2>Resuelve el puzzle</h2><button class="verbandeja" id="verBandeja" type="button">¿No ves las cartas? Pulsa aquí</button></div>
   <p class="fase-sub">Escucha la frase y <b>arrastra</b> (o pulsa) las cartas que flotan abajo hasta su pulso.
     Entre ellas están <b>todos los ritmos de esta carta</b> (los de la estrella ★) y algún relleno más sencillo.
     Cuando creas que está, pulsa <b>Comprobar</b>. Puedes escuchar las veces que quieras.</p>
@@ -154,8 +164,9 @@ body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiase
     <span class="hint" id="hint">Coloca todas las cartas para comprobar.</span>
     <button class="btn btn-check" id="checkBtn" disabled>Comprobar</button>
   </div>
-  <p class="pool-hint">↓ las cartas flotan en la nebulosa · agárralas y muévelas para ver lo que hay detrás</p>
+  <p class="pool-hint"><span id="poolTxt">↓ las cartas flotan en la nebulosa · agárralas y muévelas para ver lo que hay detrás</span></p>
   <div id="floatTop"></div>
+  <div id="bandeja"></div>
 </div>
 
 <div id="floatLayer"></div>
@@ -503,16 +514,19 @@ let raf=null;
 function bounds(){ const s=document.getElementById('floatTop'); const top=s?s.getBoundingClientRect().bottom+12:innerHeight*0.5;
   return {l:14, t:top, r:innerWidth-14, b:innerHeight-14}; }
 function makeFloatCard(ct){
-  const layer=document.getElementById('floatLayer'); const el=document.createElement('div'); el.className='fcard'+(ct.target?' tgt':'');
+  const layer=document.getElementById(BANDEJA?'bandeja':'floatLayer'); const el=document.createElement('div'); el.className='fcard'+(ct.target?' tgt':'');
   el.innerHTML=`<div class="fmini">${renderPulseMini(ct.toks,ct.beams,64,ct.tup)}</div>`; layer.appendChild(el);
+  if(BANDEJA){ const card={el,ct,x:0,y:0,vx:0,vy:0,w:el.offsetWidth||110,h:el.offsetHeight||74,drag:false}; el.style.left='0px'; el.style.top='0px';
+    attachDrag(card); pool.push(card); return card; }
   const bb=bounds(); const w=el.offsetWidth||110,h=el.offsetHeight||74;
-  const x=bb.l+Math.random()*Math.max(40,bb.r-bb.l-w), y=bb.t+Math.random()*Math.max(60,bb.b-bb.t-h);
+  let x=bb.l+Math.random()*Math.max(40,bb.r-bb.l-w), y=bb.t+Math.random()*Math.max(60,bb.b-bb.t-h);
+  x=Math.max(0, Math.min(x, bb.r-w)); y=Math.max(0, Math.min(y, bb.b-h));   // (13-oct) ya a la vista desde el principio
   const ang=Math.random()*Math.PI*2, sp=10+Math.random()*14;
   const card={el,ct,x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,w,h,drag:false}; el.style.left=x+'px'; el.style.top=y+'px';
   attachDrag(card); pool.push(card); return card;
 }
 function spawnPool(){
-  const layer=document.getElementById('floatLayer'); layer.innerHTML=''; pool=[];
+  const layer=document.getElementById('floatLayer'); layer.innerHTML=''; pool=[]; { const bj=document.getElementById('bandeja'); if(bj) bj.innerHTML=''; }
   // (Iago 15-sep-2026) las cartas del mazo copiaban solo toks y beams: el grupo de valoración
   // especial (tup) y sus duraciones reales (beats) se perdían, así que un tresillo salía sin
   // corchete ni «3» y, una vez colocado, sonaba como corcheas normales.
@@ -521,7 +535,7 @@ function spawnPool(){
   contents.sort(()=>Math.random()-.5);
   contents.forEach(ct=>makeFloatCard(ct));
   if(raf) cancelAnimationFrame(raf); let last=performance.now();
-  const tick=(now)=>{ const dt=Math.min(.05,(now-last)/1000); last=now; const bb=bounds();
+  const tick=(now)=>{ if(BANDEJA){ raf=null; return; } const dt=Math.min(.05,(now-last)/1000); last=now; const bb=bounds();
     for(let a=0;a<pool.length;a++){ for(let b2=a+1;b2<pool.length;b2++){ const A=pool[a],B=pool[b2];
       const acx=A.x+A.w/2,acy=A.y+A.h/2,bcx=B.x+B.w/2,bcy=B.y+B.h/2;
       let dx=bcx-acx,dy=bcy-acy; let dist=Math.hypot(dx,dy)||0.01; const min=(A.w+B.w)/2*0.95;
@@ -555,10 +569,27 @@ function attachDrag(card){
     } else { let idx=nextFreeFrom(clickCursor, n); if(idx==null) idx=nextFreeFrom(0, n);
       if(idx!=null){ placeCard(card, idx); return; }
       avisaNoCabe(n, null); }                                     // pulsada y no le queda sitio en toda la frase
+    if(BANDEJA){ card.x=0; card.y=0; el.style.left='0px'; el.style.top='0px'; return; }   // (13-oct) bandeja: vuelve a su sitio de la fila
     { const bb=bounds(); if(card.y<bb.t){ card.y=bb.t; el.style.top=card.y+'px'; } }   // vuelve a su zona YA, sin esperar al siguiente fotograma (en un aparato lento se quedaba un momento encima de las ✕)
     const ang=Math.random()*Math.PI*2, sp=10+Math.random()*14; card.vx=Math.cos(ang)*sp; card.vy=Math.sin(ang)*sp; };   // y sigue flotando
   el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
 }
+/* (13-oct-2026) BANDEJA. aBandeja() pasa las cartas que quedan a la fila de debajo de los botones (y las que vuelvan con su
+   ✕, «Limpiar compases» o una ronda nueva también van ahí). compruebaVisibles(): poco después de repartir, mira si alguna
+   carta se ve de verdad (dentro de la pantalla y con su centro a la vista); si no se ve NINGUNA, pasa a la bandeja sola. */
+let BANDEJA=false, _tVis=null;
+function aBandeja(){ if(BANDEJA) return; BANDEJA=true; document.body.classList.add('bandeja');
+  const t=document.getElementById('poolTxt'); if(t) t.textContent='↓ tus cartas: arrástralas hasta su pulso (o púlsalas en el orden en que suenan)';
+  const bj=document.getElementById('bandeja');
+  pool.forEach(cd=>{ cd.drag=false; cd.x=0; cd.y=0; cd.vx=0; cd.vy=0; cd.el.classList.remove('drag','sobre','cabe','nocabe'); cd.el.style.left='0px'; cd.el.style.top='0px'; bj.appendChild(cd.el); });
+  try{ hidePulseHL(); }catch(e){}
+  try{ const r=bj.getBoundingClientRect(); if(r.top>innerHeight-110) window.scrollBy(0, r.top-(innerHeight-150)); }catch(e){} }   // solo esta página: que asome la primera fila
+function compruebaVisibles(){ if(BANDEJA || !pool.length || document.hidden || document.querySelector('.ov.show')) return; const W=innerWidth, H=innerHeight; if(!(W>0 && H>0)) return;
+  let vistas=0; pool.forEach(cd=>{ const r=cd.el.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    if(r.width>4 && r.height>4 && cx>=0 && cy>=0 && cx<=W && cy<=H){ const e=document.elementFromPoint(cx,cy); if(e && cd.el.contains(e)) vistas++; } });
+  if(!vistas) aBandeja(); }
+function vigilaCartas(){ clearTimeout(_tVis); _tVis=setTimeout(compruebaVisibles, 1500); }
+document.getElementById('verBandeja').onclick=()=>{ aBandeja(); };
 function placeCard(card, idx){
   /* (7-oct-2026) una carta de N pulsos ocupa N pulsos seguidos desde idx: los siguientes pasan a «cubiertos» AHORA (antes
      venían reservados de antemano y delataban dónde iba cada ritmo largo) */
@@ -654,7 +685,7 @@ function newRound(){
      todos empiezan libres. La barra de compás solo manda si la solución se generó sin cruzarla (MEZCLA, carta 1.4). */
   SIN_CRUZAR=!!(SEL || HAY_LARGOS) && solution.every((s,i)=>s.cubierto || (i%PULSES_PER_MEAS)+spanSol(i)<=PULSES_PER_MEAS);
   avisoLargos(solution.some(s=>s.cubierto));
-  renderPhrase(); spawnPool(); updateCheck(); setBar();
+  renderPhrase(); spawnPool(); updateCheck(); setBar(); vigilaCartas();
 }
 /* (7-oct-2026) si en este puzzle hay algún ritmo de más de un pulso, la cabecera lo avisa (en los demás, ni una letra más) */
 function avisoLargos(hay){ const fs=document.querySelector('.fase-sub'); let o=document.getElementById('subLargos');
