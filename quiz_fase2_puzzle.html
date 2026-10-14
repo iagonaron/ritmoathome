@@ -595,15 +595,33 @@ function vigia(motivo, extra){
     if(_vigiaYa[motivo]) return; _vigiaYa[motivo]=1;
     let S=null; try{ S=window.Sentry||((window.parent&&window.parent!==window)?window.parent.Sentry:null); }catch(e){}
     if(!S || typeof S.captureMessage!=='function') return;
-    S.captureMessage('Vigía · '+motivo, { level:'warning', tags:{ vigia:motivo, fase:'quiz-fase2' },
+    /* (14-oct-2026, incidencia #6) la cuenta del alumno va en el aviso: sale de la dirección con la que el portal abre el ritmo
+       (?cuenta=…; la de la página de arriba, porque esta fase va en un iframe) */
+    let cuenta=''; try{ const q=new URLSearchParams(((window.parent&&window.parent!==window)?window.parent.location.search:'')||location.search); cuenta=q.get('cuenta')||''; }catch(e){}
+    const tg={ vigia:motivo, fase:'quiz-fase2' }; if(cuenta) tg.cuenta=cuenta.slice(0,64);
+    S.captureMessage('Vigía · '+motivo, { level:'warning', tags:tg,
       extra:Object.assign({ ancho:innerWidth, alto:innerHeight, dpr:window.devicePixelRatio||1, cartas:(typeof pool!=='undefined'&&pool)?pool.length:0 }, extra||{}) });
   }catch(e){}
 }
 function compruebaVisibles(){ if(BANDEJA || !pool.length || document.hidden || document.querySelector('.ov.show')) return; const W=innerWidth, H=innerHeight; if(!(W>0 && H>0)) return;
-  let vistas=0; pool.forEach(cd=>{ const r=cd.el.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
-    if(r.width>4 && r.height>4 && cx>=0 && cy>=0 && cx<=W && cy<=H){ const e=document.elementFromPoint(cx,cy); if(e && cd.el.contains(e)) vistas++; } });
-  if(!vistas){ vigia('cartas-invisibles', { vistas:0 }); aBandeja(); } }
+  /* (14-oct-2026, incidencia #6) además de contar, se apunta lo que hay en el sitio de cada carta (x,y,ancho,alto,qué elemento
+     sale encima,¿es la carta?) para que el aviso diga POR QUÉ no se ven: fuera de la pantalla, tapadas o sin tamaño */
+  const nom=e=>{ if(!e) return '-'; let c=''; try{ c=(typeof e.className==='string'?e.className:(e.className&&e.className.baseVal)||'').split(' ')[0]; }catch(x){} return e.tagName.toLowerCase()+(e.id?'#'+e.id:'')+(c?'.'+c:''); };
+  let vistas=0; const det=[]; pool.forEach(cd=>{ const r=cd.el.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2; let e=null, es=0;
+    if(r.width>4 && r.height>4 && cx>=0 && cy>=0 && cx<=W && cy<=H){ e=document.elementFromPoint(cx,cy); if(e && cd.el.contains(e)){ vistas++; es=1; } }
+    det.push([Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height),nom(e),es].join(',')); });
+  if(!vistas){ let ex={ vistas:0, det:det.join(' | ') };
+    try{ const bb=bounds(), ly=document.getElementById('floatLayer'), cs=ly?getComputedStyle(ly):null, lr=ly?ly.getBoundingClientRect():null, vv=window.visualViewport;
+      ex.hueco=[Math.round(bb.l),Math.round(bb.t),Math.round(bb.r),Math.round(bb.b)].join(',');
+      ex.capa=cs?[cs.display,cs.visibility,cs.opacity,cs.position,cs.zIndex,cs.transform,Math.round(lr.width)+'x'+Math.round(lr.height)].join(','):'-';
+      ex.centro=nom(document.elementFromPoint(W/2, Math.min(H-2, Math.max(2,(bb.t+bb.b)/2))));
+      ex.doc=[document.documentElement.clientWidth,document.documentElement.clientHeight,Math.round(scrollX),Math.round(scrollY),document.documentElement.scrollHeight].join(',');
+      ex.vv=vv?[Math.round(vv.width),Math.round(vv.height),vv.scale,Math.round(vv.offsetTop)].join(','):'-';
+      ex.ms=Math.round(performance.now()); ex.estado=document.visibilityState; }catch(x){}
+    vigia('cartas-invisibles', ex); aBandeja(); } }
 function vigilaCartas(){ clearTimeout(_tVis); _tVis=setTimeout(compruebaVisibles, 1500); }
+/* (14-oct-2026, incidencia #6) si al repartir la página estaba en segundo plano, compruebaVisibles() no miraba nada: se mira al volver */
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && !BANDEJA && pool.length) vigilaCartas(); });
 document.getElementById('verBandeja').onclick=()=>{ vigia('boton-no-veo-cartas', { ya_en_bandeja:BANDEJA }); aBandeja(); };   /* (14-oct-2026) + vigía */
 function placeCard(card, idx){
   /* (7-oct-2026) una carta de N pulsos ocupa N pulsos seguidos desde idx: los siguientes pasan a «cubiertos» AHORA (antes
