@@ -584,12 +584,27 @@ function aBandeja(){ if(BANDEJA) return; BANDEJA=true; document.body.classList.a
   pool.forEach(cd=>{ cd.drag=false; cd.x=0; cd.y=0; cd.vx=0; cd.vy=0; cd.el.classList.remove('drag','sobre','cabe','nocabe'); cd.el.style.left='0px'; cd.el.style.top='0px'; bj.appendChild(cd.el); });
   try{ hidePulseHL(); }catch(e){}
   try{ const r=bj.getBoundingClientRect(); if(r.top>innerHeight-110) window.scrollBy(0, r.top-(innerHeight-150)); }catch(e){} }   // solo esta página: que asome la primera fila
+/* (14-oct-2026, Iago: «sí al vigía») VIGÍA: si las cartas no se ven (la bandeja salta sola) o el alumno pulsa «¿No ves las
+   cartas?», aviso a Sentry (el de la página del ritmo, que es la que lo carga; esta fase va en un iframe del mismo sitio) con
+   el tamaño de la pantalla y cuántas cartas había; el navegador y su versión los pone Sentry. Así, si una versión nueva de
+   Chrome vuelve a esconder las cartas, se sabe el mismo día (lo revisa la tarea «Incidencias»). Un aviso por página y por
+   motivo. Para quitarlo: borrar este bloque y las dos llamadas a vigia(). */
+const _vigiaYa={};
+function vigia(motivo, extra){
+  try{
+    if(_vigiaYa[motivo]) return; _vigiaYa[motivo]=1;
+    let S=null; try{ S=window.Sentry||((window.parent&&window.parent!==window)?window.parent.Sentry:null); }catch(e){}
+    if(!S || typeof S.captureMessage!=='function') return;
+    S.captureMessage('Vigía · '+motivo, { level:'warning', tags:{ vigia:motivo, fase:'quiz-fase2' },
+      extra:Object.assign({ ancho:innerWidth, alto:innerHeight, dpr:window.devicePixelRatio||1, cartas:(typeof pool!=='undefined'&&pool)?pool.length:0 }, extra||{}) });
+  }catch(e){}
+}
 function compruebaVisibles(){ if(BANDEJA || !pool.length || document.hidden || document.querySelector('.ov.show')) return; const W=innerWidth, H=innerHeight; if(!(W>0 && H>0)) return;
   let vistas=0; pool.forEach(cd=>{ const r=cd.el.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
     if(r.width>4 && r.height>4 && cx>=0 && cy>=0 && cx<=W && cy<=H){ const e=document.elementFromPoint(cx,cy); if(e && cd.el.contains(e)) vistas++; } });
-  if(!vistas) aBandeja(); }
+  if(!vistas){ vigia('cartas-invisibles', { vistas:0 }); aBandeja(); } }
 function vigilaCartas(){ clearTimeout(_tVis); _tVis=setTimeout(compruebaVisibles, 1500); }
-document.getElementById('verBandeja').onclick=()=>{ aBandeja(); };
+document.getElementById('verBandeja').onclick=()=>{ vigia('boton-no-veo-cartas', { ya_en_bandeja:BANDEJA }); aBandeja(); };   /* (14-oct-2026) + vigía */
 function placeCard(card, idx){
   /* (7-oct-2026) una carta de N pulsos ocupa N pulsos seguidos desde idx: los siguientes pasan a «cubiertos» AHORA (antes
      venían reservados de antemano y delataban dónde iba cada ritmo largo) */
