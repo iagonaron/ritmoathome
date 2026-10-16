@@ -236,13 +236,33 @@ function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false
   const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
 function patternQ(toks){ return toks.map(durQ); }
 function tokKey(toks){ return toks.join(','); }
-function autoBeam(toks){ const beamable=t=>['8','16','32'].includes(t.replace('d','').replace('r','')) && !t.endsWith('r');
-  const out=[]; let run=[]; toks.forEach((t,i)=>{ if(beamable(t)) run.push(i); else { if(run.length>1)out.push(run); run=[]; } });
-  if(run.length>1)out.push(run); return out; }
+/* (16-oct-2026, Iago) EL CORCHETE PASA POR ENCIMA DEL SILENCIO: «esas 3 semicorcheas deberían estar bajo el mismo
+   corchete… cuando hay semicorcheas del mismo pulso antes y después del silencio», en todas las fases. Igual que en las
+   cartas de la app: los tramos de figuras con corchete (corchea, semicorchea, fusa) que solo separa un silencio corto (de
+   corchea, semicorchea o fusa) se unen en un grupo, siempre DENTRO DEL MISMO PULSO; un silencio al principio o al final se
+   queda fuera. El grupo lleva solo las figuras: el corchete va de la primera a la última y pasa por encima del silencio.
+   beats (opcional): duraciones reales (grupos de valoración especial comprimidos), para saber en qué pulso cae cada una. */
+function autoBeam(toks, beats){
+  const corta=t=>['8','16','32'].includes(t.replace('d','').replace('r','')), sil=t=>t.endsWith('r');
+  const b=(beats&&beats.length===toks.length)?beats:toks.map(durQ);
+  const on=[]; let acc=0; b.forEach(d=>{ on.push(acc); acc+=d; });
+  const pulso=i=>Math.floor((on[i]+1e-6)/PULSE_Q);
+  const tramos=[]; let run=[];
+  toks.forEach((t,i)=>{ if(corta(t)&&!sil(t)) run.push(i); else { if(run.length) tramos.push(run); run=[]; } });
+  if(run.length) tramos.push(run);
+  const out=[]; let cur=null;
+  tramos.forEach(r=>{
+    if(cur){ const a=cur[cur.length-1], z=r[0]; let une=pulso(a)===pulso(z);
+      for(let k=a+1;k<z&&une;k++) if(!(sil(toks[k])&&corta(toks[k]))) une=false;
+      if(une){ cur=cur.concat(r); return; } }
+    if(cur&&cur.length>1) out.push(cur); cur=r.slice(); });
+  if(cur&&cur.length>1) out.push(cur);
+  return out;
+}
 
 /* mini render de un pulso: altura fija H, ancho proporcional al nº de figuras (espaciado equiparable) */
 function renderPulseMini(toks, beams, H, tup){
-  if(tup){ const m={time:MEAS,notes:toks.map(t=>({dur:t})),beams:(beams&&beams.length?beams:autoBeam(toks)).map(b=>b.slice()),clef:'treble',tuplets:[{idx:tup.idx.slice(),num:tup.num,occ:tup.occ}]};
+  if(tup){ const m={time:MEAS,notes:toks.map(t=>({dur:t})),beams:(beams&&beams.length?beams:autoBeam(toks,(tup?toks.map((t,k)=>durQ(t)*((tup.idx||[]).indexOf(k)>=0?tup.occ/tup.num:1)):null))).map(b=>b.slice()),clef:'treble',tuplets:[{idx:tup.idx.slice(),num:tup.num,occ:tup.occ}]};
     return renderMini(m, H||56, true); }
   return renderPulseMini_.apply(null,[toks,beams,H]);
 }
@@ -263,7 +283,7 @@ function renderMini(m, H, noTS){
     const vf=m.notes.map(nn=>{ const isRest=nn.rest||nn.dur.endsWith('r'); const base=nn.dur.replace('d','').replace('r','');
       const sn=new VF.StaveNote({clef,keys:[key],duration:base+(isRest?'r':'')}); if(nn.dur.replace('r','').endsWith('d'))VF.Dot.buildAndAttach([sn]); return sn; });
     const beamable=d=>['8','16','32'].includes(d.replace('d','').replace('r',''));
-    const beams=[]; (m.beams||[]).forEach(idx=>{ const run=idx.filter(i=>vf[i]&&beamable(m.notes[i].dur)).map(i=>vf[i]); if(run.length>1)beams.push(new VF.Beam(run)); });
+    const beams=[]; (m.beams||[]).forEach(idx=>{ const run=idx.filter(i=>vf[i]&&beamable(m.notes[i].dur)&&!(m.notes[i].rest||m.notes[i].dur.endsWith('r'))).map(i=>vf[i]); if(run.length>1)beams.push(new VF.Beam(run));   /* (16-oct-2026) solo figuras: el corchete pasa por encima del silencio */ });
     const [num,den]=time.split('/').map(Number);
     const voice=new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); voice.addTickables(vf);
     new VF.Formatter({softmaxFactor:5}).joinVoices([voice]).format([voice],STAVE_W-36); voice.draw(ctx,st); beams.forEach(b=>b.setContext(ctx).draw());
@@ -327,7 +347,7 @@ function cellSlot(cell){
   /* 3-ago-2026 · quiz-fix H1: contenido del hueco = unidad característica si existe (tuplets con
      duración real y corchete); si no, la célula entera (compases enteros: síncopas, blanca…). */
   if(cell.unit){ const u=cell.unit;
-    return {toks:u.toks.slice(), beams:autoBeam(u.toks), beats:u.beats.slice(), tup:u.tup?{idx:u.tup.idx.slice(),num:u.tup.num,occ:u.tup.occ}:null}; }
+    return {toks:u.toks.slice(), beams:autoBeam(u.toks, u.beats), beats:u.beats.slice(), tup:u.tup?{idx:u.tup.idx.slice(),num:u.tup.num,occ:u.tup.occ}:null}; }
   const toks=cell.notes.slice();
   return {toks:toks, beams:(cell.beams||[]).map(b=>b.slice()),
           beats:(cell.beatsReal&&cell.beatsReal.slice())||toks.map(durQ),
@@ -398,7 +418,7 @@ function renderPhrase(){
   const staveTop=staves[0].getYForLine(0), staveBot=staves[0].getYForLine(4);
   for(let i=0;i<N_MEAS;i++){ const st=staves[i]; const notes=[]; const beamGroups=[]; const tupGroups=[]; let nIdx=0;
     for(let p=0;p<PULSES_PER_MEAS;p++){ const idx=i*PULSES_PER_MEAS+p; const cont=placed[idx];
-      if(cont){ const toks=cont.toks; const lb=(cont.beams&&cont.beams.length?cont.beams:autoBeam(toks)); const startN=nIdx;
+      if(cont){ const toks=cont.toks; const lb=(cont.beams&&cont.beams.length?cont.beams:autoBeam(toks, cont.beats)); const startN=nIdx;
         toks.forEach(t=>{ const isRest=t.endsWith('r'); const base=t.replace('d','').replace('r','');
           const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:base+(isRest?'r':'')}); if(t.replace('r','').endsWith('d'))VF.Dot.buildAndAttach([sn]); notes.push(sn); nIdx++; });
         lb.forEach(g=>beamGroups.push(g.map(k=>startN+k)));
@@ -406,7 +426,7 @@ function renderPhrase(){
       } else { const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:'qr'}); VF.Dot.buildAndAttach([sn]); sn.setStyle({fillStyle:'rgba(0,0,0,0)',strokeStyle:'rgba(0,0,0,0)'}); notes.push(sn); nIdx++; }
     }
     const voice=new VF.Voice({num_beats:6,beat_value:8}).setStrict(false); voice.addTickables(notes);
-    const beamObjs=beamGroups.map(g=>{ try{ return new VF.Beam(g.map(k=>notes[k]).filter(Boolean)); }catch(e){ return null; } }).filter(Boolean);
+    const beamObjs=beamGroups.map(g=>{ try{ return new VF.Beam(g.map(k=>notes[k]).filter(n=>n&&!(n.isRest&&n.isRest()))); }catch(e){ return null; } }).filter(Boolean);   /* (16-oct-2026) solo figuras: pasa por encima del silencio */
     new VF.Formatter({softmaxFactor:5}).joinVoices([voice]).format([voice], ws[i]-(i===0?72:26));
     voice.draw(ctx,st);                                  // los beams ya existen → no se dibujan corchetes sueltos
     beamObjs.forEach(b=>{ try{ b.setContext(ctx).draw(); }catch(e){} });

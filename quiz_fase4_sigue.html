@@ -337,14 +337,52 @@ const CELL_TS=_CFG?_CFG.cells.map(c=>c.ts||null):CARD.cells.map(()=>null);
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
   const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
 function sumQ(toks){ return toks.reduce((s,t)=>s+durQ(t),0); }
-function autoBeam(toks){ const groups=[]; let run=[]; const beamable=t=>['8','16','32'].includes(t.replace('d','').replace('r','')) && !t.endsWith('r');
-  toks.forEach((t,i)=>{ if(beamable(t)) run.push(i); else { if(run.length>1)groups.push(run); run=[]; } }); if(run.length>1)groups.push(run); return groups; }
+/* (16-oct-2026, Iago) EL CORCHETE PASA POR ENCIMA DEL SILENCIO: «esas 3 semicorcheas deberían estar bajo el mismo
+   corchete… cuando hay semicorcheas del mismo pulso antes y después del silencio», en todas las fases. Igual que en las
+   cartas de la app: los tramos de figuras con corchete (corchea, semicorchea, fusa) que solo separa un silencio corto (de
+   corchea, semicorchea o fusa) se unen en un grupo, siempre DENTRO DEL MISMO PULSO; un silencio al principio o al final se
+   queda fuera. El grupo lleva solo las figuras: el corchete va de la primera a la última y pasa por encima del silencio.
+   beats (opcional): duraciones reales (grupos de valoración especial comprimidos), para saber en qué pulso cae cada una. */
+function autoBeam(toks, beats){
+  const corta=t=>['8','16','32'].includes(t.replace('d','').replace('r','')), sil=t=>t.endsWith('r');
+  const b=(beats&&beats.length===toks.length)?beats:toks.map(durQ);
+  const on=[]; let acc=0; b.forEach(d=>{ on.push(acc); acc+=d; });
+  const pulso=i=>Math.floor((on[i]+1e-6)/PULSE_Q);
+  const tramos=[]; let run=[];
+  toks.forEach((t,i)=>{ if(corta(t)&&!sil(t)) run.push(i); else { if(run.length) tramos.push(run); run=[]; } });
+  if(run.length) tramos.push(run);
+  const out=[]; let cur=null;
+  tramos.forEach(r=>{
+    if(cur){ const a=cur[cur.length-1], z=r[0]; let une=pulso(a)===pulso(z);
+      for(let k=a+1;k<z&&une;k++) if(!(sil(toks[k])&&corta(toks[k]))) une=false;
+      if(une){ cur=cur.concat(r); return; } }
+    if(cur&&cur.length>1) out.push(cur); cur=r.slice(); });
+  if(cur&&cur.length>1) out.push(cur);
+  return out;
+}
 
 /* ===== dibujo de figuras posicionadas POR TIEMPO (sin barras de compás) ===== */
 const HEAD_RX=6.2, HEAD_RY=4.6, STEM=34, BEAMGAP=6, BEAMTH=4.2, INK='#16132b';
 function lvlOf(dur){ const b=dur.replace('d','').replace('r',''); return b==='8'?1:b==='16'?2:b==='32'?3:0; }
+/* (16-oct-2026, Iago) SILENCIOS DE VERDAD en la pista: «ahí tendría que haber silencio de semicorchea, no ese símbolo
+   raro». Antes cualquier silencio era un rectangulito; ahora va el glifo de su duración (Bravura: el mismo que dibuja
+   VexFlow en las otras fases), medido en espacios de pentagrama (× LINE_GAP), centrado en su sitio y sobre la línea
+   central (el de redonda cuelga de la 4.ª); con puntillo si lo lleva. */
+const REST_GLIFO={ '8':{w:0.99,d:'M0.54-0.43C0.54-0.57 0.42-0.7 0.27-0.7C0.12-0.7 0-0.57 0-0.43C0-0.34 0.05-0.27 0.11-0.22C0.17-0.18 0.25-0.16 0.33-0.16C0.38-0.16 0.44-0.17 0.48-0.18C0.54-0.2 0.57-0.22 0.63-0.24C0.63-0.25 0.64-0.25 0.64-0.25C0.66-0.25 0.66-0.23 0.66-0.21C0.66-0.2 0.66-0.18 0.66-0.17C0.65-0.11 0.36 0.69 0.29 0.95C0.29 1 0.38 1 0.4 1C0.45 1 0.5 1 0.54 0.96C0.56 0.96 0.95-0.45 0.95-0.45C0.96-0.52 0.98-0.58 0.99-0.6C0.99-0.64 0.95-0.66 0.94-0.67C0.93-0.67 0.92-0.67 0.9-0.65C0.87-0.63 0.67-0.39 0.54-0.39'},
+  '16':{w:1.28,d:'M0.83-0.44C0.83-0.6 0.71-0.72 0.56-0.72C0.41-0.72 0.29-0.6 0.29-0.44C0.29-0.28 0.46-0.17 0.61-0.17C0.72-0.17 0.83-0.21 0.92-0.26C0.93-0.26 0.94-0.27 0.95-0.27C0.96-0.27 0.97-0.26 0.97-0.24C0.97-0.17 0.76 0.42 0.74 0.48C0.7 0.56 0.6 0.6 0.54 0.6C0.54 0.59 0.54 0.57 0.54 0.56C0.54 0.41 0.42 0.29 0.27 0.29C0.12 0.29 0 0.41 0 0.56C0 0.73 0.17 0.84 0.32 0.84C0.43 0.84 0.53 0.8 0.62 0.75C0.63 0.75 0.64 0.76 0.64 0.78L0.63 0.78C0.63 0.78 0.63 0.78 0.63 0.78L0.25 1.92C0.25 1.92 0.25 1.92 0.25 1.92L0.25 1.93C0.25 1.96 0.28 2 0.37 2C0.49 2 0.51 1.95 0.53 1.91L0.99 0.38C1.09 0.04 1.17-0.22 1.17-0.22C1.17-0.22 1.27-0.57 1.27-0.63C1.27-0.64 1.28-0.64 1.28-0.64C1.28-0.67 1.25-0.68 1.24-0.69C1.22-0.69 1.21-0.68 1.2-0.67C1.17-0.65 0.97-0.41 0.83-0.4'},
+  '32':{w:1.45,d:'M1.41-1.67C1.39-1.67 1.38-1.67 1.37-1.66C1.34-1.64 1.14-1.4 1-1.4L1-1.43C1-1.58 0.88-1.7 0.73-1.7C0.58-1.7 0.46-1.58 0.46-1.43C0.46-1.35 0.51-1.28 0.57-1.23C0.6-1.2 0.64-1.19 0.68-1.17C0.72-1.17 0.75-1.16 0.79-1.16C0.89-1.16 1-1.2 1.09-1.25C1.1-1.25 1.1-1.25 1.11-1.25C1.14-1.25 1.15-1.21 1.15-1.18L1.15-1.17C1.15-1.17 1.15-1.17 1.15-1.17L0.99-0.53C0.97-0.47 0.84-0.39 0.78-0.39C0.78-0.4 0.78-0.41 0.78-0.42C0.78-0.57 0.66-0.7 0.51-0.7C0.36-0.7 0.24-0.57 0.24-0.42C0.24-0.34 0.28-0.27 0.35-0.22C0.38-0.2 0.42-0.18 0.46-0.17C0.49-0.16 0.53-0.15 0.56-0.15C0.67-0.15 0.77-0.19 0.86-0.24C0.87-0.24 0.87-0.24 0.88-0.24C0.9-0.24 0.9-0.21 0.9-0.19L0.74 0.46C0.73 0.55 0.6 0.6 0.54 0.6C0.54 0.59 0.54 0.57 0.54 0.56C0.54 0.41 0.43 0.29 0.27 0.29C0.13 0.29 0 0.41 0 0.56C0 0.73 0.17 0.84 0.32 0.84C0.43 0.84 0.54 0.8 0.63 0.75C0.64 0.74 0.64 0.74 0.64 0.74C0.66 0.74 0.67 0.76 0.67 0.77C0.67 0.78 0.39 1.88 0.38 1.91C0.38 1.92 0.38 1.93 0.38 1.94C0.38 1.97 0.4 2 0.49 2C0.62 2 0.63 1.96 0.64 1.92C0.66 1.87 1.34-1.21 1.34-1.21C1.34-1.21 1.44-1.57 1.45-1.62C1.45-1.62 1.45-1.63 1.45-1.63C1.45-1.67 1.42-1.67 1.41-1.67'},
+  q:{w:1.08,d:'M0.31 0.15C0.38 0.23 0.43 0.31 0.48 0.39C0.49 0.41 0.51 0.44 0.51 0.45C0.51 0.45 0.51 0.46 0.5 0.46C0.5 0.48 0.48 0.48 0.46 0.48C0.44 0.48 0.41 0.48 0.4 0.47C0.39 0.47 0.38 0.47 0.38 0.47L0.35 0.46C0.14 0.46 0 0.65 0 0.84C0 1.04 0.18 1.24 0.47 1.46C0.5 1.49 0.54 1.5 0.57 1.5C0.6 1.5 0.63 1.49 0.63 1.48C0.64 1.46 0.64 1.46 0.64 1.45C0.64 1.41 0.61 1.38 0.57 1.35C0.53 1.35 0.48 1.24 0.47 1.21C0.46 1.18 0.46 1.14 0.46 1.1C0.46 0.94 0.54 0.81 0.71 0.81C0.83 0.81 0.96 0.86 1.02 0.88L1.03 0.88C1.04 0.89 1.05 0.89 1.06 0.89C1.07 0.89 1.08 0.88 1.08 0.87C1.08 0.83 0.98 0.69 0.93 0.64C0.78 0.46 0.66 0.31 0.66 0.09C0.66 0.08 0.66 0.08 0.66 0.08L0.66 0.05C0.66 0.04 0.66 0.04 0.66 0.04C0.68-0.2 0.82-0.39 0.93-0.55C0.94-0.57 0.94-0.59 0.94-0.61C0.94-0.65 0.93-0.69 0.93-0.69C0.93-0.69 0.33-1.39 0.26-1.46C0.24-1.48 0.22-1.49 0.19-1.49C0.15-1.49 0.11-1.46 0.11-1.41C0.11-1.39 0.12-1.37 0.13-1.34C0.14-1.3 0.37-1.1 0.37-0.81C0.37-0.66 0.31-0.49 0.13-0.3C0.09-0.26 0.08-0.22 0.08-0.18C0.08-0.13 0.12-0.09 0.12-0.09'},
+  h:{w:1.13,d:'M1.13-0.1L1.13-0.46C1.13-0.52 1.08-0.57 1.02-0.57L0.1-0.57C0.04-0.57 0-0.52 0-0.46L0-0.1C0-0.04 0.04 0.01 0.1 0.01L1.02 0.01C1.08 0.01 1.13-0.04 1.13-0.1'},
+  w:{w:1.13,dy:-1,d:'M1.13 0.44L1.13 0.07C1.13 0.01 1.08-0.04 1.02-0.04L0.1-0.04C0.04-0.04 0 0.01 0 0.07L0 0.44C0 0.49 0.04 0.54 0.1 0.54L1.02 0.54C1.08 0.54 1.13 0.49 1.13 0.44'} };
+function restSVG(x,midY,dur){
+  const t=dur.replace('r',''), dotted=t.endsWith('d'), base=t.replace('d','');
+  const g=REST_GLIFO[base]||REST_GLIFO['8'], s=LINE_GAP, x0=x-g.w*s/2, y0=midY+(g.dy||0)*s;
+  let o=`<path d="${g.d}" transform="translate(${x0.toFixed(1)} ${y0.toFixed(1)}) scale(${s})" fill="${INK}"/>`;
+  if(dotted) o+=`<circle cx="${(x0+g.w*s+s*0.45).toFixed(1)}" cy="${(midY-s*0.5).toFixed(1)}" r="${(s*0.2).toFixed(1)}" fill="${INK}"/>`;
+  return o;
+}
 function noteSVG(x,midY,dur,isRest,beamed){
-  if(isRest){ return `<rect x="${(x-5).toFixed(1)}" y="${(midY-3).toFixed(1)}" width="10" height="6" rx="1.5" fill="${INK}" opacity="0.85"/>`; }
+  if(isRest) return restSVG(x,midY,dur);   /* (16-oct-2026) antes: un rectangulito para cualquier silencio */
   const base=dur.replace('d','').replace('r',''); const dotted=dur.replace('r','').endsWith('d');
   const sx=x+HEAD_RX*0.92, topY=midY-STEM; let s='';
   if(base==='w'){ s+=`<ellipse cx="${x}" cy="${midY}" rx="9" ry="6" transform="rotate(-12 ${x} ${midY})" fill="none" stroke="${INK}" stroke-width="3"/>`; }
@@ -540,6 +578,11 @@ const LEN_P = Math.max(4*CHORD_P, Math.floor(OBJETIVO_PULSOS/(4*CHORD_P))*(4*CHO
 const DE_TAREAS = !!(_CFG && _CFG.deTareas);
 const URL_PORTAL = 'https://ge.lmathome.es/#tareas';
 const TOL=0.14, VIS_DELAY=0.10;                                        // retraso (s) de figura Y de la ventana de precisión
+/* (16-oct-2026, Iago) «quien vaya clavado, como que lo da por adelantado… necesitamos que lo adelantes. Un poquito»:
+   la ventana de precisión esperaba el golpe 100 ms después de que sonara la figura y un golpe clavado al sonido salía
+   ~79 % (él: 76 % haciéndolo a su juicio al 95-98 %). Ahora la espera a 50 ms. El dibujo (DRAW_DELAY_P) no cambia.
+   Para deshacerlo: ADELANTO_VENTANA=0. */
+const ADELANTO_VENTANA=0.05;
 const GRACE=0.072, STAR_WIN=0.110, EXTRA_PEN=1.0;                      // crédito pleno · estrellita · cada golpe de más = un acierto perdido
 /* ANTI-METRALLETA ADAPTATIVA (Iago 2-jul): antes el hueco mínimo entre
    golpes era 0.9 de una semicorchea FIJA (sp/6) → en compuesto, unas
@@ -627,7 +670,7 @@ function buildQuiz(){
         notes.push({onsetP, dur:t, isRest, round:ri});
         if(!isRest) attacks.push({tP:onsetP, isTarget:isT, round:ri, matched:false});
         acc+=(bts&&bts[k]!=null)?bts[k]:durQ(t); });
-      autoBeam(toks).forEach(g=> beamGroups.push(g.map(li=>baseIdx+li)));
+      autoBeam(toks, bts).forEach(g=> beamGroups.push(g.map(li=>baseIdx+li)));   // (16-oct-2026) con su duración real: por pulso
     }
     roundsMeta.push({ri, aStart, aEnd:attacks.length, start:roundStart, len, boundaryP:roundStart+len, done:false});
     pulse = roundStart + len + (ri===roundDefs.length-1 ? 0 : (extremeMode?2:GAPP));   // SIN hueco tras la última ronda
@@ -666,7 +709,7 @@ function emitStars(n){ const game=document.getElementById('game'); const COL=doc
 function startQuiz(){
   if(running){ stopRun(); return; }
   ac(); drawStaff(); roundsPassed=0; lastTap=-1; spamCount=0; roundExtra=0; extraTotal=0; tapTimes=[]; if(!extremeMode) intentos++;
-  VIS_DELAY_P  = VIS_DELAY/effSecPerPulse();          // ventana de precisión (sin tocar)
+  VIS_DELAY_P  = (VIS_DELAY-ADELANTO_VENTANA)/effSecPerPulse();   // ventana de precisión · (16-oct-2026) 50 ms antes
   // (Iago 15-sep-2026) Punto medio: ayer se quitó del dibujo TODO el retardo de
   // 100 ms (quedaba solo la latencia del aparato) y ahora las figuras van un pelín
   // ADELANTADAS. Se deja la mitad: latencia real + 50 ms.
@@ -907,7 +950,7 @@ function showExtremeResult(){
 
 /* ===== pantalla de lección de estudio (maqueta) ===== */
 function renderPreview(toks, ts, tup){
-  const host=document.createElement('div'); const beams=autoBeam(toks); const W=Math.max(150,70+toks.length*24);
+  const host=document.createElement('div'); const beams=autoBeam(toks,(tup?toks.map((t,k)=>durQ(t)*((tup.idx||[]).indexOf(k)>=0?tup.occ/tup.num:1)):null)); const W=Math.max(150,70+toks.length*24)+30;
   try{ const r=new VF.Renderer(host,VF.Renderer.Backends.SVG); r.resize(W,128); const ctx=r.getContext();
     const st=new VF.Stave(4,40,W-8); st.addClef('treble').addTimeSignature(ts||'6/8'); st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw();
     const vf=toks.map(tok=>{ const isRest=tok.endsWith('r'); const base=tok.replace('d','').replace('r','');
@@ -915,7 +958,7 @@ function renderPreview(toks, ts, tup){
     const vbeams=beams.map(g=>{ try{ return new VF.Beam(g.map(i=>vf[i])); }catch(e){return null;} }).filter(Boolean);
     const [tn2,td2]=String(ts||'6/8').split('/').map(Number);
     const voice=new VF.Voice({num_beats:tn2||6,beat_value:td2||8}).setStrict(false); voice.addTickables(vf);
-    new VF.Formatter().joinVoices([voice]).format([voice],W-70); voice.draw(ctx,st); vbeams.forEach(b=>{try{b.setContext(ctx).draw();}catch(e){}});
+    new VF.Formatter().joinVoices([voice]).format([voice],W-100); voice.draw(ctx,st); /* (16-oct-2026) el pentagrama, 30 px más largo (mismo espaciado): la última figura ya no se monta en la doble barra */ vbeams.forEach(b=>{try{b.setContext(ctx).draw();}catch(e){}});
     if(tup){ try{ const grp=tup.idx.map(i=>vf[i]).filter(Boolean); if(grp.length>1) new VF.Tuplet(grp,{num_notes:tup.num,notes_occupied:tup.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} }
     const svg=host.querySelector('svg'); const top=st.getYForLine(0), bot=st.getYForLine(4);
     svg.setAttribute('viewBox',`0 ${(top-22).toFixed(1)} ${W} ${(bot-top+44).toFixed(1)}`); svg.setAttribute('preserveAspectRatio','xMidYMid meet'); svg.removeAttribute('width'); svg.removeAttribute('height');
