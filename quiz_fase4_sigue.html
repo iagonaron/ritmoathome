@@ -493,9 +493,13 @@ function tapApaga(v){ const c=AC; if(!c || v.fin) return; v.fin=true; clearTimeo
 function tapSuelta(id){ const v=tapVoces[id]; if(!v) return; delete tapVoces[id]; tapApaga(v); }
 function tapSueltaTodo(){ Object.keys(tapVoces).forEach(tapSuelta); }
 /* groove suave del MODO NORMAL (bajo + acorde cálido tenue, muy por debajo del extremo) */
+/* (16-oct-2026, Iago) «la base va con un poquito de retardo con respecto al metrónomo»: la rampa de entrada de cada nota
+   de la base era de 50 ms (exponencial, desde -80 dB: se oía a los ~30-40 ms); ahora 10 ms, como la claqueta y el bombo
+   (4-5 ms), sin que suene a golpe. Para deshacerlo: ATAQUE_BASE=0.05. */
+const ATAQUE_BASE=0.010;
 function softNote(t,freq,dur,vol,type){ const c=ac(); if(!c)return; const m=BUS||master(); const o=c.createOscillator(),g=c.createGain();
   o.type=type||'sine'; o.frequency.value=freq; o.connect(g); g.connect(m);
-  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+.05); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+ATAQUE_BASE); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.start(t); o.stop(t+dur+.05); }
 /* Iago 2-jul: la base del modo normal era un la menor estático (repetitivo).
    Ahora hay PROGRESIÓN ARMÓNICA en la menor que va resolviendo: bajo de
