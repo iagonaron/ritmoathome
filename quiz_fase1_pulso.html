@@ -19,6 +19,10 @@
 body{color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.45;min-height:100vh;position:relative;overflow-x:hidden;
   background:linear-gradient(160deg,#241a52 0%,#180f3c 38%,#0e0a2c 72%,#080518 100%);background-attachment:fixed;}
 .sky{position:fixed;inset:-12% -8%;z-index:-1;filter:blur(40px) saturate(1.15);opacity:.92;pointer-events:none}
+/* (16-oct-2026, Iago: «un alumno… con una tablet Android que tiene un año… problemas de fluidez en la fase 4… que la experiencia
+   sea buena para todos») el fondo de colores, QUIETO en pantallas táctiles: mover sus manchas bajo el desenfoque obliga a
+   redibujar toda la pantalla en cada fotograma. Banco (fase 4, carta 1.4, tablet simulada): de ~11 a ~59 fotogramas/s. */
+@media (hover:none),(pointer:coarse){.sky b{animation:none!important}}
 .sky b{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:.55}
 .b1{width:46vw;height:42vw;left:-6%;top:-10%;background:#34d399;animation:drift1 19s ease-in-out infinite}
 .b2{width:44vw;height:40vw;right:-8%;top:-6%;background:#5bd0ff;animation:drift2 23s ease-in-out infinite}
