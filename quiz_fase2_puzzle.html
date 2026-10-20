@@ -251,7 +251,7 @@ function sonidosLigados(toks, qs, ties){
   (toks||[]).forEach((t,k)=>{ const on=acc, q=(qs&&qs[k]!=null)?qs[k]:durQ(t); acc+=q;
     if(String(t).endsWith('r') || cont.has(k)) return;
     let d=q, j=k, g=0; while(sig[j]!=null && g++<16){ j=sig[j]; d+=(qs&&qs[j]!=null)?qs[j]:durQ(toks[j]); }
-    out.push({k:k, on:on, dur:d}); });
+    out.push({k:k, on:on, dur:d, lig:j!==k}); });   /* lig: alargada por una ligadura (su grave suena entera) */
   return out;
 }
 function dibujaLigaduras(ctx, vf, ties){
@@ -330,7 +330,7 @@ function master(){ const c=ac(); if(!c)return null; if(!MASTER){ MASTER=c.create
 function click(t0,accent,dest){ const c=ac(); if(!c)return; const out=dest||master(); const o=c.createOscillator(),g=c.createGain();
   o.frequency.value=accent?1500:1050; g.gain.value=.0001; o.connect(g); g.connect(out);
   g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(accent?.58:.36,t0+.004); g.gain.exponentialRampToValueAtTime(.0001,t0+.08); o.start(t0); o.stop(t0+.09); }
-function ritmoSound(t0,durSec,gain,dest){
+function ritmoSound(t0,durSec,gain,dest,ligada){   /* (20-oct-2026) ligada: la nota grave se mantiene hasta el final */
   const c=ac(); if(!c)return; const out=dest||master(); const peak=(gain==null?0.32:gain);
   const aLen=Math.floor(c.sampleRate*0.012); const ab=c.createBuffer(1,aLen,c.sampleRate); const ad=ab.getChannelData(0);
   for(let i=0;i<aLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/aLen,2.0);
@@ -339,7 +339,7 @@ function ritmoSound(t0,durSec,gain,dest){
   const sustain=Math.max(0.05,durSec-0.05);
   const o=c.createOscillator(); o.type='sine'; o.frequency.value=REF_FREQ; const g=c.createGain(); o.connect(g); g.connect(out);
   g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak*0.42,t0+0.01);
-  g.gain.setValueAtTime(peak*0.42,t0+Math.max(0.05,sustain*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
+  g.gain.setValueAtTime(peak*0.42,t0+Math.max(0.05,ligada?sustain-0.08:sustain*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,t0+sustain);
   o.start(t0); o.stop(t0+sustain+0.03); }
 const spq=_CFG?_CFG.spq:(60/CARD.bpmComp)/1.5, secPerPulse=PULSE_Q*spq;
 let phraseBus=null, playing=false, lightTimers=[], idleLabel='▶ Escuchar la frase';
@@ -701,7 +701,7 @@ function playPhrase(noClick){
   const start = noClick ? t0 : t0+measSec;                       // refuerzo: sin compás de claqueta previo
   if(!noClick){ for(let p=0;p<PULSES_PER_MEAS;p++) click(t0+p*secPerPulse,p===0,phraseBus); }
   solution.forEach((s,i)=>{ const ps=start+i*secPerPulse;   /* (20-oct-2026) con sus ligaduras */
-    sonidosLigados(s.toks, s.beats||patternQ(s.toks), s.ties).forEach(ev=>ritmoSound(ps+ev.on*spq,ev.dur*spq,.34,phraseBus)); });
+    sonidosLigados(s.toks, s.beats||patternQ(s.toks), s.ties).forEach(ev=>ritmoSound(ps+ev.on*spq,ev.dur*spq,.34,phraseBus,ev.lig)); });
   if(!noClick){ for(let i=0;i<N_PULSES;i++){ click(start+i*secPerPulse, i%PULSES_PER_MEAS===0, phraseBus); } }   // metrónomo solo en escucha normal
   // iluminar la flecha/pulso por el que va la música
   lightTimers.forEach(clearTimeout); lightTimers=[]; const baseMs=(start-c.currentTime)*1000;

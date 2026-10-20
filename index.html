@@ -715,6 +715,13 @@ footer .lock{color:var(--gold1);}
 /* (29-sep-2026, Iago) carta 1.3: con tres figuras en «¿De qué lo conoces?», las tres en UNA fila (las 6 semicorcheas a la derecha) */
 .ifact:has(.icells.small > :nth-child(3)){max-width:780px;}
 .ifact .icells.small:has(> :nth-child(3)){flex-wrap:nowrap;}
+/* (20-oct-2026, Iago, 1.6: «los ritmos se ven muy pequeños, no tengas miedo en ponerlos 2x2») ejemplos en 2×2 y grandes */
+.ifact:has(.icells.small.i2x2){max-width:960px;}
+.ifact .icells.small.i2x2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px;}
+.ifact .icells.small.i2x2>.ipaper{display:flex;min-width:0;padding:14px 16px;}
+.ifact .icells.small.i2x2 .i2x2-caja{max-width:100%;}
+.ifact .icells.small.i2x2 .i2x2-caja>svg{display:block;width:100%;height:auto;}
+@media (max-width:600px){ .ifact .icells.small.i2x2{grid-template-columns:minmax(0,1fr);} }
 .ifact-q{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);font-weight:800;margin:0 0 8px;}
 .ifact-a{font-size:15.5px;color:var(--ink);line-height:1.55;margin:8px 0 0;}
 .ifact-a b{color:var(--gold-soft);}
@@ -820,6 +827,10 @@ footer .lock{color:var(--gold1);}
 .itnode.on-ghost::after{content:"◉";position:absolute;top:4px;right:7px;font-size:10px;color:var(--gold1);animation:ipulse 1.2s ease-in-out infinite;}
 @keyframes ighostOn{0%{box-shadow:0 0 0 0 rgba(34,201,138,.75),0 0 0 0 rgba(34,201,138,0);}100%{box-shadow:0 0 0 1px var(--gold1),0 0 24px rgba(34,201,138,.45);}}
 @media (prefers-reduced-motion:reduce){.itnode.on-ghost{animation:none;}}
+html.lm-fam-ritmo:not(.lm-sin-piel) .itree-side .itnode.ghost.on-ghost{border-color:var(--lm-verde,#22c55e) !important;border-style:solid !important;
+  box-shadow:inset 0 0 0 1px var(--lm-verde,#22c55e),0 0 22px rgba(34,197,94,.45) !important;background:rgba(34,197,94,.14) !important;}
+html.lm-fam-ritmo:not(.lm-sin-piel) .itree-side .itnode.ghost.on-ghost .itnode-lab{color:#fff !important;}
+html.lm-fam-ritmo:not(.lm-sin-piel) .itree-side .itnode.ghost.on-ghost::after{color:var(--lm-verde,#22c55e);}
 .itree-side{flex:0 0 215px;background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:16px;padding:13px;display:flex;flex-direction:column;gap:10px;}
 .iside-t{font-size:12px;font-weight:900;color:var(--gold-soft);letter-spacing:.1em;text-transform:uppercase;margin:0;}
 .iside-s{font-size:11.5px;color:var(--muted2);line-height:1.5;margin:0;}
@@ -6816,7 +6827,7 @@ function chipSuena(w,spec){
       /* (22-sep-2026, Iago) fuera del arbol TODO suena UNA SOLA VUELTA (antes,
          de la tercera diapositiva en adelante, la tarjeta entraba en bucle). */
       if(_uno && _uno.el===w){ pararUno(); return; }
-      tocarUnaVez(w, spec, voz);
+      tocarUnaVez(w, spec, voz, w.__pulso ? {pulse:w.__pulso} : undefined);   /* (20-oct-2026) con el pulso debajo, como en la génesis */
     }catch(e){}
   });
 }
@@ -6914,7 +6925,21 @@ function factBlock(b){
       if(b.fig){ const fw=el('div','ifact-fig'); fw.appendChild(paperChip(b.fig,{height:96,minInner:60,stretch:2})); bx.appendChild(fw); }
       if(b.a && !b.meters) bx.appendChild(el('p','ifact-a',b.a));
     }
-    if(b.figs){ const fr=el('div','icells small'); b.figs.forEach(sp=>fr.appendChild(paperChip(sp,{height:84,stretch:1.4,minInner:56}))); bx.appendChild(fr); stagger([].slice.call(fr.children),320,140); }
+    if(b.figs){ const fr=el('div','icells small'+(b.figsGrande?' i2x2':''));   /* (20-oct-2026) figsGrande: 2×2 y grandes · figsPulso: suenan con el pulso */
+      b.figs.forEach(sp=>{ const w=paperChip(sp,{height:84,stretch:(b.figsGrande?1.15:1.4),minInner:56});
+        if(b.figsGrande){ try{ const sv=w.querySelector('svg'); if(sv){ const vb=(sv.getAttribute('viewBox')||'').split(/[\s,]+/).map(Number);
+          const caja=document.createElement('div'); caja.className='i2x2-caja'; caja.__w=vb[2]||parseFloat(sv.getAttribute('width'))||200; caja.style.width=Math.floor(caja.__w)+'px';
+          sv.parentNode.insertBefore(caja,sv); caja.appendChild(sv); sv.style.width='100%'; sv.style.height='auto'; } }catch(e){} }
+        if(b.figsPulso) w.__pulso=b.figsPulso;
+        fr.appendChild(w); });
+      bx.appendChild(fr); stagger([].slice.call(fr.children),320,140);
+      if(b.figsGrande){ let kPrev=0; const ajusta=()=>{ try{ const cel=fr.querySelector('.ipaper'); if(!cel||!cel.clientWidth) return; const cs=getComputedStyle(cel);
+          const libre=cel.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0);
+          const cajas=[].slice.call(fr.querySelectorAll('.i2x2-caja')), maxW=Math.max.apply(null,cajas.map(c=>c.__w||0)); if(!(maxW>0&&libre>0)) return;
+          const K=Math.max(0.6,Math.min(b.figsGrande,libre/maxW)); if(Math.abs(K-kPrev)<0.005) return; kPrev=K;   /* la misma escala para todos: manda el más largo */
+          cajas.forEach(c=>{ c.style.width=Math.floor(c.__w*K)+'px'; }); }catch(e){} };
+        requestAnimationFrame(()=>requestAnimationFrame(ajusta)); setTimeout(ajusta,350); setTimeout(ajusta,1000);
+        try{ if(window.ResizeObserver) new ResizeObserver(()=>requestAnimationFrame(ajusta)).observe(fr); }catch(e){} } }
     if(b.meters){
       /* --- quiz de compases: pulsa TODOS los que pueden tenerlo --- */
       const correctos=b.meters.slice(), todos=opcionesCompas(correctos); let vistos=0;
@@ -7879,7 +7904,7 @@ D['1.6']={spq:0.75,slides:function(card){ return [
   cover(card,'La ligadura prolonga el sonido por encima del pulso o de la fracción: fusión escrita… sin consumar.'),
   {type:'facts',blocks:[
     {q:'¿Qué hace la ligadura?',a:'Une dos notas escritas en <b>UN solo sonido</b>: la segunda no se articula, se sigue oyendo la primera. <b>Pulsa los ejemplos</b> y escúchalo:',
-     figs:[L16x('qc'),L16x('cs'),L16x('sc'),L16x('mc')]},
+     figs:[L16x('qc'),L16x('cs'),L16x('sc'),L16x('mc')],figsGrande:1.7,figsPulso:{notes:['q','q']}},
     {q:'¿Cuánto ocupa el patrón base?',fig:{notes:['h']},a:'Una <b>blanca</b> — un compás de 2/4 completo.'},
     {q:'¿Dónde vive?',meters:BIN}]},
   {type:'genesis',mode:'fusion',title:'La fusión que se queda a medias',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',steps:[
