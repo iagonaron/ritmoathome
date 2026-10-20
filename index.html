@@ -812,7 +812,14 @@ footer .lock{color:var(--gold1);}
 @keyframes ipulse{0%,100%{opacity:.5;}50%{opacity:1;}}
 .itnode.ghost{cursor:default;border-style:dashed;opacity:.72;}
 .itnode.ghost:hover{transform:none;border-color:var(--line);}
-.itnode.on-ghost{opacity:1;border-color:var(--gold-soft);border-style:dashed;box-shadow:0 0 18px rgba(111,227,180,.3);}
+/* (20-oct-2026, Iago: «que no solo se iluminen las cabezas, sino que el propio recuadro de esa tarjeta se resalte… también
+   en formato tableta») la gemela encendida, con el mismo resalte que la oficial (antes, un borde discontinuo casi igual) */
+.itnode.on-ghost,.itnode.ghost.on-ghost,.itnode.ghost.on-ghost:hover{opacity:1;border-color:var(--gold1);border-style:solid;transform:translateY(-2px);
+  box-shadow:0 0 0 1px var(--gold1),0 0 24px rgba(34,201,138,.45);animation:ighostOn .7s ease-out;}
+.itnode.on-ghost .itnode-lab{color:var(--gold-soft);}
+.itnode.on-ghost::after{content:"◉";position:absolute;top:4px;right:7px;font-size:10px;color:var(--gold1);animation:ipulse 1.2s ease-in-out infinite;}
+@keyframes ighostOn{0%{box-shadow:0 0 0 0 rgba(34,201,138,.75),0 0 0 0 rgba(34,201,138,0);}100%{box-shadow:0 0 0 1px var(--gold1),0 0 24px rgba(34,201,138,.45);}}
+@media (prefers-reduced-motion:reduce){.itnode.on-ghost{animation:none;}}
 .itree-side{flex:0 0 215px;background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:16px;padding:13px;display:flex;flex-direction:column;gap:10px;}
 .iside-t{font-size:12px;font-weight:900;color:var(--gold-soft);letter-spacing:.1em;text-transform:uppercase;margin:0;}
 .iside-s{font-size:11.5px;color:var(--muted2);line-height:1.5;margin:0;}
@@ -1398,10 +1405,22 @@ const GE_WORLDS=[
         {"ts":"2/4","beats":1,"beat":4,"notes":["16","16","16","16r"],"beams":[[0,1,2,3]]}
       ] },
       { id:"c1_6", atlasId:"1.6", name:"Ligaduras (s.binaria)", lecs:"33–34", ref:"pág. 22", note:"La ligadura prolonga el sonido sobre el pulso o la fracción siguiente y genera síncopa. Conviene combinar muchos tipos.",
+        /* (20-oct-2026, Iago: «el 1.6 tratamos las ligaduras, por lo tanto es necesario que los ritmos que aparecen en el quiz
+           sean combinaciones de las cosas que están ligadas… puede ser una negra ligada a dos corcheas, cuatro semicorcheas
+           ligadas a dos corcheas… fíjate cómo son las lecciones que vienen esta semana, combinan») ocho ritmos de dos pulsos,
+           el primero ligado al segundo, en cuatro familias (fam: lo que hay en el primer pulso). quiz: cada fase elige
+           cuatro (uno de cada familia, al azar dentro de ella: azar) en 2/4. Antes: tres ritmos (corcheas, negra y
+           semicorcheas ligadas) y el quiz se quedaba con su primer pulso. */
+        quiz:{n:4, compas:"2/4", azar:true},
         cells:[
-        {"ts":"2/4","notes":["8","8","8","8"],"beams":[[0,1],[2,3]],"ties":[[1,2]]},
-        {"ts":"2/4","notes":["q","8","8"],"beams":[[1,2]],"ties":[[0,1]]},
-        {"ts":"2/4","notes":["16","16","16","16","16","16","16","16"],"beams":[[0,1,2,3],[4,5,6,7]],"ties":[[3,4]]}
+        {"ts":"2/4","notes":["q","8","8"],"beams":[[1,2]],"ties":[[0,1]],"fam":"negra"},
+        {"ts":"2/4","notes":["8","8","8","8"],"beams":[[0,1],[2,3]],"ties":[[1,2]],"fam":"corcheas"},
+        {"ts":"2/4","notes":["16","16","16","16","8","8"],"beams":[[0,1,2,3],[4,5]],"ties":[[3,4]],"fam":"semis"},
+        {"ts":"2/4","notes":["16","16","8","16","16","16","16"],"beams":[[0,1,2],[3,4,5,6]],"ties":[[2,3]],"fam":"mixta"},
+        {"ts":"2/4","notes":["q","16","16","16","16"],"beams":[[1,2,3,4]],"ties":[[0,1]],"fam":"negra"},
+        {"ts":"2/4","notes":["8","8","16","16","16","16"],"beams":[[0,1],[2,3,4,5]],"ties":[[1,2]],"fam":"corcheas"},
+        {"ts":"2/4","notes":["16","16","16","16","16","16","16","16"],"beams":[[0,1,2,3],[4,5,6,7]],"ties":[[3,4]],"fam":"semis"},
+        {"ts":"2/4","notes":["16","16","8","8","8"],"beams":[[0,1,2],[3,4]],"ties":[[2,3]],"fam":"mixta"}
       ] },
     ]
   },
@@ -5953,7 +5972,7 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
       // no al generador de ejercicios.
       /* (7-oct-2026, Iago: la síncopa doble en el quiz «sustituyendo otras, no añadiendo») MEZCLA: la carta tiene más
          ritmos de los que el quiz trabaja; cada fase elige `n`, repartidos por familias. Solo las cartas con quiz:{…} */
-      mezcla: (card.quiz && card.quiz.n>0) ? {n:card.quiz.n, compas:card.quiz.compas||null, compasesExtra:card.quiz.compasesExtra||undefined} : undefined,
+      mezcla: (card.quiz && card.quiz.n>0) ? {n:card.quiz.n, compas:card.quiz.compas||null, compasesExtra:card.quiz.compasesExtra||undefined, azar:card.quiz.azar?true:undefined} : undefined,   /* (20-oct-2026) azar: cualquiera de cada familia (1.6) */
       deTareas: (function(){ try{ const q=new URLSearchParams(location.search);
         return !!(q.get('envio') && q.get('cuenta')); }catch(e){ return false; } })(),
       /* 3-ago-2026 · quiz-fix: tokens normalizados (clave de Do → solo ritmo), tuplets con
@@ -5980,7 +5999,8 @@ try{ window.RITMO={get lesson(){return currentLesson;}, get active(){return acti
             if(s>=pStart-1e-6 && s<pStart+pulseLen-1e-6){ inside.push(i); sum+=beatsReal[i]; }
           }
           const contiguous = inside.length && inside.every((v,k)=>k===0||v===inside[k-1]+1);
-          if(contiguous && Math.abs(sum-pulseLen)<1e-6 && (!tup || tup.idx.every(i=>inside.includes(i)))){
+          /* (20-oct-2026, Iago, 1.6) un ritmo con LIGADURA no se recorta a un pulso: la ligadura es lo que se trabaja (va entero, como las síncopas) */
+          if(contiguous && Math.abs(sum-pulseLen)<1e-6 && (!tup || tup.idx.every(i=>inside.includes(i))) && !((ce.ties||[]).length)){
             const b0=inside[0];
             unit={toks:inside.map(i=>toks[i]), beats:inside.map(i=>beatsReal[i]),
                   tup: tup?{idx:tup.idx.map(i=>i-b0),num:tup.num,occ:tup.occ}:null};
@@ -7840,28 +7860,51 @@ D['1.5']={spq:0.8,slides:function(card){ return [
     {label:'de dónde vienes',nodes:[Object.assign({},B2C,{id:'a1',timbre:'wood',loopBeats:1}),Object.assign({},B4S,{id:'a2',timbre:'shaker',loopBeats:1})]},
     {label:'las cuatro posiciones',nodes:leaves(card,1).map((n,i)=>Object.assign(n,{label:'silencio en la '+['1ª','2ª','3ª','4ª'][i]}))}]}];}};
 
+/* (20-oct-2026, Iago) INTRO 1.6 · «en "¿Qué hace la ligadura?" no se está viendo nada… necesito que me pongas un ejemplo en el
+   que haya variedad» · «aquí también tendría que haber más ejemplos… una negra ligada a dos corcheas, cuatro semicorcheas
+   ligadas a dos corcheas» · en el árbol, «si pulso el ritmo de la carta, que la grafía gemela se ilumine» (el recuadro
+   entero: .itnode.on-ghost). Los ocho ritmos son los de la carta; sus gemelas, las que ya conocen (síncopa estándar,
+   negra con puntillo, dos semicorcheas y síncopa). */
+const L16={
+  qc:{notes:['q','8','8'],beams:[[1,2]],ties:[[0,1]]},
+  cc:{notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]]},
+  sc:{notes:['16','16','16','16','8','8'],beams:[[0,1,2,3],[4,5]],ties:[[3,4]]},
+  ms:{notes:['16','16','8','16','16','16','16'],beams:[[0,1,2],[3,4,5,6]],ties:[[2,3]]},
+  qs:{notes:['q','16','16','16','16'],beams:[[1,2,3,4]],ties:[[0,1]]},
+  cs:{notes:['8','8','16','16','16','16'],beams:[[0,1],[2,3,4,5]],ties:[[1,2]]},
+  ss:{notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],ties:[[3,4]]},
+  mc:{notes:['16','16','8','8','8'],beams:[[0,1,2],[3,4]],ties:[[2,3]]}};
+const L16x=(k,o)=>Object.assign({},L16[k],{notes:L16[k].notes.slice(),beams:L16[k].beams.map(b=>b.slice()),ties:L16[k].ties.map(t=>t.slice())},o||{});
 D['1.6']={spq:0.75,slides:function(card){ return [
   cover(card,'La ligadura prolonga el sonido por encima del pulso o de la fracción: fusión escrita… sin consumar.'),
   {type:'facts',blocks:[
-    {q:'¿Qué hace la ligadura?',a:'Une dos notas escritas en <b>UN solo sonido</b>: la segunda no se articula, se sigue oyendo la primera.'},
+    {q:'¿Qué hace la ligadura?',a:'Une dos notas escritas en <b>UN solo sonido</b>: la segunda no se articula, se sigue oyendo la primera. <b>Pulsa los ejemplos</b> y escúchalo:',
+     figs:[L16x('qc'),L16x('cs'),L16x('sc'),L16x('mc')]},
     {q:'¿Cuánto ocupa el patrón base?',fig:{notes:['h']},a:'Una <b>blanca</b> — un compás de 2/4 completo.'},
     {q:'¿Dónde vive?',meters:BIN}]},
   {type:'genesis',mode:'fusion',title:'La fusión que se queda a medias',loopBeats:2,pulse:{notes:['q','q']},timbre:'clave',steps:[
     {notes:['8','8','8','8'],beams:[[0,1],[2,3]],caption:'Cuatro corcheas.'},
     {notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Aparece la LIGADURA',caption:'Dos notas escritas, un sonido. La fusión queda A LA VISTA — no se consuma. Eso es la ligadura.'},
     {notes:['q','8','8'],beams:[[1,2]],ties:[[0,1]],mark:[0,1],btn:'Otra: sobre el pulso',anim:'fusion',caption:'Negra ligada a corchea: el sonido cruza la frontera del pulso.'},
-    {notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],ties:[[3,4]],mark:[3,4],btn:'Y entre semicorcheas',anim:'fusion',caption:'La ligadura cruza el centro del compás entre semicorcheas: síncopa en miniatura.'}]},
+    {notes:['q','16','16','16','16'],beams:[[1,2,3,4]],ties:[[0,1]],mark:[0,1],btn:'Negra ligada a semicorcheas',anim:'fusion',caption:'La negra se alarga una semicorchea: suena, y el pulso siguiente ya entra a medias.'},
+    {notes:['16','16','16','16','8','8'],beams:[[0,1,2,3],[4,5]],ties:[[3,4]],mark:[3,4],btn:'Semicorcheas ligadas a corcheas',anim:'fusion',caption:'La última semicorchea se queda sonando sobre la corchea siguiente.'},
+    {notes:['8','8','16','16','16','16'],beams:[[0,1],[2,3,4,5]],ties:[[1,2]],mark:[1,2],btn:'Corcheas ligadas a semicorcheas',anim:'fusion',caption:'La corchea cruza el pulso y se come la primera semicorchea.'},
+    {notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],ties:[[3,4]],mark:[3,4],btn:'Y entre semicorcheas',anim:'fusion',caption:'La ligadura cruza el centro del compás entre semicorcheas: síncopa en miniatura.'},
+    {notes:['16','16','8','16','16','16','16'],beams:[[0,1,2],[3,4,5,6]],ties:[[2,3]],mark:[2,3],btn:'Y mezclando figuras',anim:'fusion',caption:'Cualquier figura se puede ligar con la siguiente: lo que cuenta es que el sonido NO se vuelve a atacar.'}]},
   {type:'tree',spq:0.75,loopBeats:2,kicker:'EL ÁRBOL — y al lado, las grafías gemelas ✳',rows:[
     {label:'el punto de partida',nodes:[{id:'root',notes:['h'],label:'blanca · el compás',timbre:'drum',loopBeats:2,stretch:2.4}]},
     {label:'las subdivisiones',nodes:[
       {id:'a1',notes:['8','8','8','8'],beams:[[0,1],[2,3]],label:'4 corcheas',timbre:'wood',loopBeats:2},
       {id:'a2',notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],label:'8 semicorcheas',timbre:'shaker',loopBeats:2}]},
-    {label:'los ritmos de la carta',nodes:[
-      {id:'l1',notes:['8','8','8','8'],beams:[[0,1],[2,3]],ties:[[1,2]],label:'ligadura de fracción',timbre:'clave',loopBeats:2,
-       twin:{notes:['8','q','8'],label:'= síncopa estándar'}},
-      {id:'l2',notes:['q','8','8'],beams:[[1,2]],ties:[[0,1]],label:'sobre el pulso',timbre:'marimba',loopBeats:2,
-       twin:{notes:['qd','8'],label:'= negra con puntillo'}},
-      {id:'l3',notes:['16','16','16','16','16','16','16','16'],beams:[[0,1,2,3],[4,5,6,7]],ties:[[3,4]],label:'entre semicorcheas',timbre:'bell',loopBeats:2}]}],
+    {label:'los ritmos de la carta · el primer pulso, ligado al segundo',cls:'wrap2',nodes:[
+      L16x('qc',{id:'l1',label:'negra ligada a 2 corcheas',timbre:'marimba',loopBeats:2,twin:{notes:['qd','8'],label:'= negra con puntillo'}}),
+      L16x('cc',{id:'l2',label:'2 corcheas ligadas a 2 corcheas',timbre:'clave',loopBeats:2,twin:{notes:['8','q','8'],label:'= síncopa estándar'}}),
+      L16x('sc',{id:'l3',label:'4 semis ligadas a 2 corcheas',timbre:'bell',loopBeats:2}),
+      L16x('ms',{id:'l4',label:'semis y corchea ligadas a 4 semis',timbre:'conga',loopBeats:2}),
+      L16x('qs',{id:'l5',label:'negra ligada a 4 semis',timbre:'blip',loopBeats:2}),
+      L16x('cs',{id:'l6',label:'2 corcheas ligadas a 4 semis',timbre:'wood',loopBeats:2}),
+      L16x('ss',{id:'l7',label:'4 semis ligadas a 4 semis',timbre:'tick',loopBeats:2}),
+      L16x('mc',{id:'l8',label:'semis y corchea ligadas a 2 corcheas',timbre:'shaker',loopBeats:2,twin:{notes:['16','16','q','8'],beams:[[0,1]],label:'= 2 semicorcheas y síncopa'}})].map(n=>Object.assign(n,{h:60,stretch:0.95,minInner:30}))}],   /* (20-oct-2026) hojas como las de la 1.4 */
    foot:'✳ Al encender una tarjeta con gemela, la gemela se ilumina y suena CON ella — porque son el mismo sonido con distinta ropa.'}];}};
 
 /* ================= MUNDO 2 — compases de blanca ================= */

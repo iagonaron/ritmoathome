@@ -290,6 +290,7 @@ function barajar(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function elegirCelulas(n, basePrimero){
   const cs=(_CFG&&_CFG.cells)||[]; const fams=[], porFam={};
   cs.forEach((c,i)=>{ const f=(c&&c.fam)||('#'+i); if(!porFam[f]){ porFam[f]=[]; fams.push(f); } porFam[f].push(i); });
+  if(MIX && MIX.azar) barajar(fams);   /* (20-oct-2026, 1.6) azar: las familias en orden al azar (y de cada una, cualquiera) */
   fams.forEach(f=>{ const L=porFam[f]; porFam[f]= basePrimero ? [L[0]].concat(barajar(L.slice(1))) : barajar(L.slice()); });
   const out=[]; let hubo=true;
   while(out.length<n && hubo){ hubo=false; for(const f of fams){ if(out.length>=n) break; if(porFam[f].length){ out.push(porFam[f].shift()); hubo=true; } } }
@@ -321,6 +322,23 @@ function cellTokens(cell){ return (cell.unit?cell.unit.toks:cell.notes).slice();
 function cellBeatsQ(cell){ const u=cell.unit; if(u&&u.beats) return u.beats.slice();
   if(cell.beatsReal) return cell.beatsReal.slice(); return cell.notes.map(durQ); }      // duración REAL (tuplets comprimidos)
 function cellTup(cell){ return (cell.unit&&cell.unit.tup)?cell.unit.tup:((cell.tuplets&&cell.tuplets[0])||null); }
+function cellTies(cell){ return (cell && !cell.unit && Array.isArray(cell.ties)) ? cell.ties.filter(t=>Array.isArray(t)&&t.length===2).map(t=>[t[0]|0,t[1]|0]) : []; }   /* (20-oct-2026) 1.6 */
+/* (20-oct-2026, Iago, carta 1.6) LIGADURAS · un ritmo ligado suena como lo que es: la nota de destino no se vuelve a
+   atacar y la primera dura las dos. Devuelve [{k, on, dur}] (en negras). Sin ligaduras da exactamente los mismos ataques
+   y duraciones que antes (cada figura que no es silencio, en su sitio y con su duración). */
+function sonidosLigados(toks, qs, ties){
+  const sig={}, cont=new Set(); (ties||[]).forEach(t=>{ if(t&&t.length===2){ sig[t[0]]=t[1]; cont.add(t[1]); } });
+  const out=[]; let acc=0;
+  (toks||[]).forEach((t,k)=>{ const on=acc, q=(qs&&qs[k]!=null)?qs[k]:durQ(t); acc+=q;
+    if(String(t).endsWith('r') || cont.has(k)) return;
+    let d=q, j=k, g=0; while(sig[j]!=null && g++<16){ j=sig[j]; d+=(qs&&qs[j]!=null)?qs[j]:durQ(toks[j]); }
+    out.push({k:k, on:on, dur:d}); });
+  return out;
+}
+function dibujaLigaduras(ctx, vf, ties){
+  (ties||[]).forEach(t=>{ try{ const a=vf[t[0]], b=vf[t[1]]; if(a && b) new VF.StaveTie({first_note:a,last_note:b,first_indices:[0],last_indices:[0]}).setContext(ctx).draw(); }catch(e){} });
+}
+
 
 /* (16-oct-2026, Iago) EL CORCHETE PASA POR ENCIMA DEL SILENCIO: «esas 3 semicorcheas deberían estar bajo el mismo
    corchete… cuando hay semicorcheas del mismo pulso antes y después del silencio», en todas las fases. Igual que en las
@@ -355,7 +373,7 @@ function renderTarget(cell){
   let beams;
   if(u){ beams=autoBeam(toks, u.beats); }   /* (16-oct-2026) por encima del silencio del mismo pulso (ver autoBeam) */
   else beams=(cell.beams||[]).map(b=>b.slice());
-  const m={time,notes,beams,ties:[],clef:'treble'};
+  const m={time,notes,beams,ties:cellTies(cell),clef:'treble'};   /* (20-oct-2026) con su ligadura (antes ties:[]) */
   const tp=cellTup(cell); if(tp) m.tuplets=[{idx:tp.idx.slice(),num:tp.num,occ:tp.occ}];
   return renderMiniMeasure(m,true);
 }
@@ -377,6 +395,7 @@ function renderMiniMeasure(m, noTS){
     const voice=new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); voice.addTickables(vf);
     new VF.Formatter().joinVoices([voice]).format([voice],STAVE_W-70); voice.draw(ctx,st);
     beams.forEach(b=>b.setContext(ctx).draw());
+    dibujaLigaduras(ctx, vf, m.ties);   /* (20-oct-2026) */
     (m.tuplets||[]).forEach(t=>{ try{ const grp=t.idx.map(i=>vf[i]).filter(Boolean);
       if(grp.length>1) new VF.Tuplet(grp,{num_notes:t.num,notes_occupied:t.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} });
     const svg=host.querySelector('svg');
@@ -587,7 +606,7 @@ function newRound(){
   lastTargetPulse=targetPulse;
   const pulses=[];
   for(let i=0;i<N_PULSES;i++){
-    if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:tgtQ.slice(), target:true}); }
+    if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:tgtQ.slice(), target:true, ties:cellTies(target)}); }
     else if(i>targetPulse && i<targetPulse+spanP){ pulses.push({tokens:[], q:[], target:false, cubierto:true}); }
     else { let f; do{ f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; }while(f.join(',')===tgtKey); pulses.push({tokens:f.slice(), q:patternQ(f), target:false}); }
   }
@@ -623,8 +642,8 @@ function playPhrase(){
   const t0=c.currentTime+0.15; const measSec=PULSES_PER_MEAS*secPerPulse;
   for(let p=0;p<PULSES_PER_MEAS;p++) click(t0+p*secPerPulse, p===0, phraseBus);   // claqueta de UN compás entero
   const start=t0+measSec;
-  round.pulses.forEach((pl,i)=>{ const ps=start+i*secPerPulse; let acc=0;
-    pl.q.forEach((dq,k)=>{ const tok=pl.tokens[k]; if(!tok.endsWith('r')) ritmoSound(ps+acc*spq, dq*spq, .34, phraseBus); acc+=dq; }); });
+  round.pulses.forEach((pl,i)=>{ const ps=start+i*secPerPulse;   /* (20-oct-2026) con sus ligaduras */
+    sonidosLigados(pl.tokens, pl.q, pl.ties).forEach(ev=>ritmoSound(ps+ev.on*spq, ev.dur*spq, .34, phraseBus)); });
   for(let i=0;i<N_PULSES;i++){ click(start+i*secPerPulse, i%PULSES_PER_MEAS===0, phraseBus); }   // metrónomo durante la frase
   const baseMs=(0.15+measSec)*1000;
   round.pulses.forEach((pl,i)=>{ liveTimers.push(setTimeout(()=>{ if(answered)return; clearLiveOnly(); const g=pnumByIdx(i); if(g) g.classList.add('live'); }, baseMs+i*secPerPulse*1000)); });
@@ -636,17 +655,17 @@ function playPhrase(){
 
 function playOnePulse(idx){
   const c=ac(); if(!c)return; const t0=c.currentTime+0.08; const pl=round.pulses[idx]; let acc=0;
-  pl.q.forEach((dq,k)=>{ const tok=pl.tokens[k]; if(!tok.endsWith('r')) ritmoSound(t0+acc*spq, dq*spq, .42); acc+=dq; });
+  sonidosLigados(pl.tokens, pl.q, pl.ties).forEach(ev=>ritmoSound(t0+ev.on*spq, ev.dur*spq, .42));   /* (20-oct-2026) */
 }
-function lightTargetHeads(tokens,beatsQ){
+function lightTargetHeads(tokens,beatsQ,ties){   /* (20-oct-2026) las notas ligadas se encienden juntas, lo que dura su sonido */
   const svg=document.querySelector('#targetPaper svg'); if(!svg)return;
   const heads=[...svg.querySelectorAll('g.vf-stavenote')]; heads.forEach(h=>h.classList.remove('vf-hit'));
-  let acc=0;
-  tokens.forEach((tok,k)=>{ const dq=(beatsQ&&beatsQ[k]!=null)?beatsQ[k]:durQ(tok);
-    if(!tok.endsWith('r')){ const at=(0.08+acc*spq)*1000;
-      setTimeout(()=>{ heads.forEach((h,j)=>h.classList.toggle('vf-hit', j===k)); }, at);
-      setTimeout(()=>{ if(heads[k]) heads[k].classList.remove('vf-hit'); }, at+dq*spq*1000); }
-    acc+=dq; });
+  const qs=tokens.map((tok,k)=>(beatsQ&&beatsQ[k]!=null)?beatsQ[k]:durQ(tok));
+  const sig={}; (ties||[]).forEach(t=>{ sig[t[0]]=t[1]; });
+  sonidosLigados(tokens, qs, ties).forEach(ev=>{ const grp=[ev.k]; let j=ev.k, g=0; while(sig[j]!=null && g++<16){ j=sig[j]; grp.push(j); }
+    const at=(0.08+ev.on*spq)*1000;
+    setTimeout(()=>{ heads.forEach((h,j2)=>h.classList.toggle('vf-hit', grp.indexOf(j2)>=0)); }, at);
+    setTimeout(()=>{ grp.forEach(j2=>{ if(heads[j2]) heads[j2].classList.remove('vf-hit'); }); }, at+ev.dur*spq*1000); });
 }
 let firstRound=true;
 function roundNotice(){ if(firstRound){ firstRound=false; return; } const n=document.getElementById('roundNotice'); n.classList.add('show'); setTimeout(()=>n.classList.remove('show'),950); }
@@ -670,8 +689,9 @@ function playTargetCard(force){
   const toks=cellTokens(CARD.cells[targetCellIdx]);
   const qs2=cellBeatsQ(CARD.cells[targetCellIdx]);
   const t0=c.currentTime+0.08; let acc=0;
-  toks.forEach((tok,k)=>{ const dq=qs2[k]; if(!tok.endsWith('r')) ritmoSound(t0+acc*spq, dq*spq, .42); acc+=dq; });
-  lightTargetHeads(toks,qs2);
+  const tz=cellTies(CARD.cells[targetCellIdx]);   /* (20-oct-2026) con su ligadura */
+  sonidosLigados(toks, qs2, tz).forEach(ev=>ritmoSound(t0+ev.on*spq, ev.dur*spq, .42)); qs2.forEach(dq=>{ acc+=dq; });
+  lightTargetHeads(toks,qs2,tz);
   const ms=Math.round((0.08+acc*spq)*1000)+500;
   setTimeout(()=>{ targetPlaying=false;
     if(btn){ btn.classList.remove('suena'); btn.innerHTML='🔊 Escuchar'; }

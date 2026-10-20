@@ -162,6 +162,7 @@ function barajar(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function elegirCelulas(n, basePrimero){
   const cs=(_CFG&&_CFG.cells)||[]; const fams=[], porFam={};
   cs.forEach((c,i)=>{ const f=(c&&c.fam)||('#'+i); if(!porFam[f]){ porFam[f]=[]; fams.push(f); } porFam[f].push(i); });
+  if(MIX && MIX.azar) barajar(fams);   /* (20-oct-2026, 1.6) azar: las familias en orden al azar (y de cada una, cualquiera) */
   fams.forEach(f=>{ const L=porFam[f]; porFam[f]= basePrimero ? [L[0]].concat(barajar(L.slice(1))) : barajar(L.slice()); });
   const out=[]; let hubo=true;
   while(out.length<n && hubo){ hubo=false; for(const f of fams){ if(out.length>=n) break; if(porFam[f].length){ out.push(porFam[f].shift()); hubo=true; } } }
@@ -175,7 +176,10 @@ function compasDeRonda(ci){
   const ce=MIX && _CFG.cells[ci];
   if(ce && ce.extra && ce.ts){ const p=String(ce.ts).split('/').map(Number); if(p[0]>0 && p[1]===4){ MEAS_R=ce.ts; PPM_R=p[0]; } }
 }
-const HAS_TIES=false;   // 1.1 no usa ligaduras
+/* (20-oct-2026, Iago, carta 1.6) LIGADURAS: con ritmos ligados, el editor trae «Ligadura» (une las dos últimas notas) y se
+   corrige por lo que SUENA (también vale la grafía gemela: «8 q 8» por «8 8⁀8 8»). Sin ligaduras, todo igual que antes. */
+const CELL_TIES=_CFG?_CFG.cells.map(c=>(c.unit||!Array.isArray(c.ties))?[]:c.ties.filter(t=>Array.isArray(t)&&t.length===2).map(t=>[t[0]|0,t[1]|0])):CARD.cells.map(()=>[]);
+const HAS_TIES=CELL_TIES.some(t=>t.length>0);   // antes: false (1.1 no usa ligaduras)
 /* 3-ago-2026 · quiz-fix: duración REAL por célula (tuplets comprimidos) y su grupo, si lo hay */
 const CELL_BEATS=_CFG?_CFG.cells.map(c=>(c.unit?c.unit.beats:(c.beatsReal||c.notes.map(durQ))).slice()):CARD.cells.map(cs=>cs.map(durQ));
 const CELL_TUP=_CFG?_CFG.cells.map(c=>{const t=c.unit?c.unit.tup:((c.tuplets&&c.tuplets[0])||null); return t?{idx:t.idx.slice(),num:t.num,occ:t.occ}:null;}):CARD.cells.map(()=>null);
@@ -184,6 +188,29 @@ const CELL_TUP=_CFG?_CFG.cells.map(c=>{const t=c.unit?c.unit.tup:((c.tuplets&&c.
 function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false; if(t.endsWith('d')){dot=true;t=t.slice(0,-1);}
   const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
 function sumQ(toks){ return toks.reduce((a,t)=>a+durQ(t),0); }
+/* (20-oct-2026, Iago, carta 1.6) LIGADURAS · un ritmo ligado suena como lo que es: la nota de destino no se vuelve a
+   atacar y la primera dura las dos. Devuelve [{k, on, dur}] (en negras). Sin ligaduras da exactamente los mismos ataques
+   y duraciones que antes (cada figura que no es silencio, en su sitio y con su duración). */
+function sonidosLigados(toks, qs, ties){
+  const sig={}, cont=new Set(); (ties||[]).forEach(t=>{ if(t&&t.length===2){ sig[t[0]]=t[1]; cont.add(t[1]); } });
+  const out=[]; let acc=0;
+  (toks||[]).forEach((t,k)=>{ const on=acc, q=(qs&&qs[k]!=null)?qs[k]:durQ(t); acc+=q;
+    if(String(t).endsWith('r') || cont.has(k)) return;
+    let d=q, j=k, g=0; while(sig[j]!=null && g++<16){ j=sig[j]; d+=(qs&&qs[j]!=null)?qs[j]:durQ(toks[j]); }
+    out.push({k:k, on:on, dur:d}); });
+  return out;
+}
+function dibujaLigaduras(ctx, vf, ties){
+  (ties||[]).forEach(t=>{ try{ const a=vf[t[0]], b=vf[t[1]]; if(a && b) new VF.StaveTie({first_note:a,last_note:b,first_indices:[0],last_indices:[0]}).setContext(ctx).draw(); }catch(e){} });
+}
+function mismoSonido(w, wt, t, tt, tb){   /* (20-oct-2026) lo escrito suena igual que el ritmo (mismos ataques y duraciones) */
+  const r3=x=>Math.round(x*1000)/1000, tot=tb.reduce((a,b)=>a+b,0);
+  if(Math.abs(sumQ(w)-tot)>1e-6) return false;
+  const A=sonidosLigados(w, w.map(durQ), wt).map(e=>r3(e.on)+':'+r3(e.dur)).join(',');
+  const B=sonidosLigados(t, tb, tt).map(e=>r3(e.on)+':'+r3(e.dur)).join(',');
+  return A===B;
+}
+
 /* (16-oct-2026, Iago) EL CORCHETE PASA POR ENCIMA DEL SILENCIO: «esas 3 semicorcheas deberían estar bajo el mismo
    corchete… cuando hay semicorcheas del mismo pulso antes y después del silencio», en todas las fases. Igual que en las
    cartas de la app: los tramos de figuras con corchete (corchea, semicorchea, fusa) que solo separa un silencio corto (de
@@ -207,6 +234,12 @@ function autoBeam(toks, beats){
   if(cur&&cur.length>1) out.push(cur);
   return out;
 }
+/* (20-oct-2026, 1.6) con ligaduras se escribe el compás entero: los corchetes de autoBeam, cortados donde cambia el pulso
+   (como en la carta: «8 8 | 16 16 16 16», no un corchete corrido). Solo se usa con ligaduras (HAS_TIES). */
+function autoBeamPorPulso(toks, beats){ const b=(beats&&beats.length===toks.length)?beats:toks.map(durQ); const on=[]; let acc=0; b.forEach(x=>{ on.push(acc); acc+=x; });
+  const pul=i=>Math.floor((on[i]+1e-6)/PULSE_Q), out=[];
+  autoBeam(toks, beats).forEach(g=>{ let cur=[]; g.forEach(i=>{ if(cur.length && pul(cur[cur.length-1])!==pul(i)){ if(cur.length>1) out.push(cur); cur=[]; } cur.push(i); }); if(cur.length>1) out.push(cur); });
+  return out; }
 /* descompone un hueco (en negras) en silencios estándar transparentes */
 function padRests(rem){ const order=[1.5,1,0.5,0.25,0.125]; const map={1.5:'qd',1:'q',0.5:'8',0.25:'16',0.125:'32'}; const out=[];
   let r=Math.round(rem*1000)/1000; for(const v of order){ while(r>=v-1e-6){ out.push(map[v]); r=Math.round((r-v)*1000)/1000; } } return out; }
@@ -269,9 +302,12 @@ function renderMeasure(written, correct){
     if(writeSlot===0){ buildWritten(); givenRange=buildGiven(); }   // alumno a la IZQUIERDA · dado a la DERECHA
     else { givenRange=buildGiven(); buildWritten(); }
     const voice=new VF.Voice({num_beats:6,beat_value:8}).setStrict(false); voice.addTickables(notes);
-    const beams=autoBeam(written).map(g=>{ try{ return new VF.Beam(g.map(k=>writtenNotes[k]).filter(Boolean)); }catch(e){ return null; } }).filter(Boolean);
+    const beams=(HAS_TIES?autoBeamPorPulso(written):autoBeam(written)).map(g=>{   /* (20-oct-2026) con ligaduras, por pulso */ try{ return new VF.Beam(g.map(k=>writtenNotes[k]).filter(Boolean)); }catch(e){ return null; } }).filter(Boolean);
     new VF.Formatter({softmaxFactor:5}).joinVoices([voice]).format([voice],STAVE_W-70);
     voice.draw(ctx,st); beams.forEach(b=>{ try{ b.setContext(ctx).draw(); }catch(e){} });
+    try{ ctx.save(); const _c=correct?'#16a86f':'#16132b'; if(ctx.setFillStyle){ ctx.setFillStyle(_c); ctx.setStrokeStyle(_c); }
+      dibujaLigaduras(ctx, writtenNotes, writtenTies); ctx.restore(); }catch(e){}   /* (20-oct-2026) las ligaduras del alumno */
+    if(givenTies.length && givenRange){ dibujaLigaduras(ctx, notes.slice(givenRange.start, givenRange.start+givenRange.len), givenTies); }
     if(givenToks.length>1 && givenRange){ try{ autoBeam(givenToks, givenBeats).forEach(g=>{ const bn=g.map(k=>notes[givenRange.start+k]).filter(Boolean); if(bn.length>1) new VF.Beam(bn).setContext(ctx).draw(); }); }catch(e){} }
     if(givenTup && givenRange){ try{ const grp=givenTup.idx.map(k=>notes[givenRange.start+k]).filter(Boolean);
       if(grp.length>1) new VF.Tuplet(grp,{num_notes:givenTup.num,notes_occupied:givenTup.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} }
@@ -313,8 +349,9 @@ function playMeasure(){
   const slot1B= writeSlot===0 ? givenBeats : targetBeats;
   const sum0=slot0B.reduce((a,b)=>a+b,0), sum1=slot1B.reduce((a,b)=>a+b,0), totalQ=sum0+sum1;
   const t0=c.currentTime+0.15, measSec=totalQ*spq;   // SIN compás de claqueta: va directo
-  let acc=0; slot0.forEach((t,k)=>{ if(!t.endsWith('r')) ritmoSound(t0+acc*spq, slot0B[k]*spq,.34,phraseBus); acc+=slot0B[k]; });
-  acc=sum0; slot1.forEach((t,k)=>{ if(!t.endsWith('r')) ritmoSound(t0+acc*spq, slot1B[k]*spq,.34,phraseBus); acc+=slot1B[k]; });
+  const slot0T = writeSlot===0 ? targetTies : givenTies, slot1T = writeSlot===0 ? givenTies : targetTies;   /* (20-oct-2026) con sus ligaduras */
+  sonidosLigados(slot0, slot0B, slot0T).forEach(ev=>ritmoSound(t0+ev.on*spq, ev.dur*spq,.34,phraseBus));
+  sonidosLigados(slot1, slot1B, slot1T).forEach(ev=>ritmoSound(t0+(sum0+ev.on)*spq, ev.dur*spq,.34,phraseBus));
   const nClicks=Math.max(2,Math.round(totalQ/PULSE_Q));
   for(let p=0;p<nClicks;p++) click(t0+p*secPerPulse, p===0, phraseBus);   // metrónomo de referencia
   // iluminar el pulso DADO cuando suena (ahí termina lo que el alumno descifra)
@@ -327,6 +364,7 @@ function playMeasure(){
 
 /* ===== estado ===== */
 let target=[], written=[], roundIdx=0, score=0, failUsedThisRound=false, order=[], writeSlot=0, givenToks=[GIVEN];
+let writtenTies=[], targetTies=[], givenTies=[];   /* (20-oct-2026) ligaduras: pares [i,j] de índices */
 let targetBeats=[], givenBeats=[durQ(GIVEN)], givenTup=null, CAP_Q=PULSE_Q;   // 3-ago: cabida REAL del hueco a escribir
 const PER=100/ROUNDS, HALF=PER/2;
 
@@ -367,14 +405,21 @@ function applyDot(){ if(!written.length) return; const last=written[written.leng
   if(last.endsWith('d')) return; const base=last; const dotted=base+'d';
   if(sumQ(written.slice(0,-1))+durQ(dotted) > CAP_Q+1e-6){ toast('Con puntillo no cabe en este hueco','no'); return; }
   written[written.length-1]=dotted; renderMeasure(written,false); }
-function delLast(){ if(written.length){ written.pop(); renderMeasure(written,false); document.getElementById('hint').textContent='Sigue escribiendo tu pulso.'; } }
+/* (20-oct-2026) «Ligadura»: une (o separa) las dos últimas notas escritas */
+function applyTie(){ if(!HAS_TIES) return; const n=written.length;
+  if(n<2){ toast('Escribe las dos notas y luego únelas','no'); return; }
+  const a=n-2, b=n-1; if(written[a].endsWith('r')||written[b].endsWith('r')){ toast('La ligadura une dos notas, no silencios','no'); return; }
+  const i=writtenTies.findIndex(t=>t[0]===a&&t[1]===b); if(i>=0) writtenTies.splice(i,1); else writtenTies.push([a,b]);
+  renderMeasure(written,false); }
+function delLast(){ if(written.length){ const _n=written.length-1; writtenTies=writtenTies.filter(t=>t[0]!==_n&&t[1]!==_n); written.pop(); renderMeasure(written,false); document.getElementById('hint').textContent='Sigue escribiendo tu pulso.'; } }
 
 function setBar(){ document.getElementById('barFill').style.width=Math.max(0,Math.min(100,score))+'%';
   document.getElementById('barTag').textContent = roundIdx>=ROUNDS?'¡Completada!':`Ronda ${roundIdx+1} de ${ROUNDS}`; }
 function flashBad(){ const f=document.getElementById('barFill'); f.classList.add('bad'); setTimeout(()=>f.classList.remove('bad'),700); }
 
 function check(){
-  const ok = written.length===target.length && written.every((t,i)=>t===target[i]);
+  const ok = HAS_TIES ? mismoSonido(written, writtenTies, target, targetTies, targetBeats)   /* (20-oct-2026) con ligaduras: por lo que suena */
+                      : (written.length===target.length && written.every((t,i)=>t===target[i]));
   if(ok){ score=Math.min(100,score+PER); setBar(); renderMeasure(written,true);
     document.getElementById('staffPanel').classList.add('ok'); toast('¡Correcto!','ok'); burst(); playMeasure();
     roundIdx++;
@@ -400,12 +445,13 @@ function burst(){ const host=document.getElementById('confetti'); const cx=inner
     p.style.animation='conf '+(900+Math.random()*700)+'ms cubic-bezier(.15,.7,.3,1) forwards'; host.appendChild(p); setTimeout(()=>p.remove(),1700); } }
 
 /* ronda */
-function newRound(){ stopPhrase(); failUsedThisRound=false; written=[]; idleLabel='▶ Escuchar'; setSounding(false);
+function newRound(){ stopPhrase(); failUsedThisRound=false; written=[]; writtenTies=[]; idleLabel='▶ Escuchar'; setSounding(false);
   const spec=order[roundIdx]; const variation=CARD.cells[spec.cell].slice();
   compasDeRonda(spec.cell);
   const vBeats=CELL_BEATS[spec.cell].slice(); const vTup=CELL_TUP[spec.cell];
-  if(spec.swap){ writeSlot=1; givenToks=variation; givenBeats=vBeats; givenTup=vTup; target=[GIVEN]; targetBeats=[durQ(GIVEN)]; CAP_Q=durQ(GIVEN); }   // escribe la figura de pulso; suena la variación (real)
+  if(spec.swap){ writeSlot=1; givenToks=variation; givenBeats=vBeats; givenTup=vTup; target=[GIVEN]; targetBeats=[durQ(GIVEN)]; CAP_Q=durQ(GIVEN); givenTies=(CELL_TIES[spec.cell]||[]).map(t=>t.slice()); targetTies=[]; }   // escribe la figura de pulso; suena la variación (real)
   else { writeSlot=0; givenToks=[GIVEN]; givenBeats=[durQ(GIVEN)]; givenTup=null; target=variation; targetBeats=vBeats; CAP_Q=vBeats.reduce((a,b)=>a+b,0);
+    givenTies=[]; targetTies=(CELL_TIES[spec.cell]||[]).map(t=>t.slice());   /* (20-oct-2026) */
     // (Iago 15-sep-2026) si el ritmo objetivo ya llena el compás entero (síncopas de compás),
     // no se le añade el pulso dado: el compás sonaba y se escribía con un pulso de más.
     const _ppm=PPM_R;   /* (7-oct-2026) el compás de ESTA ronda */
@@ -416,16 +462,17 @@ function newRound(){ stopPhrase(); failUsedThisRound=false; written=[]; idleLabe
   if(_sub) _sub.innerHTML = (writeSlot===1)
     ? 'Escucha el compás y <b>escribe el pulso que FALTA</b> (el ritmo especial ya está puesto: fíjate en su grupo).'
     : (givenToks.length ? 'Escucha el compás y <b>escribe el primer pulso</b> con el editor. El segundo pulso ya está puesto.'
-                        : 'Escucha el compás y <b>escríbelo entero</b> con el editor.');
+                        : ('Escucha el compás y <b>escríbelo entero</b> con el editor.'+((HAS_TIES&&targetTies.length)?' Para unir dos notas con una <b>ligadura</b>, escríbelas y pulsa «Ligadura».':'')));
 }
 document.getElementById('playBtn').onclick=()=>{ ac(); playMeasure(); };
 document.getElementById('dotBtn').onclick=()=>applyDot();
 document.getElementById('delBtn').onclick=()=>delLast();
+document.getElementById('tieBtn').onclick=()=>applyTie();   /* (20-oct-2026) */
 document.getElementById('checkBtn').onclick=()=>check();
 document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin').classList.remove('show'); roundIdx=0; score=0; startGame(); };
 
 function startGame(orden){   // (27-sep-2026) orden: el de la visita anterior al retomar; sin él, barajado como siempre
-  const idxs=orden?orden.slice():(MIX ? barajar(elegirCelulas(ROUNDS,true)) : CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5));   /* (7-oct) MEZCLA: el base de cada familia y una variante */
+  const idxs=orden?orden.slice():(MIX ? barajar(elegirCelulas(ROUNDS,!MIX.azar)) : CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5));   /* (7-oct) MEZCLA: el base de cada familia y una variante */
   const swapFor=i=>!!CELL_TUP[i];   // 3-ago: GVE (tresillo…) no se puede escribir con la paleta → se escribe el pulso dado
   order = (CARD.cells.length===1) ? [{cell:0,swap:swapFor(0)},{cell:0,swap:true}] : idxs.map(i=>({cell:i,swap:swapFor(i)}));
   buildEditor(); newRound();

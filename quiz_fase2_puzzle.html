@@ -207,6 +207,7 @@ function barajar(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function elegirCelulas(n, basePrimero){
   const cs=(_CFG&&_CFG.cells)||[]; const fams=[], porFam={};
   cs.forEach((c,i)=>{ const f=(c&&c.fam)||('#'+i); if(!porFam[f]){ porFam[f]=[]; fams.push(f); } porFam[f].push(i); });
+  if(MIX && MIX.azar) barajar(fams);   /* (20-oct-2026, 1.6) azar: las familias en orden al azar (y de cada una, cualquiera) */
   fams.forEach(f=>{ const L=porFam[f]; porFam[f]= basePrimero ? [L[0]].concat(barajar(L.slice(1))) : barajar(L.slice()); });
   const out=[]; let hubo=true;
   while(out.length<n && hubo){ hubo=false; for(const f of fams){ if(out.length>=n) break; if(porFam[f].length){ out.push(porFam[f].shift()); hubo=true; } } }
@@ -216,7 +217,7 @@ function elegirCelulas(n, basePrimero){
    ritmos elegidos: el base de cada familia y una variante hasta completar `n` */
 const _MIXC=(function(){ if(!MIX || !MIX.compas) return null; const p=String(MIX.compas).split('/').map(Number);
   return (p[0]>0 && p[1]===4 && _CFG && _CFG.pulseQ===1) ? {meas:MIX.compas, ppm:p[0]} : null; })();
-const SEL = (MIX && _MIXC) ? elegirCelulas(MIX.n, true) : null;            // índices de las células de este puzzle
+const SEL = (MIX && _MIXC) ? elegirCelulas(MIX.n, !MIX.azar) : null;   /* (20-oct-2026) azar (1.6): de cada familia, cualquiera */            // índices de las células de este puzzle
 const CELDAS = SEL ? SEL.map(i=>CARD.cells[i]) : CARD.cells;
 const COMPOUND=_CFG?_CFG.compound:true, MEAS=_MIXC?_MIXC.meas:(_CFG?_CFG.meas:"6/8"), PULSES_PER_MEAS=_MIXC?_MIXC.ppm:(_CFG?_CFG.pulsesPerMeas:2), PULSE_Q=_CFG?_CFG.pulseQ:1.5;
 // (22-sep-2026) La frase tiene nMeas compases (4 en 2/4 y 6/8), pero si los ritmos de la
@@ -240,6 +241,23 @@ function durQ(tok){ let t=tok; if(t.endsWith('r'))t=t.slice(0,-1); let dot=false
   const map={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125}; let v=map[t]!=null?map[t]:1; if(dot)v*=1.5; return v; }
 function patternQ(toks){ return toks.map(durQ); }
 function tokKey(toks){ return toks.join(','); }
+function claveCarta(x){ return tokKey(x.toks)+'|'+((x&&x.ties)||[]).map(t=>t.join('-')).join(','); }   /* (20-oct-2026) el ritmo y su ligadura */
+/* (20-oct-2026, Iago, carta 1.6) LIGADURAS · un ritmo ligado suena como lo que es: la nota de destino no se vuelve a
+   atacar y la primera dura las dos. Devuelve [{k, on, dur}] (en negras). Sin ligaduras da exactamente los mismos ataques
+   y duraciones que antes (cada figura que no es silencio, en su sitio y con su duración). */
+function sonidosLigados(toks, qs, ties){
+  const sig={}, cont=new Set(); (ties||[]).forEach(t=>{ if(t&&t.length===2){ sig[t[0]]=t[1]; cont.add(t[1]); } });
+  const out=[]; let acc=0;
+  (toks||[]).forEach((t,k)=>{ const on=acc, q=(qs&&qs[k]!=null)?qs[k]:durQ(t); acc+=q;
+    if(String(t).endsWith('r') || cont.has(k)) return;
+    let d=q, j=k, g=0; while(sig[j]!=null && g++<16){ j=sig[j]; d+=(qs&&qs[j]!=null)?qs[j]:durQ(toks[j]); }
+    out.push({k:k, on:on, dur:d}); });
+  return out;
+}
+function dibujaLigaduras(ctx, vf, ties){
+  (ties||[]).forEach(t=>{ try{ const a=vf[t[0]], b=vf[t[1]]; if(a && b) new VF.StaveTie({first_note:a,last_note:b,first_indices:[0],last_indices:[0]}).setContext(ctx).draw(); }catch(e){} });
+}
+
 /* (16-oct-2026, Iago) EL CORCHETE PASA POR ENCIMA DEL SILENCIO: «esas 3 semicorcheas deberían estar bajo el mismo
    corchete… cuando hay semicorcheas del mismo pulso antes y después del silencio», en todas las fases. Igual que en las
    cartas de la app: los tramos de figuras con corchete (corchea, semicorchea, fusa) que solo separa un silencio corto (de
@@ -265,14 +283,14 @@ function autoBeam(toks, beats){
 }
 
 /* mini render de un pulso: altura fija H, ancho proporcional al nº de figuras (espaciado equiparable) */
-function renderPulseMini(toks, beams, H, tup){
-  if(tup){ const m={time:MEAS,notes:toks.map(t=>({dur:t})),beams:(beams&&beams.length?beams:autoBeam(toks,(tup?toks.map((t,k)=>durQ(t)*((tup.idx||[]).indexOf(k)>=0?tup.occ/tup.num:1)):null))).map(b=>b.slice()),clef:'treble',tuplets:[{idx:tup.idx.slice(),num:tup.num,occ:tup.occ}]};
+function renderPulseMini(toks, beams, H, tup, ties){   /* (20-oct-2026) + ties */
+  if(tup){ const m={ties:(ties||[]),time:MEAS,notes:toks.map(t=>({dur:t})),beams:(beams&&beams.length?beams:autoBeam(toks,(tup?toks.map((t,k)=>durQ(t)*((tup.idx||[]).indexOf(k)>=0?tup.occ/tup.num:1)):null))).map(b=>b.slice()),clef:'treble',tuplets:[{idx:tup.idx.slice(),num:tup.num,occ:tup.occ}]};
     return renderMini(m, H||56, true); }
-  return renderPulseMini_.apply(null,[toks,beams,H]);
+  return renderPulseMini_.apply(null,[toks,beams,H,ties]);
 }
-function renderPulseMini_(toks, beams, H){
+function renderPulseMini_(toks, beams, H, ties){
   const notes=toks.map(t=>({dur:t}));
-  const m={time:MEAS,notes,beams:(beams&&beams.length?beams:autoBeam(toks)).map(b=>b.slice()),clef:'treble'};
+  const m={ties:(ties||[]),time:MEAS,notes,beams:(beams&&beams.length?beams:autoBeam(toks)).map(b=>b.slice()),clef:'treble'};
   return renderMini(m, H||56, true);
 }
 function renderMini(m, H, noTS){
@@ -291,6 +309,7 @@ function renderMini(m, H, noTS){
     const [num,den]=time.split('/').map(Number);
     const voice=new VF.Voice({num_beats:num,beat_value:den}).setStrict(false); voice.addTickables(vf);
     new VF.Formatter({softmaxFactor:5}).joinVoices([voice]).format([voice],STAVE_W-36); voice.draw(ctx,st); beams.forEach(b=>b.setContext(ctx).draw());
+    dibujaLigaduras(ctx, vf, m.ties);   /* (20-oct-2026) */
     (m.tuplets||[]).forEach(t=>{ try{ const grp=t.idx.map(i=>vf[i]).filter(Boolean);
       if(grp.length>1) new VF.Tuplet(grp,{num_notes:t.num,notes_occupied:t.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} });
     const svg=host.querySelector('svg');
@@ -351,11 +370,12 @@ function cellSlot(cell){
   /* 3-ago-2026 · quiz-fix H1: contenido del hueco = unidad característica si existe (tuplets con
      duración real y corchete); si no, la célula entera (compases enteros: síncopas, blanca…). */
   if(cell.unit){ const u=cell.unit;
-    return {toks:u.toks.slice(), beams:autoBeam(u.toks, u.beats), beats:u.beats.slice(), tup:u.tup?{idx:u.tup.idx.slice(),num:u.tup.num,occ:u.tup.occ}:null}; }
+    return {toks:u.toks.slice(), beams:autoBeam(u.toks, u.beats), beats:u.beats.slice(), tup:u.tup?{idx:u.tup.idx.slice(),num:u.tup.num,occ:u.tup.occ}:null, ties:[]}; }
   const toks=cell.notes.slice();
   return {toks:toks, beams:(cell.beams||[]).map(b=>b.slice()),
           beats:(cell.beatsReal&&cell.beatsReal.slice())||toks.map(durQ),
-          tup:(cell.tuplets&&cell.tuplets[0])?{idx:cell.tuplets[0].idx.slice(),num:cell.tuplets[0].num,occ:cell.tuplets[0].occ}:null};
+          tup:(cell.tuplets&&cell.tuplets[0])?{idx:cell.tuplets[0].idx.slice(),num:cell.tuplets[0].num,occ:cell.tuplets[0].occ}:null,
+          ties:(Array.isArray(cell.ties)?cell.ties:[]).filter(t=>Array.isArray(t)&&t.length===2).map(t=>[t[0]|0,t[1]|0])};   /* (20-oct-2026) 1.6 */
 }
 /* (7-oct-2026) MEZCLA: los ritmos elegidos, cada uno una vez, SIN cruzar la barra de compás: primero los que más
    ocupan (la síncopa doble llena un compás de 3/4), cada uno en un hueco al azar de los que le valen. */
@@ -420,13 +440,14 @@ function renderPhrase(){
     if(i===N_MEAS-1) st.setEndBarType(VF.Barline.type.END); st.setContext(ctx).draw(); staves.push(st);
     measGeom.push({x0:st.getNoteStartX(), x1:st.getX()+st.getWidth()-10}); }
   const staveTop=staves[0].getYForLine(0), staveBot=staves[0].getYForLine(4);
-  for(let i=0;i<N_MEAS;i++){ const st=staves[i]; const notes=[]; const beamGroups=[]; const tupGroups=[]; let nIdx=0;
+  for(let i=0;i<N_MEAS;i++){ const st=staves[i]; const notes=[]; const beamGroups=[]; const tupGroups=[]; const tieGroups=[]; let nIdx=0;
     for(let p=0;p<PULSES_PER_MEAS;p++){ const idx=i*PULSES_PER_MEAS+p; const cont=placed[idx];
       if(cont){ const toks=cont.toks; const lb=(cont.beams&&cont.beams.length?cont.beams:autoBeam(toks, cont.beats)); const startN=nIdx;
         toks.forEach(t=>{ const isRest=t.endsWith('r'); const base=t.replace('d','').replace('r','');
           const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:base+(isRest?'r':'')}); if(t.replace('r','').endsWith('d'))VF.Dot.buildAndAttach([sn]); notes.push(sn); nIdx++; });
         lb.forEach(g=>beamGroups.push(g.map(k=>startN+k)));
         if(cont.tup) tupGroups.push({idx:cont.tup.idx.map(k=>startN+k),num:cont.tup.num,occ:cont.tup.occ});
+        (cont.ties||[]).forEach(t=>tieGroups.push([startN+t[0], startN+t[1]]));   /* (20-oct-2026) */
       } else { const sn=new VF.StaveNote({clef:'treble',keys:['b/4'],duration:'qr'}); VF.Dot.buildAndAttach([sn]); sn.setStyle({fillStyle:'rgba(0,0,0,0)',strokeStyle:'rgba(0,0,0,0)'}); notes.push(sn); nIdx++; }
     }
     const voice=new VF.Voice({num_beats:6,beat_value:8}).setStrict(false); voice.addTickables(notes);
@@ -436,6 +457,7 @@ function renderPhrase(){
     beamObjs.forEach(b=>{ try{ b.setContext(ctx).draw(); }catch(e){} });
     tupGroups.forEach(t=>{ try{ const grp=t.idx.map(k=>notes[k]).filter(Boolean);
       if(grp.length>1) new VF.Tuplet(grp,{num_notes:t.num,notes_occupied:t.occ,ratioed:false}).setContext(ctx).draw(); }catch(e){} });
+    dibujaLigaduras(ctx, notes, tieGroups);   /* (20-oct-2026) */
   }
   const svg=host.querySelector('svg'); const pulseY=staveBot+30; ensureXGrad(svg);
   for(let i=0;i<N_MEAS;i++){ const g=measGeom[i], span=g.x1-g.x0;
@@ -539,7 +561,7 @@ function bounds(){ const s=document.getElementById('floatTop'); const top=s?s.ge
   return {l:14, t:top, r:innerWidth-14, b:innerHeight-14}; }
 function makeFloatCard(ct){
   const layer=document.getElementById(BANDEJA?'bandeja':'floatLayer'); const el=document.createElement('div'); el.className='fcard'+(ct.target?' tgt':'');
-  el.innerHTML=`<div class="fmini">${renderPulseMini(ct.toks,ct.beams,64,ct.tup)}</div>`; layer.appendChild(el);
+  el.innerHTML=`<div class="fmini">${renderPulseMini(ct.toks,ct.beams,64,ct.tup,ct.ties)}</div>`; layer.appendChild(el);
   if(BANDEJA){ const card={el,ct,x:0,y:0,vx:0,vy:0,w:el.offsetWidth||110,h:el.offsetHeight||74,drag:false}; el.style.left='0px'; el.style.top='0px';
     attachDrag(card); pool.push(card); return card; }
   const bb=bounds(); const w=el.offsetWidth||110,h=el.offsetHeight||74;
@@ -554,7 +576,7 @@ function spawnPool(){
   // (Iago 15-sep-2026) las cartas del mazo copiaban solo toks y beams: el grupo de valoración
   // especial (tup) y sus duraciones reales (beats) se perdían, así que un tresillo salía sin
   // corchete ni «3» y, una vez colocado, sonaba como corcheas normales.
-  const contents=solution.filter(s=>!s.cubierto).map(s=>({toks:s.toks.slice(),beams:(s.beams||[]).map(b=>b.slice()),beats:(s.beats||[]).slice(),tup:s.tup?{idx:s.tup.idx.slice(),num:s.tup.num,occ:s.tup.occ}:null,target:!!s.target}));
+  const contents=solution.filter(s=>!s.cubierto).map(s=>({toks:s.toks.slice(),beams:(s.beams||[]).map(b=>b.slice()),beats:(s.beats||[]).slice(),tup:s.tup?{idx:s.tup.idx.slice(),num:s.tup.num,occ:s.tup.occ}:null,target:!!s.target,ties:(s.ties||[]).map(t=>t.slice())}));   /* (20-oct-2026) + ties */
   { let k=0; solution.forEach((s,i)=>{ if(!s.cubierto) contents[k++].span=spanSol(i); }); }   /* (7-oct-2026) los pulsos que ocupa cada carta; el mazo y su orden, igual que antes */
   contents.sort(()=>Math.random()-.5);
   contents.forEach(ct=>makeFloatCard(ct));
@@ -651,7 +673,7 @@ function placeCard(card, idx){
   /* (7-oct-2026) una carta de N pulsos ocupa N pulsos seguidos desde idx: los siguientes pasan a «cubiertos» AHORA (antes
      venían reservados de antemano y delataban dónde iba cada ritmo largo) */
   const n=card.ct.span||1; if(!cabeEn(idx,n)) return false;
-  placed[idx]={toks:card.ct.toks.slice(),beams:(card.ct.beams||[]).map(b=>b.slice()),beats:(card.ct.beats||card.ct.toks.map(durQ)).slice(),tup:card.ct.tup?{idx:card.ct.tup.idx.slice(),num:card.ct.tup.num,occ:card.ct.tup.occ}:null,target:!!card.ct.target,span:n};
+  placed[idx]={toks:card.ct.toks.slice(),beams:(card.ct.beams||[]).map(b=>b.slice()),beats:(card.ct.beats||card.ct.toks.map(durQ)).slice(),tup:card.ct.tup?{idx:card.ct.tup.idx.slice(),num:card.ct.tup.num,occ:card.ct.tup.occ}:null,target:!!card.ct.target,span:n,ties:(card.ct.ties||[]).map(t=>t.slice())};
   for(let k=1;k<n;k++) placed[idx+k]={cubierto:true,toks:[],beams:[],beats:[],tup:null};
   clickCursor=idx+n;                                   // las clicadas siguientes van a partir de aquí
   round.malos=(round.malos||[]).filter(i=>i!==idx);
@@ -678,8 +700,8 @@ function playPhrase(noClick){
   const lead=noClick?0.12:0.15; const t0=c.currentTime+lead, measSec=PULSES_PER_MEAS*secPerPulse;
   const start = noClick ? t0 : t0+measSec;                       // refuerzo: sin compás de claqueta previo
   if(!noClick){ for(let p=0;p<PULSES_PER_MEAS;p++) click(t0+p*secPerPulse,p===0,phraseBus); }
-  solution.forEach((s,i)=>{ const ps=start+i*secPerPulse; let acc=0;
-    (s.beats||patternQ(s.toks)).forEach((dq,k)=>{ if(!s.toks[k].endsWith('r')) ritmoSound(ps+acc*spq,dq*spq,.34,phraseBus); acc+=dq; }); });
+  solution.forEach((s,i)=>{ const ps=start+i*secPerPulse;   /* (20-oct-2026) con sus ligaduras */
+    sonidosLigados(s.toks, s.beats||patternQ(s.toks), s.ties).forEach(ev=>ritmoSound(ps+ev.on*spq,ev.dur*spq,.34,phraseBus)); });
   if(!noClick){ for(let i=0;i<N_PULSES;i++){ click(start+i*secPerPulse, i%PULSES_PER_MEAS===0, phraseBus); } }   // metrónomo solo en escucha normal
   // iluminar la flecha/pulso por el que va la música
   lightTimers.forEach(clearTimeout); lightTimers=[]; const baseMs=(start-c.currentTime)*1000;
@@ -702,7 +724,7 @@ function check(){
   /* (7-oct-2026) sin pulsos reservados, se mira carta a carta: está bien si EMPIEZA en el mismo pulso que en la solución
      y es el mismo ritmo. Las que no, se marcan en rojo como siempre (la ✕ del pulso en el que empiezan). */
   placed.forEach((p,i)=>{ const s=solution[i];
-    if(p && !p.cubierto){ if(!s || s.cubierto || tokKey(p.toks)!==tokKey(s.toks)) malos.push(i); }
+    if(p && !p.cubierto){ if(!s || s.cubierto || claveCarta(p)!==claveCarta(s)) malos.push(i); }   /* (20-oct-2026) con su ligadura */
     else if(!p && s && !s.cubierto) malos.push(i); });   // hueco sin carta (no debería: «Comprobar» solo se activa con todo colocado)
   const ok = malos.length===0;
   if(ok){ round.malos=[]; round.hits++; round.score=Math.min(100,round.score+(100/PUZZLES)); enviarEstado(); toast('¡Correcto!','ok'); burst(); setBar();
@@ -742,9 +764,15 @@ function newRound(){
      todos empiezan libres. La barra de compás solo manda si la solución se generó sin cruzarla (MEZCLA, carta 1.4). */
   SIN_CRUZAR=!!(SEL || HAY_LARGOS) && solution.every((s,i)=>s.cubierto || (i%PULSES_PER_MEAS)+spanSol(i)<=PULSES_PER_MEAS);
   avisoLargos(solution.some(s=>s.cubierto));
+  sinRelleno(!solution.some(s=>s && !s.cubierto && !s.target));   /* (20-oct-2026) */
   renderPhrase(); spawnPool(); updateCheck(); setBar(); vigilaCartas();
 }
 /* (7-oct-2026) si en este puzzle hay algún ritmo de más de un pulso, la cabecera lo avisa (en los demás, ni una letra más) */
+/* (20-oct-2026, 1.6) si en el puzzle no hay relleno (cuatro ritmos que llenan los cuatro compases), la cabecera no lo menciona */
+function sinRelleno(si){ try{ const fs=document.querySelector('.fase-sub'); if(!fs) return;
+  [].slice.call(fs.childNodes).forEach(n=>{ if(n.nodeType!==3) return;
+    if(si && n.nodeValue.indexOf(' y algún relleno más sencillo')>=0){ n.__orig=n.nodeValue; n.nodeValue=n.nodeValue.replace(' y algún relleno más sencillo',''); }
+    else if(!si && n.__orig){ n.nodeValue=n.__orig; n.__orig=null; } }); }catch(e){} }
 function avisoLargos(hay){ const fs=document.querySelector('.fase-sub'); let o=document.getElementById('subLargos');
   if(hay && !o && fs){ o=document.createElement('span'); o.id='subLargos'; o.innerHTML=' <b>Ojo:</b> hay ritmos que ocupan más de un pulso.'; fs.appendChild(o); }
   else if(!hay && o){ o.remove(); } }
