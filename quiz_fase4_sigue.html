@@ -612,7 +612,7 @@ const MAXTAPS_PER_PULSE=Math.ceil(PULSE_Q/MIN_DUR_Q)+3;                // máx. 
 
 /* ===== estado ===== */
 let roundsPassed=0;
-let running=false, attacks=[], notes=[], beamGroups=[], roundsMeta=[], raf=null, tieGroups=[];   /* (20-oct-2026) + tieGroups */
+let running=false, attacks=[], notes=[], beamGroups=[], roundsMeta=[], raf=null, tieGroups=[], tupGroups=[];   /* (27-oct-2026) + tupGroups */   /* (20-oct-2026) + tieGroups */
 // (Iago 14-sep-2026, 2ª vuelta) Antes había UN solo desfase para dos cosas que
 // no son la misma. VIS_DELAY_P sigue moviendo la VENTANA DE PRECISIÓN — eso
 // está bien calibrado, él lo confirma de oído — pero movía TAMBIÉN el dibujo,
@@ -643,7 +643,7 @@ function buildQuiz(){
   // de principio a fin, que es su gracia.
   const roundDefs = extremeMode ? [{N:2,pulses:stdLen}]
                                 : [{gaps:GAPS, pulses:stdLen}];
-  notes=[]; attacks=[]; beamGroups=[]; roundsMeta=[]; tieGroups=[];
+  notes=[]; attacks=[]; beamGroups=[]; roundsMeta=[]; tieGroups=[]; tupGroups=[];
   let pulse=0, varRot=0, fillRot=0;
   roundDefs.forEach((d,ri)=>{
     const roundStart=pulse, aStart=attacks.length, len=d.pulses;
@@ -682,6 +682,9 @@ function buildQuiz(){
       const baseIdx=notes.length; let acc=0;
       const tz=isT?(CELL_TIES[ci]||[]):[], ligada=new Set(tz.map(t=>t[1]));   /* (20-oct-2026) la nota de destino de una ligadura no se percute */
       tz.forEach(t=>tieGroups.push([baseIdx+t[0], baseIdx+t[1]]));
+      /* (27-oct-2026, Mantenimiento · Iago, carta 2.1) TRESILLOS: el ritmo ya sonaba y se corregía como tresillo (CELL_BEATS),
+         pero en la pista se dibujaban negras normales y parecían «más rápidas de lo escrito». Ahora se dibuja el corchete con el 3. */
+      if(isT && CELL_TUP[ci] && Array.isArray(CELL_TUP[ci].idx) && CELL_TUP[ci].idx.length>1) tupGroups.push({idx:CELL_TUP[ci].idx.map(k=>baseIdx+k), num:CELL_TUP[ci].num});
       toks.forEach((t,k)=>{ const onsetP=i + (acc/PULSE_Q), isRest=t.endsWith('r');   // posición en PULSOS
         notes.push({onsetP, dur:t, isRest, round:ri});
         if(!isRest && !ligada.has(k)) attacks.push({tP:onsetP, isTarget:isT, round:ri, matched:false});
@@ -707,6 +710,11 @@ function layoutTrack(){
   let body='';
   notes.forEach((n,i)=>{ body+=noteSVG(xs[i], midY, n.dur, n.isRest, inBeam.has(i)); });
   beamGroups.forEach(g=>{ body+=beamsSVG(g.map(i=>xs[i]), g.map(i=>lvlOf(notes[i].dur)), midY); });
+  /* (27-oct-2026) el corchete del tresillo (o del grupo que sea), por encima de las plicas, con su número en medio */
+  tupGroups.forEach(g=>{ const a=xs[g.idx[0]], z=xs[g.idx[g.idx.length-1]]; if(a==null||z==null) return;
+    const x1=a-HEAD_RX, x2=z+HEAD_RX*0.92+3, y=midY-STEM-13, xm=(x1+x2)/2, hw=8;
+    body+=`<path d="M${x1.toFixed(1)} ${(y+6).toFixed(1)} V${y.toFixed(1)} H${(xm-hw).toFixed(1)} M${(xm+hw).toFixed(1)} ${y.toFixed(1)} H${x2.toFixed(1)} V${(y+6).toFixed(1)}" fill="none" stroke="${INK}" stroke-width="1.6"/>`+
+          `<text x="${xm.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="800" font-style="italic" font-family="Georgia,serif" fill="${INK}">${g.num}</text>`; });
   /* (20-oct-2026) las ligaduras: un arco por debajo de las cabezas (las plicas van hacia arriba) */
   tieGroups.forEach(g=>{ const xa=xs[g[0]], xb=xs[g[1]]; if(xa==null||xb==null) return; const x1=xa+HEAD_RX*0.6, x2=xb-HEAD_RX*0.6, y=midY+HEAD_RY+3, h=Math.min(14, 5+(x2-x1)*0.08);
     body+=`<path d="M${x1.toFixed(1)} ${y.toFixed(1)} Q ${((x1+x2)/2).toFixed(1)} ${(y+h).toFixed(1)} ${x2.toFixed(1)} ${y.toFixed(1)} Q ${((x1+x2)/2).toFixed(1)} ${(y+h-2.6).toFixed(1)} ${x1.toFixed(1)} ${y.toFixed(1)} Z" fill="${INK}"/>`; });
