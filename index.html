@@ -7940,7 +7940,8 @@ function m2Slides(card,cfg){ return [
    capB:'<b>El sonido NO ha cambiado.</b> Solo la ropa: cada figura ha crecido una talla. La unidad de pulso ahora es la <b>BLANCA</b>. Esto es el '+cfg.tsB+'.'},
   {type:'facts',blocks:[
     {q:'¿Cuál es el pulso?',fig:{notes:['h']},a:'La <b>BLANCA</b>. Mismo lenguaje rítmico de siempre — otra escala de valores.'},
-    {q:'¿En qué compás estamos?',meters:cfg.meters},
+    /* (27-oct-2026, Mantenimiento · Iago) en la 2.1 fuera «¿En qué compás estamos?»: sale solo si la carta trae meters */
+    ...(cfg.meters?[{q:'¿En qué compás estamos?',meters:cfg.meters}]:[]),
     {q:'La regla de oro',a:'Todo lo que sabías con la negra vale aquí… <b>con el doble de tamaño</b>: la corchea hace de semicorchea, la negra de corchea, la blanca de negra y la redonda de blanca.'},
     {q:'¿De qué lo conoces?',a:'De las subdivisiones del pulso de blanca:',figs:cfg.anc.map(a=>({notes:a.notes,beams:a.beams}))}]},
   cfg.genesis,
@@ -7953,7 +7954,7 @@ function m2Slides(card,cfg){ return [
 D['2.1']={spq:0.45,slides:function(card){ return m2Slides(card,{
   tallaTitle:'El pulso ya no es la negra: es la BLANCA',
   small:{notes:['q','8','8'],beams:[[1,2]]},big:{notes:['h','q','q']},tsS:'2/4',tsB:'2/2',pulseOn:[0,1],
-  meters:['2/2 (¢)'],loop:4,rootNotes:['h','h'],
+  loop:4,rootNotes:['h','h'],
   anc:[{notes:['q','q','q','q'],label:'4 negras'},{notes:['8','8','8','8','8','8','8','8'],beams:[[0,1,2,3],[4,5,6,7]],label:'8 corcheas'}],
   genesis:{type:'genesis',mode:'fusion',title:'¿Te suena esta fusión?',loopBeats:4,pulse:{notes:['h','h']},timbre:'marimba',steps:[
     {notes:['q','q','q','q'],caption:'Cuatro negras… que ahora son SUBDIVISIÓN: la mitad de cada blanca.'},

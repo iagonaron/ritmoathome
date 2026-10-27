@@ -549,10 +549,17 @@ if(VARIOS){ try{
     const _d=document.createElement('div'); _d.className='ini-demo'; _d.id='iniDemo'; _d.setAttribute('aria-hidden','true');
     _d.style.setProperty('--n',String(_n)); _d.style.setProperty('--k',String(_k));
     if(_k>6) _d.style.setProperty('--c',Math.max(20,Math.floor((300-8*(_k-1))/_k))+'px');   // ritmos muy largos: fichas más pequeñas
-    _d.innerHTML='<div class="idm-cap">el ritmo ocupa <b>'+_n+' pulsos</b></div><div class="idm-br"></div>'+_ch+
+    /* (27-oct-2026, Mantenimiento · Iago, carta 2.1) con pulso de BLANCA el cartel lo dice: «2 pulsos de blanca» y, debajo,
+       que una blanca ocupa un pulso (antes parecía que había figuras de dos pulsos) */
+    const _deBlanca=Math.abs(PULSE_Q-2)<1e-6;
+    _d.innerHTML='<div class="idm-cap">el ritmo ocupa <b>'+_n+' pulsos'+(_deBlanca?' de blanca':'')+'</b></div><div class="idm-br"></div>'+_ch+
       '<div class="idm-mano"><i>👆</i><span>tocas este: donde <b>EMPIEZA</b></span></div>';
     const _g=document.createElement('p'); _g.className='ini-grande'; _g.innerHTML='Toca el pulso en el que<br><b>EMPIEZA</b> el ritmo.';
     _is.parentNode.insertBefore(_d,_is); _is.parentNode.insertBefore(_g,_is);
+    if(_deBlanca){ const _pb=document.createElement('p'); _pb.className='ini-blanca';
+      _pb.style.cssText='margin:-4px auto 10px;font-size:14px;font-weight:700;color:#cfc8ff;text-align:center';
+      _pb.innerHTML='Aquí el pulso es la <b style="color:#fff">BLANCA</b>: una blanca ocupa <b style="color:#fff">un</b> pulso.';
+      _d.parentNode.insertBefore(_pb,_d.nextSibling); }
     _is.classList.add('ini-peq');
     _is.innerHTML='Primero suena el <b>ritmo de la tarjeta</b>; <br>después pulsa ▶ para oír la frase.<br>Tres rondas, dos escuchas y dos intentos en cada una. Nada resta.';
     document.getElementById('ovIni').classList.add('ini-alta');
@@ -594,7 +601,7 @@ function newRound(){
   SPAN_R=spanP;
   if(spanP>1 && !_empHecho){ _empRonda=true; _empPinta(); }   /* (7-oct-2026) primera ronda con un ritmo largo: pista resaltada */
   try{ const _tx=document.querySelector('#targetCard .t-txt');   /* (7-oct-2026) el texto de la tarjeta, según lo que ocupa el ritmo */
-    if(_tx) _tx.innerHTML=(spanP>1)?('Este ritmo ocupa <b>'+spanP+' pulsos</b>. Toca el número del pulso en el que <b>EMPIEZA</b>.')
+    if(_tx) _tx.innerHTML=(spanP>1)?('Este ritmo ocupa <b>'+spanP+' pulsos'+(Math.abs(PULSE_Q-2)<1e-6?' de blanca':'')+'</b>. Toca el número del pulso en el que <b>EMPIEZA</b>.')
                                    :'Este ritmo está escondido en <b>un</b> pulso de la frase.'; }catch(e){}
   const maxStart=Math.max(1, N_PULSES-spanP+1);
   let targetPulse;
