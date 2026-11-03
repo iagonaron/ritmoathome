@@ -266,6 +266,13 @@ const VF = window.Vex ? window.Vex.Flow : window.VexFlow;
 
 /* ===== carta 1.1 (datos reales) ===== */
 const _CFG=(function(){ try{ const c=new URLSearchParams(location.search).get('cfg'); if(c) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(c))))); }catch(e){ console.error('cfg',e); } return null; })();
+
+/* (3-nov-2026, Iago: «en un 3/2 tiene que haber ritmos que ocupen el compás de 3/2» · «no repitas siempre los mismos»)
+   Compases de 3 o 4 pulsos de blanca (cartas 2.2 y 2.3): los ritmos de la carta van ENTEROS, ocupando su compás. Antes se
+   recortaban a su primer pulso («unidad») y casi todos se quedaban en UNA BLANCA, igual que el relleno: siempre lo mismo y,
+   en la fase 3, un compás de 3/2 con solo dos pulsos (no coincidía lo que sonaba con lo que había que escribir). */
+const BARRA = !!(_CFG && !_CFG.compound && !_CFG.mezcla && (_CFG.pulsesPerMeas|0)>2);
+if(BARRA) (_CFG.cells||[]).forEach(c=>{ if(c && !(c.tuplets&&c.tuplets.length)) c.unit=null; });
 const CARD = _CFG ? { kicker:"Carta "+(_CFG.atlasId||''), bpmSimple:_CFG.bpmSimple, bpmComp:_CFG.bpmComp, cells:_CFG.cells } : {
   kicker:"Carta 1.1", bpmSimple:63, bpmComp:42,   /* BASE: negra c/puntillo=42 · negra≈63 · blanca≈31 · fusas: mitad */
   cells:[
@@ -279,7 +286,8 @@ let MEAS = _CFG ? _CFG.meas : (COMPOUND ? "6/8" : "2/4");            /* (7-oct-2
 let PULSES_PER_MEAS = _CFG ? _CFG.pulsesPerMeas : 2;
 // (Iago 14-sep-2026) La fase 2 usa una frase MÁS CORTA que el resto del quiz
 // (nMeas2 = nMeas-1): se le estaba haciendo largo a los chavales.
-let N_MEAS = _CFG ? (_CFG.nMeas2 || _CFG.nMeas) : 3;
+/* (3-nov-2026, Iago: «se ve muy cutre en esta fase 1 que solo haya 2 compases, pon 4») la frase tiene al menos 4 compases */
+let N_MEAS = Math.max(4, _CFG ? (_CFG.nMeas2 || _CFG.nMeas) : 3);
 let N_PULSES = N_MEAS*PULSES_PER_MEAS;
 /* (7-oct-2026, Iago: la síncopa doble en el quiz «sustituyendo otras, no añadiendo. Incluso también con las
    variantes») MEZCLA · solo en las cartas que la traen en su configuración (hoy, la 1.4). La carta tiene más ritmos de
@@ -605,17 +613,33 @@ function newRound(){
                                    :'Este ritmo está escondido en <b>un</b> pulso de la frase.'; }catch(e){}
   const maxStart=Math.max(1, N_PULSES-spanP+1);
   let targetPulse;
-  if(MIX){   /* (7-oct-2026) MEZCLA: un ritmo de varios pulsos no cruza la barra de compás */
+  if(MIX || BARRA){   /* (7-oct-2026) MEZCLA: un ritmo de varios pulsos no cruza la barra de compás · (3-nov) también en 3/2 y 4/2 */
     const sitios=[]; for(let p=0;p+spanP<=N_PULSES;p++){ if((p%PULSES_PER_MEAS)+spanP<=PULSES_PER_MEAS) sitios.push(p); }
     const cand=(sitios.length>1)?sitios.filter(p=>p!==lastTargetPulse):sitios;
     targetPulse=cand.length?cand[Math.floor(Math.random()*cand.length)]:0;
   } else { do{ targetPulse=Math.floor(Math.random()*maxStart); }while(maxStart>1 && targetPulse===lastTargetPulse); }
   lastTargetPulse=targetPulse;
-  const pulses=[];
-  for(let i=0;i<N_PULSES;i++){
-    if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:tgtQ.slice(), target:true, ties:cellTies(target)}); }
-    else if(i>targetPulse && i<targetPulse+spanP){ pulses.push({tokens:[], q:[], target:false, cubierto:true}); }
-    else { let f; do{ f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; }while(f.join(',')===tgtKey); pulses.push({tokens:f.slice(), q:patternQ(f), target:false}); }
+  /* (3-nov-2026, Iago: «asegúrate de que el ritmo objetivo solo aparezca una vez en cada ejercicio de la fase 1») con
+     los rellenos de un pulso, varios seguidos podían formar OTRA VEZ el ritmo objetivo de varios pulsos (en 3/2:
+     blanca | negra negra | blanca). Si pasa, se vuelven a sortear los rellenos. */
+  function objetivoRepetido(ps){
+    for(let s0=0; s0+spanP<=ps.length; s0++){
+      if(s0>=targetPulse && s0<targetPulse+spanP) continue;
+      let toks=[], ok=true;
+      for(let j=s0;j<s0+spanP;j++){ const pj=ps[j]; if(!pj || pj.target || pj.cubierto){ ok=false; break; } toks=toks.concat(pj.tokens); }
+      if(ok && toks.join(',')===tgtKey) return true;
+    }
+    return false;
+  }
+  let pulses=[];
+  for(let intentoR=0; intentoR<80; intentoR++){
+    pulses=[];
+    for(let i=0;i<N_PULSES;i++){
+      if(i===targetPulse){ pulses.push({tokens:targetTokens.slice(), q:tgtQ.slice(), target:true, ties:cellTies(target)}); }
+      else if(i>targetPulse && i<targetPulse+spanP){ pulses.push({tokens:[], q:[], target:false, cubierto:true}); }
+      else { let f; do{ f=FILLERS[Math.floor(Math.random()*FILLERS.length)]; }while(f.join(',')===tgtKey); pulses.push({tokens:f.slice(), q:patternQ(f), target:false}); }
+    }
+    if(!objetivoRepetido(pulses)) break;
   }
   round={pulses, targetPulse};
   // dibujar frase

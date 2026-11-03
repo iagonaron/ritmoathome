@@ -7946,12 +7946,17 @@ function m2Slides(card,cfg){ return [
     ...(cfg.meters?[{q:'¿En qué compás estamos?',meters:cfg.meters}]:[]),
     {q:'La regla de oro',a:'Todo lo que sabías con la negra vale aquí… <b>con el doble de tamaño</b>: la corchea hace de semicorchea, la negra de corchea, la blanca de negra y la redonda de blanca.'},
     {q:'¿De qué lo conoces?',a:'De las subdivisiones del pulso de blanca:',figs:cfg.anc.map(a=>({notes:a.notes,beams:a.beams}))}]},
-  cfg.genesis,
-  {type:'tree',spq:0.45,loopBeats:cfg.loop,rows:[
+  ...[].concat(cfg.genesis),   /* (3-nov-2026) puede ser una o varias (2.2: fusiones y tajos) */
+  m2Compacta(cfg,{type:'tree',spq:0.45,loopBeats:cfg.loop,rows:[
     {label:'el pulso (blanca)',nodes:[{id:'root',notes:cfg.rootNotes,label:'pulso de blanca',timbre:'drum',loopBeats:cfg.loop,stretch:1.8}]},
     {label:'las subdivisiones',nodes:cfg.anc.map((a,i)=>Object.assign({},a,{id:'a'+i,timbre:['wood','shaker'][i%2],loopBeats:cfg.loop}))},
+    /* (3-nov-2026, Iago: «que la intro también tenga alguna variedad más de combinaciones en el árbol») */
+    ...(cfg.combos?[{label:'más combinaciones',lvl:2,nodes:cfg.combos.map((a,i)=>Object.assign({},a,{id:'k'+i,loopBeats:cfg.loop}))}]:[]),
     {label:'los ritmos de la carta',nodes:leaves(card,cfg.loop)}],
-   foot:'Enciende el pulso de blanca y superpón: es el mismo juego de siempre, una talla más arriba.'}];}
+   foot:'Enciende el pulso de blanca y superpón: es el mismo juego de siempre, una talla más arriba.'})];}
+/* (3-nov-2026) con la fila de «más combinaciones» el árbol tiene cuatro pisos: nodos más bajos para que quepa en pantalla */
+function m2Compacta(cfg,t){ if(!cfg.combos) return t; const H=[50,46,46,52];
+  t.rows.forEach((r,ri)=>{ r.nodes=r.nodes.map(nd=>Object.assign({},nd,{h:H[Math.min(ri,3)],minInner:Math.min(nd.minInner||46,38),stretch:Math.min(nd.stretch||1.35,ri>=2?1.0:1.35)})); }); return t; }
 
 D['2.1']={spq:0.45,slides:function(card){ return m2Slides(card,{
   tallaTitle:'El pulso ya no es la negra: es la BLANCA',
@@ -7968,11 +7973,36 @@ D['2.2']={spq:0.45,slides:function(card){ return m2Slides(card,{
   tallaTitle:'Tres pulsos de blanca: el 3/2',
   small:{notes:['q','8','8','q'],beams:[[1,2]]},big:{notes:['h','q','q','h']},tsS:'3/4',tsB:'3/2',pulseOn:[0,1,2],
   meters:['3/2'],loop:6,rootNotes:['h','h','h'],
-  anc:[{notes:['q','q','q','q','q','q'],label:'6 negras'}],
-  genesis:{type:'genesis',mode:'fusion',title:'Nace la pareja redonda + blanca',loopBeats:6,pulse:{notes:['h','h','h']},timbre:'marimba',steps:[
-    {notes:['h','h','h'],caption:'Tres blancas: los tres pulsos del compás.'},
-    {notes:['h','h','h'],ties:[[0,1]],mark:[0,1],btn:'✨ Liga las dos primeras',caption:'Dos blancas, un solo sonido…'},
-    {notes:['w','h'],mark:[0],join:[0,1],btn:'✨ Consuma la fusión',caption:'La <b>REDONDA</b> ocupa dos pulsos enteros. Redonda + blanca: la pareja reina del 3/2.'}]}
+  anc:[{notes:['q','q','q','q','q','q'],label:'6 negras'},{notes:['8','8','8','8','8','8','8','8','8','8','8','8'],beams:[[0,1,2,3],[4,5,6,7],[8,9,10,11]],label:'12 corcheas'}],
+  /* (3-nov-2026, Iago: «más variedad de combinaciones en el árbol o en el momento tajo y fusiones… no repitas siempre los
+     mismos») antes, una sola fusión (tres blancas → redonda + blanca). Ahora tres fusiones a la vez y seis tajos. */
+  combos:[{notes:['h','q','q','h'],label:'blanca · 2 negras · blanca'},{notes:['h','w'],label:'blanca + redonda'},
+          {notes:['q','q','w'],label:'2 negras + redonda'},{notes:['h','h','q','q'],label:'2 blancas + 2 negras'}],
+  genesis:[
+  {type:'genesisN',mode:'fusion',kicker:'LA FUSIÓN — unir · tres a la vez',title:'Tres fusiones en el 3/2',cols:3,colsMovil:1,estrechaHasta:820,
+   talla:{grande:{height:140,stretch:1.6,minInner:46},ancha:{height:124,stretch:1.4,minInner:42},media:{height:100,stretch:1.05,minInner:36},tableta:{height:108,stretch:1.25,minInner:38},movil:{height:76,stretch:0.9,minInner:28}},
+   voces:{t:{loopBeats:6,pulse:{notes:['h','h','h']},timbre:'marimba'}},
+   cells:[{id:'a',g:'t',label:'redonda + blanca'},{id:'b',g:'t',label:'blanca + redonda'},{id:'c',g:'t',label:'síncopa doble'}],
+   steps:[
+    {caption:'Tres blancas, tres blancas… y seis negras: los tres pulsos del compás, enteros y subdivididos.',
+     put:{a:{notes:['h','h','h']},b:{notes:['h','h','h']},c:{notes:['q','q','q','q','q','q']}}},
+    {btn:'✨ Liga',caption:'Ya SUENAN las tres fusiones — la escritura todavía no se ha enterado.',
+     put:{a:{notes:['h','h','h'],ties:[[0,1]]},b:{notes:['h','h','h'],ties:[[1,2]]},c:{notes:['q','q','q','q','q','q'],ties:[[1,2],[3,4]]}}},
+    {btn:'✨ Consuma las fusiones',anim:'fusion',caption:'<b>REDONDA</b> + blanca, blanca + <b>REDONDA</b> (la redonda ocupa dos pulsos enteros) y negra – <b>BLANCA – BLANCA</b> – negra: la síncopa doble del 3/2.',
+     put:{a:{notes:['w','h'],join:[0,1]},b:{notes:['h','w'],join:[1,2]},c:{notes:['q','h','h','q'],join:[[1,2],[3,4]]}}}]},
+  {type:'genesisN',mode:'tajo',kicker:'EL TAJO — dividir · seis de una tacada',title:'Tajos en el 3/2',cols:4,colsMovil:2,filasMovil:4,estrechaHasta:900,
+   talla:{grande:{height:110,stretch:1.3,minInner:40},ancha:{height:98,stretch:1.15,minInner:36},media:{height:84,stretch:0.9,minInner:28},tableta:{height:92,stretch:1.05,minInner:32},movil:{height:60,stretch:0.72,minInner:22}},
+   voces:{t:{loopBeats:6,pulse:{notes:['h','h','h']},timbre:'marimba'}},
+   cells:[{id:'t0',g:'t',label:'tres blancas'},{id:'t1',g:'t',label:'tajo en la del medio'},{id:'t2',g:'t',label:'tajo en la primera'},{id:'t3',g:'t',label:'tajo en la última'},
+          {id:'d0',g:'t',label:'blanca · 2 negras · blanca'},{id:'d1',g:'t',label:'tajo en una negra'},{id:'d2',g:'t',label:'tajo en la última'},{id:'d3',g:'t',label:'tajo en la otra negra'}],
+   steps:[
+    {caption:'Dos ritmos del 3/2, cada uno con tres huecos esperando. Ahora, el tajo: una blanca se parte en dos negras; una negra, en dos corcheas.',
+     put:{t0:{notes:['h','h','h']},d0:{notes:['h','q','q','h']}}},
+    {btn:'⚡ ¡TAJOS! Las seis variantes de una tacada',anim:'tajo',captionPre:'<i>cada ritmo, tres copias…</i>',
+     caption:'Seis combinaciones nuevas de un golpe… y tres de ellas son ritmos de la carta: <b>blanca – cuatro negras</b>, <b>blanca – negra – dos corcheas – blanca</b>.',
+     put:{t1:{notes:['h','q','q','h'],de:'t0',cut:1},t2:{notes:['q','q','h','h'],de:'t0',cut:0},t3:{notes:['h','h','q','q'],de:'t0',cut:2},
+          d1:{notes:['h','q','8','8','h'],beams:[[2,3]],de:'d0',cut:2},d2:{notes:['h','q','q','q','q'],de:'d0',cut:3},d3:{notes:['h','8','8','q','h'],beams:[[1,2]],de:'d0',cut:1}},
+     escucha:['t1','t2','t3','d1','d2','d3']}]}]
 })}};
 
 D['2.3']={spq:0.45,slides:function(card){ return m2Slides(card,{
@@ -7980,6 +8010,7 @@ D['2.3']={spq:0.45,slides:function(card){ return m2Slides(card,{
   small:{notes:['q','8','8','q','q'],beams:[[1,2]]},big:{notes:['h','q','q','h','h']},tsS:'4/4',tsB:'4/2',pulseOn:[0,1,2,3],
   meters:['4/2'],loop:8,rootNotes:['h','h','h','h'],
   anc:[{notes:['q','q','q','q','q','q','q','q'],label:'8 negras'}],
+  combos:[{notes:['h','q','q','w'],label:'blanca · 2 negras · redonda'},{notes:['w','w'],label:'dos redondas'},{notes:['h','w','h'],label:'blanca · redonda · blanca'}],   /* (3-nov-2026) */
   genesis:{type:'genesis',mode:'fusion',title:'La redonda, en cuaternario',loopBeats:8,pulse:{notes:['h','h','h','h']},timbre:'marimba',steps:[
     {notes:['h','h','h','h'],caption:'Cuatro blancas: los cuatro pulsos del compás.'},
     {notes:['h','h','h','h'],ties:[[0,1]],mark:[0,1],btn:'✨ Liga las dos primeras',caption:'Mismo gesto…'},
