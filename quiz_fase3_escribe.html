@@ -175,7 +175,7 @@ function elegirCelulas(n, basePrimero){
   while(out.length<n && hubo){ hubo=false; for(const f of fams){ if(out.length>=n) break; if(porFam[f].length){ out.push(porFam[f].shift()); hubo=true; } } }
   return out;
 }
-const NVAR=CARD.cells.length; const ROUNDS = MIX ? Math.max(1, Math.min(MIX.n, NVAR)) : (NVAR===1 ? 2 : NVAR);   // tantas rondas como variaciones (si solo hay 1 → 2, alternando el pulso dado) · (7-oct) con MEZCLA, las `n` elegidas
+const NVAR=CARD.cells.length; const ROUNDS = MIX ? Math.max(1, Math.min(MIX.n, NVAR)) : (BARRA ? Math.min(3, NVAR) : (NVAR===1 ? 2 : NVAR));   /* (3-nov-2026, Iago) en 3/2 y 4/2, 3 rondas */   // tantas rondas como variaciones (si solo hay 1 → 2, alternando el pulso dado) · (7-oct) con MEZCLA, las `n` elegidas
 /* el compás de cada ronda: el de la carta, salvo que el ritmo traiga el suyo (la síncopa doble es de 3/4) */
 let MEAS_R=MEAS, PPM_R=(_CFG&&_CFG.pulsesPerMeas)||2;
 function compasDeRonda(ci){
@@ -481,7 +481,9 @@ function newRound(){ stopPhrase(); failUsedThisRound=false; written=[]; writtenT
   const spec=order[roundIdx]; const variation=CARD.cells[spec.cell].slice();
   compasDeRonda(spec.cell);
   const vBeats=CELL_BEATS[spec.cell].slice(); const vTup=CELL_TUP[spec.cell];
-  if(BARRA && !spec.swap && !vTup && !(CELL_TIES[spec.cell]||[]).length){   /* (3-nov-2026) compás entero y variado (ver variarBarra) */
+  /* (3-nov-2026, 09:16, Iago: «estás introduciendo ritmos que no habían aparecido… que sean ritmos que hayan salido ya en las
+     fases anteriores») APAGADO: cada ronda escribe un ritmo de la carta TAL CUAL. variarBarra() se queda por si se quiere volver. */
+  if(false && BARRA && !spec.swap && !vTup && !(CELL_TIES[spec.cell]||[]).length){
     const vb=spec.barra||(spec.barra=variarBarra(spec.cell));
     if(vb){ variation.length=0; vb.toks.forEach(x=>variation.push(x)); vBeats.length=0; vb.beats.forEach(x=>vBeats.push(x)); } }
   if(spec.swap){ writeSlot=1; givenToks=variation; givenBeats=vBeats; givenTup=vTup; target=[GIVEN]; targetBeats=[durQ(GIVEN)]; CAP_Q=durQ(GIVEN); givenTies=(CELL_TIES[spec.cell]||[]).map(t=>t.slice()); targetTies=[]; }   // escribe la figura de pulso; suena la variación (real)
@@ -508,7 +510,7 @@ document.getElementById('winBtn').onclick=()=>{ document.getElementById('ovWin')
 
 function startGame(orden){   // (27-sep-2026) orden: el de la visita anterior al retomar; sin él, barajado como siempre
   _barrasUsadas=new Set();   /* (3-nov-2026) */
-  const idxs=orden?orden.slice():(MIX ? barajar(elegirCelulas(ROUNDS,!MIX.azar)) : CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5));   /* (7-oct) MEZCLA: el base de cada familia y una variante */
+  const idxs=orden?orden.slice():(MIX ? barajar(elegirCelulas(ROUNDS,!MIX.azar)) : CARD.cells.map((_,i)=>i).sort(()=>Math.random()-.5).slice(0,ROUNDS));   /* (7-oct) MEZCLA: el base de cada familia y una variante · (3-nov) solo las ROUNDS primeras (en 3/2, 3 de 5) */
   const swapFor=i=>!!CELL_TUP[i];   // 3-ago: GVE (tresillo…) no se puede escribir con la paleta → se escribe el pulso dado
   order = (CARD.cells.length===1) ? [{cell:0,swap:swapFor(0)},{cell:0,swap:true}] : idxs.map(i=>({cell:i,swap:swapFor(i)}));
   buildEditor(); newRound();
