@@ -671,12 +671,13 @@ function playPhrase(){
   clearLive(); playing=true; listensLeft--; updateReps(); setSounding(true);
   phraseBus=c.createGain(); phraseBus.gain.value=1; phraseBus.connect(master());
   const t0=c.currentTime+0.15; const measSec=PULSES_PER_MEAS*secPerPulse;
-  for(let p=0;p<PULSES_PER_MEAS;p++) click(t0+p*secPerPulse, p===0, phraseBus);   // claqueta de UN compás entero
-  const start=t0+measSec;
+  /* (3-nov-2026, Iago: «que no haya claqueta previa, porque genera fricción») la frase arranca directamente, con su metrónomo.
+     Antes: un compás entero de claqueta antes de la frase. */
+  const start=t0;
   round.pulses.forEach((pl,i)=>{ const ps=start+i*secPerPulse;   /* (20-oct-2026) con sus ligaduras */
     sonidosLigados(pl.tokens, pl.q, pl.ties).forEach(ev=>ritmoSound(ps+ev.on*spq, ev.dur*spq, .34, phraseBus, ev.lig)); });
   for(let i=0;i<N_PULSES;i++){ click(start+i*secPerPulse, i%PULSES_PER_MEAS===0, phraseBus); }   // metrónomo durante la frase
-  const baseMs=(0.15+measSec)*1000;
+  const baseMs=0.15*1000;
   round.pulses.forEach((pl,i)=>{ liveTimers.push(setTimeout(()=>{ if(answered)return; clearLiveOnly(); const g=pnumByIdx(i); if(g) g.classList.add('live'); }, baseMs+i*secPerPulse*1000)); });
   const totalMs=baseMs+N_PULSES*secPerPulse*1000+150;
   liveTimers.push(setTimeout(()=>{ clearLiveOnly(); playing=false; phraseBus=null; setSounding(false);
