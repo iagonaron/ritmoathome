@@ -7306,7 +7306,9 @@ SLIDE_TYPES.talla=function(host,s){
   function sonar(){
     clearTimeout(sonarT); sonarT=null;
     if(!cur) return;
-    tocarUnaVez(cur,s.small,null,{timbre:'marimba',freq:null,gain:1,loopBeats:on.total,pulseOnsets:s.pulseOn||[],
+    /* (3-nov-2026, Iago: «no suenan las notas largas con el sonido alargado… en esta es simplemente percusión corta») el
+       cambio de talla suena con tono sostenido, como las demás fases: cada figura dura lo que vale (freq; antes null = solo golpe) */
+    tocarUnaVez(cur,s.small,null,{timbre:'marimba',freq:s.toneFreq||523,gain:1,loopBeats:on.total,pulseOnsets:s.pulseOn||[],
       els:cur.__drawn.els,map:big?iSoundIdx(s.big):null});
   }
   function bindToggle(ch){ ch.classList.add('clickable');
