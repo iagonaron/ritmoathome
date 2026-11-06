@@ -3659,10 +3659,13 @@ function geCombPlan(worldIds, rand){
   const expand=(t,wids)=>{ const e=combExpandMeter(t,rand); return wids.every(w=>ownerCanSound(w,e))?e:t; };
   // 1) huecos: un mundo cada uno (con 6 mundos, se juntan dos que compartan compás)
   let slots=worldIds.map(w=>({owners:[w]}));
-  while(slots.length>N){ let best=null;
+  const especial=(sl)=>sl.owners.some(w=>sig[w].some(t=>isBlanca(t)||isDisp(t)));   // mundos de blanca o de 5/8: nunca se juntan
+  while(slots.length>N){ let best=null, bestEsp=9;
     for(let a=0;a<slots.length;a++) for(let b=a+1;b<slots.length;b++){
       const ca=slots[a].owners.flatMap(w=>sig[w]), cb=slots[b].owners.flatMap(w=>sig[w]);
-      const com=ca.filter(t=>cb.includes(t)&&!isBlanca(t)&&!isDisp(t)); if(com.length && (!best||rand()<0.5)) best=[a,b,com]; }
+      const com=ca.filter(t=>cb.includes(t)&&!isBlanca(t)&&!isDisp(t)); if(!com.length) continue;
+      const esp=(especial(slots[a])?1:0)+(especial(slots[b])?1:0);
+      if(esp<bestEsp || (esp===bestEsp && rand()<0.5)){ best=[a,b,com]; bestEsp=esp; } }
     if(!best){ best=[slots.length-2,slots.length-1,[]]; }
     const [a,b,com]=best; slots[a].owners=slots[a].owners.concat(slots[b].owners); slots[a].common=com; slots.splice(b,1); }
   // 2) compás de cada hueco: el más característico (el que menos se repite entre los mundos elegidos)
@@ -3670,7 +3673,7 @@ function geCombPlan(worldIds, rand){
     if(!cand || !cand.length) cand=['2/4'];
     const esp=cand.filter(t=>isBlanca(t)||isDisp(t)); if(esp.length) cand=esp;   // blanca o 5/8: es lo que define el mundo
     const minF=Math.min(...cand.map(freq)); const rare=cand.filter(t=>freq(t)===minF);
-    sl.time=expand(pick(rare), sl.owners); sl.n=1; });
+    sl.time = sl.owners.length>1 ? pick(rare) : expand(pick(rare), sl.owners); sl.n=1;   /* hueco compartido: sin ampliar, para que quepan los dos mundos */ });
   // 3) pentagramas que sobran: puente de negra entre blanca y 5/8 si hace falta; si no, alargan huecos (no el de blanca)
   let extra=N-slots.reduce((a,s)=>a+s.n,0);
   const hasB=slots.some(s=>isBlanca(s.time)), hasD=slots.some(s=>isDisp(s.time));
