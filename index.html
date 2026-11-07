@@ -3716,6 +3716,33 @@ function geCombPlan(worldIds, rand){
     if(blockTimes.length && blockTimes[blockTimes.length-1]===s.time) blockSplit[blockSplit.length-1]+=s.n; else { blockTimes.push(s.time); blockSplit.push(s.n); } });
   return {phraseTime, owners, blockTimes, blockSplit};
 }
+/* (7-nov-2026, Iago) PULSO DE BLANCA EN CLAVE DE FA, como en el examen de 4.º GE del 1T: «empieza con ritmos básicos, negras,
+   blancas, y no metas más de una dificultad cada dos compases»; riqueza de la lección 40 (negra con puntillo-corchea, síncopa
+   negra-blanca-negra, corcheas) y «solo un tresillo de negras, más hacia el final». tipo: null (básico) | 'qd8' | 'cor' | 'sinc' | 'trip' */
+function geBlancaMeasure(time, pick, tipo){
+  const cap=meterCapQ(time), P=Math.round(cap/2);
+  const notes=[], beams=[], tuplets=[]; let groupInfo=null;
+  if(tipo==='sinc' && P<2) tipo='qd8';
+  const pos = tipo ? pick(Array.from({length:P-(tipo==='sinc'?1:0)},(_,k)=>k)) : -1;
+  const uds=[]; let p=0;
+  while(p<P){
+    if(p===pos){ uds.push(tipo); p+=(tipo==='sinc'?2:1); continue; }
+    const cabeW=(p+1<P) && pos!==p+1;
+    const u=pick(cabeW?['h','h','qq','qq','w']:['h','h','qq']); uds.push(u); p+=(u==='w'?2:1);
+  }
+  uds.forEach(u=>{ const b=notes.length;
+    if(u==='h') notes.push({dur:'h'});
+    else if(u==='w') notes.push({dur:'w'});
+    else if(u==='qq') notes.push({dur:'q'},{dur:'q'});
+    else if(u==='qd8') notes.push({dur:'qd'},{dur:'8'});
+    else if(u==='cor'){ if(pick([0,1])){ notes.push({dur:'8'},{dur:'8'},{dur:'q'}); beams.push([b,b+1]); } else { notes.push({dur:'q'},{dur:'8'},{dur:'8'}); beams.push([b+1,b+2]); } }
+    else if(u==='sinc') notes.push({dur:'q'},{dur:'h'},{dur:'q'});
+    else if(u==='trip'){ notes.push({dur:'q'},{dur:'q'},{dur:'q'}); const idx=[b,b+1,b+2];
+      tuplets.push({idx,group:{ratioNum:3,ratioDen:2}}); groupInfo={idx,written:['q','q','q'],occ:2,ratioNum:3,ratioDen:2,label:'tresillo de negras'}; }
+  });
+  const m={time,notes,beams,cap,tuplets}; if(groupInfo) m.groupInfo=groupInfo;
+  return m;
+}
 function genLessonComb(worldIds, seed){
   const cfg=gp1CombConfig(worldIds);
   const rand=makeRand(seed), pick=pickF(rand);
@@ -3726,11 +3753,21 @@ function genLessonComb(worldIds, seed){
   //  al menos un pentagrama con su compás característico y un compás hecho solo con sus cartas.
   //  Pulso de blanca y 5/8 pueden convivir, pero nunca seguidos: entre ellos va un pentagrama de pulso de negra.
   const nPh = 5;
-  const plan = geCombPlan(worldIds, rand);
+  /* (7-nov-2026, Iago) MUNDOS 1 + 2 = FORMA DEL EXAMEN DEL 1T (canónica): «quiero que se integren como canónicas… para que
+     ellos desde ya puedan practicar con unas condiciones muy parecidas a las que serán el examen». Dos pentagramas de
+     subdivisión ternaria (6/8) y uno de binaria (2/4, a veces 3/4) en clave de sol, y dos de pulso de blanca (3/2, a veces
+     2/2) en clave de fa, con el pulso de blanca a la manera del examen (ver geBlancaMeasure). */
+  const EXAM12 = worldIds.length===2 && worldIds.includes('m1') && worldIds.includes('m2');
+  let plan;
+  if(EXAM12){ const bin=pick(['2/4','2/4','2/4','3/4']), bl=pick(['3/2','3/2','3/2','2/2']);
+    plan={phraseTime:['6/8','6/8',bin,bl,bl], owners:[['m1'],[],[],[],[]], blockTimes:['6/8',bin,bl], blockSplit:[2,1,2]}; }
+  else plan = geCombPlan(worldIds, rand);
   const phraseTime = plan.phraseTime, phraseOwners = plan.owners;
   const times = plan.blockTimes, split = plan.blockSplit;
   const tres1 = rand()<0.5;
-  const clefs = tres1 ? ['treble','treble','treble','bass','bass'] : ['bass','bass','treble','treble','treble'];
+  const clefs = (tres1 || EXAM12) ? ['treble','treble','treble','bass','bass'] : ['bass','bass','treble','treble','treble'];
+  /* pulso de blanca del examen: dificultades en los compases 3, 5 y 7 de los dos pentagramas de fa; el tresillo, solo en el 7 */
+  const blDif=(()=>{ const t=['qd8','cor','sinc']; const a=pick(t); const b=pick(t.filter(x=>x!==a)); return [a,b]; })();
   const binSimple=(t)=>{ const [,d]=t.split('/').map(Number); return d===4; };
 
   const phrases=clefs.map((clef,i)=>{
@@ -3755,9 +3792,15 @@ function genLessonComb(worldIds, seed){
       let m,tries=0;
       const isDisp=(tDen===8 && (tNum===5||tNum===7));
       const simpleDisp=(c===0 && isDisp);   // 5/8: el primer compás solo corcheas o figura de pulso
-      const gen=()=> reliefFa ? geBasicMeasure(time,prPick,{startSix:prevSix,dispGroup,simpleDisp})
+      const kBl=(i-3)*mc+c, blTipo = kBl===2 ? blDif[0] : kBl===4 ? blDif[1] : kBl===6 ? 'trip' : null;
+      const gen=()=> (EXAM12 && reliefFa) ? geBlancaMeasure(time,prPick,blTipo)
+                   : reliefFa ? geBasicMeasure(time,prPick,{startSix:prevSix,dispGroup,simpleDisp})
                               : genMeasureFromCards(time, cfg.activeCards, prPick, {dispGroup,simpleDisp});
-      do{ m = gen(); tries++; } while(!validateMeasure(m)&&tries<40);
+      /* examen: el pentagrama binario lleva síncopa o ligadura (cartas 1.4 y 1.6) en su 2.º compás */
+      const sincCards = (EXAM12 && i===2 && c===1) ? cfg.activeCards.filter(cc=>cc.id==='c1_4'||cc.id==='c1_6') : null;
+      const gen2 = (sincCards && sincCards.length) ? ()=>genMeasureFromCards(time, sincCards, prPick, {dispGroup}) : gen;
+      do{ m = gen2(); tries++; } while(!validateMeasure(m)&&tries<40);
+      if(sincCards && sincCards.length && !validateMeasure(m)){ let t3=0; do{ m=gen(); }while(!validateMeasure(m)&&t3++<40); }
       const is4pulse=(time==='4/4' || is12_8);
       if(c===0 && is4pulse){
         let g=0;
@@ -3768,8 +3811,8 @@ function genLessonComb(worldIds, seed){
       prevSix = !!(reliefFa && m && m._lastSix);
       measures.push(m);
     }
-    if(!isLast && !is12_8){ measures[measures.length-1]=makeCadenceMeasure(time, false); }
-    if(mc===4 && measures[1]) easeLastPulse(measures[1]);   // compás 2: último pulso fácil
+    if(!isLast && !is12_8){ measures[measures.length-1] = (EXAM12 && reliefFa) ? geBlancaMeasure(time, prPick, null) : makeCadenceMeasure(time, false); }   /* examen: el 1.er pentagrama de fa sigue sin silencio */
+    if(mc===4 && measures[1] && !(EXAM12 && reliefFa)) easeLastPulse(measures[1]);   // compás 2: último pulso fácil
     // GARANTÍA DE DIFICULTAD (idéntica al camino de un mundo)
     {
       const isCompFa = reliefFa && tDen===8 && tNum%3===0;
