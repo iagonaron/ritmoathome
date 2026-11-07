@@ -3676,6 +3676,23 @@ function geCombPlan(worldIds, rand){
     sl.time = sl.owners.length>1 ? pick(rare) : expand(pick(rare), sl.owners); sl.n=1;   /* hueco compartido: sin ampliar, para que quepan los dos mundos */ });
   // 3) pentagramas que sobran: puente de negra entre blanca y 5/8 si hace falta; si no, alargan huecos (no el de blanca)
   let extra=N-slots.reduce((a,s)=>a+s.n,0);
+  // 3a) (7-nov-2026, Iago) AL MENOS 3 COMPASES DISTINTOS por lección y, si los mundos elegidos los tienen, uno de cada tipo:
+  //     binario de negra (2/4, 3/4, 4/4), ternario (6/8, 9/8, 12/8) y de denominador 2 (2/2, 3/2, 4/2). P. ej. mundos 1+2 → 2/4 · 6/8 · 3/2.
+  { const cat=t=>{ const [n,d]=t.split('/').map(Number); return d===2?'blanca':d===4?'negra':(d===8&&n%3===0)?'ternario':'otro'; };
+    const fam=t=>t==='2/4'?['2/4','3/4','4/4']:t==='6/8'?['6/8','9/8','12/8']:[t];
+    const sigAll=[...new Set(worldIds.flatMap(w=>sig[w]))];
+    const suena=t=>worldIds.some(w=>ownerCanSound(w,t));
+    const usados=()=>new Set(slots.map(s=>s.time));
+    const mete=(cands)=>{ cands=cands.filter(t=>!usados().has(t) && suena(t)); if(!cands.length) return false;
+      let t=pick(cands); const e=combExpandMeter(t,rand); if(!usados().has(e) && suena(e)) t=e;
+      slots.push({owners:[], time:t, n:1, tipo:true}); extra--; return true; };
+    for(const c of ['negra','ternario','blanca']){ if(extra<=0) break;
+      if(slots.some(s=>cat(s.time)===c)) continue;
+      mete(sigAll.filter(t=>cat(t)===c)); }
+    let g=0; while(extra>0 && usados().size<3 && g++<6){
+      const hayB=slots.some(s=>isBlanca(s.time)), hayD=slots.some(s=>isDisp(s.time));
+      const cands=[...new Set(sigAll.flatMap(fam))].filter(t=>!(hayB&&isBlanca(t)) && !(isBlanca(t)&&hayD) && !(isDisp(t)&&hayB));
+      if(!mete(cands)) break; } }
   const hasB=slots.some(s=>isBlanca(s.time)), hasD=slots.some(s=>isDisp(s.time));
   const negraSlot=slots.find(s=>isNegra(s.time));
   if(hasB && hasD && !negraSlot && extra>0){
