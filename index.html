@@ -3424,6 +3424,7 @@ function genLessonGP1(worldId, cards, seed, second){
   const combine = !!second && second.worldId;
   const cfgB = combine ? gp1Config(second.worldId, second.cards) : null;
   const useCombine = combine && !cfgA.clave && !(cfgB&&cfgB.clave);
+  const FA_CARTA = !useCombine && !!(cfgA.W && cfgA.W.cards) && (cards||[]).length < cfgA.W.cards.filter(k=>!k.pending&&!k.base&&!k.introOnly&&!k.exclusive).length;
   const W=cfgA.W;
   const rand=makeRand(seed), pick=pickF(rand);
   const dispGroup = rand()<0.5 ? [3,2] : [2,3];   // 5/8: criterio de pulso (2+3 o 3+2) fijo para TODA la lección
@@ -3494,6 +3495,13 @@ function genLessonGP1(worldId, cards, seed, second){
     const measures=[];
     const elemental = cfg.clave || (cfg.special==='combine' && !useCombine);
     const reliefFa = (clef==='bass');   // clave de fa = alivio rítmico: ritmos básicos, saltándose la dificultad de la lección
+    /* (10-nov-2026, Iago) con solo ALGUNAS cartas marcadas, la fa no mete tresillos, síncopas ni puntillos de otras cartas:
+       «fa con la carta elegida», más sencilla — un compás con la carta y otro solo con figuras de pulso, alternando */
+    const faCarta = reliefFa && FA_CARTA;
+    const faSimple=()=>{ const k=geMeterKindGE(time); if(k.kind==='disp') return geBasicMeasure(time,prPick,{dispGroup,simpleDisp:true});
+      const nn=[],bb=[]; const P=k.pulses||1; for(let q=0;q<P;q++){ const base=nn.length; const fl=geNeutralPulse(k.kind,prPick); fl.forEach(d=>nn.push({dur:d}));
+        if(fl.length>1 && fl.every(d=>['8','16','32'].includes(d))) bb.push(range(base,nn.length-1)); }
+      return {time,notes:nn,beams:bb,cap:meterCapQ(time)}; };
     let prevSix=false;
     for(let c=0;c<mc;c++){
       const last=(c===mc-1);
@@ -3505,7 +3513,8 @@ function genLessonGP1(worldId, cards, seed, second){
       let m,tries=0;
       const isDisp=(tDen===8 && (tNum===5||tNum===7));
       const simpleDisp=(c===0 && isDisp);   // 5/8: el primer compás solo corcheas o figura de pulso
-      const gen=()=> reliefFa ? geBasicMeasure(time,prPick,{startSix:prevSix,dispGroup,simpleDisp})
+      const gen=()=> faCarta ? (elemental ? geElementalMeasure(time,prPick) : (c%2===1 ? genMeasureFromCards(time, cfg.activeCards, prPick, {dispGroup,simpleDisp}) : faSimple()))
+                   : reliefFa ? geBasicMeasure(time,prPick,{startSix:prevSix,dispGroup,simpleDisp})
                               : (elemental ? geElementalMeasure(time,prPick) : genMeasureFromCards(time, cfg.activeCards, prPick, {dispGroup,simpleDisp}));
       do{ m = gen(); tries++; } while(!validateMeasure(m)&&tries<40);
       /* 3-ago-2026 (PROPUESTA): variedad — evitar dos compases IDÉNTICOS seguidos (si el vocabulario da) */
@@ -3534,7 +3543,7 @@ function genLessonGP1(worldId, cards, seed, second){
     // (compás 2 de las frases de 4 compases). Aplica a clave de fa compuesto (6/8…) y a 5/8 en clave de sol.
     // Se comprueba DESPUÉS de la cadencia y del easeLastPulse, mirando el contenido real (no flags).
     {
-      const isCompFa = reliefFa && tDen===8 && tNum%3===0;
+      const isCompFa = reliefFa && !faCarta && tDen===8 && tNum%3===0;
       const isDispSol = !reliefFa && !elemental && tDen===8 && tNum%3!==0;
       if((isCompFa || isDispSol) && (mc>=3 || is12_8)){
         const ti=(mc>=4)?1:0;   // compás 2 (o 1/0 en frases cortas)
