@@ -1724,7 +1724,9 @@ function genMeasureFromCards(time, activeCards, pick, opts={}){
     if(geCellScope(cell)==='bar' && cell.ts!==time && sameKind(cell.ts) && Math.abs(geCellBeats(cell)-threePulseBeats)<1e-6) block3.push(cell);
   }));
   // TILE por pulsos: bloque de 2 pulsos (síncopa de otra métrica), célula de pulso (dificultad) o relleno neutro
-  const notes=[],beams=[],tuplets=[]; let groupInfo=null, placedTuplet=false;
+  /* (10-nov-2026, Iago: «puse solo la carta de ligaduras y me generó algo raro») las LIGADURAS de las células viajan con
+     ellas también cuando se colocan como bloque o pulso (en 3/4 y 4/4 se perdían: salían las figuras sin la ligadura) */
+  const notes=[],beams=[],tuplets=[],ties=[]; let groupInfo=null, placedTuplet=false;
   const P=mk.pulses||Math.round(cap/(mk.pulseBeats||1));
   let p=0;
   while(p<P){
@@ -1733,6 +1735,7 @@ function genMeasureFromCards(time, activeCards, pick, opts={}){
       const cell=pick(block3); const base=notes.length;
       cell.notes.forEach(n=>notes.push(geNoteFrom(n)));
       (cell.beams||[]).forEach(b=>beams.push(b.map(i=>i+base)));
+      (cell.ties||[]).forEach(t=>ties.push(t.map(i=>i+base)));
       p+=3; continue;
     }
     // ¿colocar un BLOQUE de 2 pulsos? (síncopa binaria en 3/4·4/4, o célula 6/8 en 9/8·12/8)
@@ -1743,6 +1746,7 @@ function genMeasureFromCards(time, activeCards, pick, opts={}){
         const base=notes.length;
         cell.notes.forEach(n=>notes.push(geNoteFrom(n)));
         (cell.beams||[]).forEach(b=>beams.push(b.map(i=>i+base)));
+        (cell.ties||[]).forEach(t=>ties.push(t.map(i=>i+base)));
         if(hasTupB){                                        /* FIX 3-ago: el corchete viaja con el bloque (antes se perdía y el validador expulsaba la célula) */
           const t=cell.tuplets[0]; const info=geTupletOcc(cell,t); const idx=t.idx.map(i=>i+base);
           tuplets.push({idx, group:{ratioNum:info.ratioNum, ratioDen:info.ratioDen}});
@@ -1759,6 +1763,7 @@ function genMeasureFromCards(time, activeCards, pick, opts={}){
         const base=notes.length;
         cell.notes.forEach(n=>notes.push(geNoteFrom(n)));
         (cell.beams||[]).forEach(b=>beams.push(b.map(i=>i+base)));
+        (cell.ties||[]).forEach(t=>ties.push(t.map(i=>i+base)));
         if(hasTup){
           const t=cell.tuplets[0]; const info=geTupletOcc(cell,t);
           const idx=t.idx.map(i=>i+base);
@@ -1777,6 +1782,7 @@ function genMeasureFromCards(time, activeCards, pick, opts={}){
   }
   const m={time,notes,beams,cap};
   if(tuplets.length){ m.tuplets=tuplets; m.groupInfo=groupInfo; }
+  if(ties.length) m.ties=ties;
   return m;
 }
 
