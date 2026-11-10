@@ -1455,12 +1455,19 @@ const GE_WORLDS=[
         {"ts":"3/2","notes":["q","h","h","q"],"label":"síncopa doble · pulso blanca"},
         {"ts":"3/2","notes":["h","q","8","8","h"],"beams":[[2,3]]}
       ] },
-      { id:"c2_3", atlasId:"2.3", name:"Compás de 4/2", lecs:"41–43", ref:"pág. 25", note:"Cuaternario de blanca. La redonda ocupa dos tiempos. Mismo repertorio ampliado a cuatro tiempos.",
+      { id:"c2_3", atlasId:"2.3", name:"Compás de 4/2", lecs:"41–43", ref:"pág. 25", note:"Cuaternario de blanca. La redonda ocupa dos tiempos. Dentro de un pulso de blanca: negra con puntillo + corchea, negra + silencio de corchea + corchea y la síncopa breve corchea–negra–corchea.",
+        /* (10-nov-2026, Iago: «que lo que hacemos de trabajo previo, intro y quiz, sea un reflejo de lo que ocurre luego en las
+           lecciones») las lecciones 41–43 están llenas de negra con puntillo + corchea, negra + silencio de corchea + corchea y
+           síncopa breve (lección 43). Cada ritmo va con el compás entero, como en las lecciones; el quiz de 4/2 sortea entre
+           ellos, y solo la redonda y la síncopa triple no llevan ninguna de las tres figuras. Antes: w h h · h h q q q q ·
+           q h h h q · h q 8 8 h h. */
         cells:[
         {"ts":"4/2","notes":["w","h","h"]},
-        {"ts":"4/2","notes":["h","h","q","q","q","q"]},
+        {"ts":"4/2","notes":["qd","8","qd","8","h","h"],"label":"negra con puntillo · corchea"},
+        {"ts":"4/2","notes":["q","8r","8","q","8r","8","w"],"label":"negra · silencio de corchea · corchea"},
+        {"ts":"4/2","notes":["8","q","8","8","q","8","q","8","8","h"],"beams":[[7,8]],"label":"síncopa breve"},
         {"ts":"4/2","notes":["q","h","h","h","q"],"label":"síncopa triple · pulso blanca"},
-        {"ts":"4/2","notes":["h","q","8","8","h","h"],"beams":[[2,3]]}
+        {"ts":"4/2","notes":["h","q","8","8","qd","8","h"],"beams":[[2,3]]}
       ] },
     ]
   },
@@ -8573,14 +8580,28 @@ D['2.2']={spq:0.45,slides:function(card){ return m2Slides(card,{
 
 D['2.3']={spq:0.45,slides:function(card){ return m2Slides(card,{
   tallaTitle:'Cuatro pulsos de blanca: el 4/2',
-  small:{notes:['q','8','8','q','q'],beams:[[1,2]]},big:{notes:['h','q','q','h','h']},tsS:'4/4',tsB:'4/2',pulseOn:[0,1,2,3],
+  /* (10-nov-2026, Iago) la talla, con las figuras de las lecciones 41–43: corchea con puntillo + semicorchea y la síncopa
+     de semicorcheas, que en 4/2 se convierten en negra con puntillo + corchea y en la síncopa breve corchea–negra–corchea */
+  small:{notes:['8d','16','16','8','16','q','q'],beams:[[0,1],[2,3,4]]},big:{notes:['qd','8','8','q','8','h','h']},tsS:'4/4',tsB:'4/2',pulseOn:[0,1,2,3],
   meters:['4/2'],loop:8,rootNotes:['h','h','h','h'],
   anc:[{notes:['q','q','q','q','q','q','q','q'],label:'8 negras'}],
-  combos:[{notes:['h','q','q','w'],label:'blanca · 2 negras · redonda'},{notes:['w','w'],label:'dos redondas'},{notes:['h','w','h'],label:'blanca · redonda · blanca'}],   /* (3-nov-2026) */
-  genesis:{type:'genesis',mode:'fusion',title:'La redonda, en cuaternario',loopBeats:8,pulse:{notes:['h','h','h','h']},timbre:'marimba',steps:[
+  combos:[{notes:['qd','8','h','w'],label:'negra con puntillo · corchea'},{notes:['q','8r','8','h','w'],label:'negra · silencio de corchea · corchea'},
+          {notes:['8','q','8','h','w'],label:'síncopa breve'},{notes:['h','w','h'],label:'blanca · redonda · blanca'}],   /* (10-nov-2026, antes 3-nov) */
+  genesis:[
+  {type:'genesis',mode:'fusion',title:'La redonda, en cuaternario',loopBeats:8,pulse:{notes:['h','h','h','h']},timbre:'marimba',steps:[
     {notes:['h','h','h','h'],caption:'Cuatro blancas: los cuatro pulsos del compás.'},
     {notes:['h','h','h','h'],ties:[[0,1]],mark:[0,1],btn:'✨ Liga las dos primeras',caption:'Mismo gesto…'},
-    {notes:['w','h','h'],mark:[0],join:[0,1],btn:'✨ Consuma la fusión',caption:'Redonda + dos blancas. Y si la fusión cae en medio del compás… síncopa de blancas (la tienes en la carta).'}]}
+    {notes:['w','h','h'],mark:[0],join:[0,1],btn:'✨ Consuma la fusión',caption:'Redonda + dos blancas. Y si la fusión cae en medio del compás… síncopa de blancas (la tienes en la carta).'}]},
+  /* (10-nov-2026, Iago) las figuras de las lecciones dentro de UN pulso de blanca */
+  {type:'genesis',mode:'fusion',kicker:'EL CRAFTEO — dentro de un pulso de blanca',title:'El puntillo… y su versión con silencio',loopBeats:8,pulse:{notes:['h','h','h','h']},timbre:'marimba',steps:[
+    {notes:['q','8','8','h','h','h'],beams:[[1,2]],caption:'Negra + dos corcheas: un pulso de blanca repartido.'},
+    {notes:['q','8','8','h','h','h'],beams:[[1,2]],ties:[[0,1]],mark:[0,1],btn:'✨ Liga la negra con la corchea',caption:'La negra se alarga media parte…'},
+    {notes:['qd','8','h','h','h'],mark:[0],join:[0,1],btn:'✨ PUNTILLO',caption:'<b>Negra con puntillo + corchea</b>: la tienes por todas partes en las lecciones 41, 42 y 43.'},
+    {notes:['q','8r','8','h','h','h'],anim:'apagar',btn:'🕳 ¿Y si en vez de alargar… callas?',caption:'<b>Negra + silencio de corchea + corchea</b>: el mismo esqueleto, con un hueco (lecciones 41 y 43).'}]},
+  {type:'genesis',mode:'fusion',kicker:'EL CRAFTEO — dentro de un pulso de blanca',title:'La síncopa breve',loopBeats:8,pulse:{notes:['h','h','h','h']},timbre:'marimba',steps:[
+    {notes:['8','8','8','8','h','h','h'],beams:[[0,1,2,3]],caption:'Cuatro corcheas: un pulso de blanca en corcheas.'},
+    {notes:['8','8','8','8','h','h','h'],beams:[[0,1,2,3]],ties:[[1,2]],mark:[1,2],btn:'✨ Liga las dos del medio',caption:'El gesto de siempre de la síncopa…'},
+    {notes:['8','q','8','h','h','h'],mark:[1],join:[1,2],btn:'✨ Consuma la fusión',caption:'Corchea – <b>NEGRA</b> – corchea: la <b>síncopa breve</b>, en un solo pulso de blanca (lección 43).'}]}]
 })}};
 
 /* ================= MUNDO 3 — corcheas punteadas ================= */
