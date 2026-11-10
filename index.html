@@ -1153,7 +1153,7 @@ window.SuiteTiempo=(function(){
           <span class="setup-q">¿Qué quieres trabajar?</span>
           <div class="setup-mode">
             <button class="setup-tab on" data-mode="uno">Un mundo</button>
-            <button class="setup-tab" data-mode="combina">Combina mundos<span class="beta-tag">beta</span></button>
+            <button class="setup-tab" data-mode="combina">Combina mundos</button>
           </div>
         </div>
         <div class="setup-topright">
@@ -3766,13 +3766,22 @@ function genLessonComb(worldIds, seed){
      2/2) en clave de fa, con el pulso de blanca a la manera del examen (ver geBlancaMeasure). */
   const EXAM12 = worldIds.length===2 && worldIds.includes('m1') && worldIds.includes('m2');
   let plan;
+  /* (10-nov-2026, Iago: «siempre 3 de sol y 2 de fa… quiero que un tercio de las opciones sea empezando con los 2 de fa y los
+     3 de sol») 1 de cada 3, los dos de pulso de blanca (fa) primero y luego los tres de sol. Con su propio azar, para no
+     cambiar el resto de la lección que sale de cada semilla. */
+  const faPrimero = EXAM12 && makeRand(seed+7717)()<1/3;
   if(EXAM12){ const bin=pick(['2/4','2/4','2/4','3/4']), bl=pick(['3/2','3/2','3/2','2/2']);
-    plan={phraseTime:['6/8','6/8',bin,bl,bl], owners:[['m1'],[],[],[],[]], blockTimes:['6/8',bin,bl], blockSplit:[2,1,2]}; }
+    plan = faPrimero
+      ? {phraseTime:[bl,bl,'6/8','6/8',bin], owners:[[],[],['m1'],[],[]], blockTimes:[bl,'6/8',bin], blockSplit:[2,2,1]}
+      : {phraseTime:['6/8','6/8',bin,bl,bl], owners:[['m1'],[],[],[],[]], blockTimes:['6/8',bin,bl], blockSplit:[2,1,2]}; }
   else plan = geCombPlan(worldIds, rand);
   const phraseTime = plan.phraseTime, phraseOwners = plan.owners;
   const times = plan.blockTimes, split = plan.blockSplit;
   const tres1 = rand()<0.5;
-  const clefs = (tres1 || EXAM12) ? ['treble','treble','treble','bass','bass'] : ['bass','bass','treble','treble','treble'];
+  const clefs = EXAM12 ? (faPrimero ? ['bass','bass','treble','treble','treble'] : ['treble','treble','treble','bass','bass'])
+              : (tres1 ? ['treble','treble','treble','bass','bass'] : ['bass','bass','treble','treble','treble']);
+  const faIni = clefs.indexOf('bass');   // (10-nov) el 1.er pentagrama de fa (para las dificultades del pulso de blanca)
+  const binIdx = EXAM12 ? (faPrimero ? 4 : 2) : -1;   // el pentagrama binario del examen (síncopa o ligadura)
   /* pulso de blanca del examen: dificultades en los compases 3, 5 y 7 de los dos pentagramas de fa; el tresillo, solo en el 7 */
   const blDif=(()=>{ const t=['qd8','cor','sinc']; const a=pick(t); const b=pick(t.filter(x=>x!==a)); return [a,b]; })();
   const binSimple=(t)=>{ const [,d]=t.split('/').map(Number); return d===4; };
@@ -3799,12 +3808,12 @@ function genLessonComb(worldIds, seed){
       let m,tries=0;
       const isDisp=(tDen===8 && (tNum===5||tNum===7));
       const simpleDisp=(c===0 && isDisp);   // 5/8: el primer compás solo corcheas o figura de pulso
-      const kBl=(i-3)*mc+c, blTipo = kBl===2 ? blDif[0] : kBl===4 ? blDif[1] : kBl===6 ? 'trip' : null;
+      const kBl=(i-faIni)*mc+c, blTipo = kBl===2 ? blDif[0] : kBl===4 ? blDif[1] : kBl===6 ? 'trip' : null;
       const gen=()=> (EXAM12 && reliefFa) ? geBlancaMeasure(time,prPick,blTipo)
                    : reliefFa ? geBasicMeasure(time,prPick,{startSix:prevSix,dispGroup,simpleDisp})
                               : genMeasureFromCards(time, cfg.activeCards, prPick, {dispGroup,simpleDisp});
       /* examen: el pentagrama binario lleva síncopa o ligadura (cartas 1.4 y 1.6) en su 2.º compás */
-      const sincCards = (EXAM12 && i===2 && c===1) ? cfg.activeCards.filter(cc=>cc.id==='c1_4'||cc.id==='c1_6') : null;
+      const sincCards = (EXAM12 && i===binIdx && c===1) ? cfg.activeCards.filter(cc=>cc.id==='c1_4'||cc.id==='c1_6') : null;
       const gen2 = (sincCards && sincCards.length) ? ()=>genMeasureFromCards(time, sincCards, prPick, {dispGroup}) : gen;
       do{ m = gen2(); tries++; } while(!validateMeasure(m)&&tries<40);
       if(sincCards && sincCards.length && !validateMeasure(m)){ let t3=0; do{ m=gen(); }while(!validateMeasure(m)&&t3++<40); }
