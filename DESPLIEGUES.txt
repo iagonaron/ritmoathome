@@ -1,0 +1,2 @@
+Registro de publicaciones forzadas (cuando GitHub Pages se queda atascado en «In progress», una línea aquí la relanza).
+- 10-nov-2026 16:40 · relanza la publicación del commit ae6d1b2 (Combina mundos 1+2 con fa delante 1 de cada 3; sin «beta»).
