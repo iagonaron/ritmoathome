@@ -6698,7 +6698,7 @@ window.__GVV=window.__GVV||{tester:false};
     // quiz no constaba. Ahora el punto de control solo se borra cuando el
     // aviso ha llegado; si no hay aviso que dar (quiz libre), se borra igual.
     if(window.SuiteQuizRitmo && typeof window.SuiteQuizRitmo.completar==='function'){
-      Promise.resolve(window.SuiteQuizRitmo.completar()).then(function(ok){ if(ok) avanceBorrar(); }).catch(function(){});
+      Promise.resolve(window.SuiteQuizRitmo.completar(avCarta)).then(function(ok){ if(ok) avanceBorrar(); }).catch(function(){});
     } else avanceBorrar();
   }
   function open(card,worldId){
@@ -6814,8 +6814,21 @@ window.__GVV=window.__GVV||{tester:false};
   }
 
   const PEND_KEY=(ENVIO && CUENTA)?('suite_quiz_pendiente_'+CUENTA+'_'+ENVIO):null;
-  async function completar(){
-    if(!ENVIO || !CUENTA) return true;          // quiz libre: nada que avisar
+  /* (11-nov-2026, Iago) «si un alumno entra en Ritmo at home y hace el quiz con la estrellita, que también se le marque
+     como hecho… de los que ya hemos dado»: quiz libre terminado → si el portal dejó su cuenta en la cookie de .lmathome.es,
+     el servidor lo apunta como el quiz de esa carta SOLO si ya se le lanzó a su grupo (si no, no pasa nada) */
+  async function completarLibre(carta){
+    let cta=''; try{ const m=document.cookie.match(/(?:^|;\s*)lm_cta_ge=([0-9a-f-]{36})/i); cta=m?m[1]:''; }catch(e){}
+    if(!cta || !carta) return true;
+    try{
+      const c=await sb(); if(!c) return true;
+      const { data, error } = await c.rpc('suite_quiz_completar_carta', { p_cuenta_id:cta, p_carta:String(carta) });
+      if(!error && data && data.ok===true && !data.ya_hecho) banner('✓ ¡Quiz completado! Cuenta como tu quiz de la carta '+String(carta)+'. Iago ya lo sabe. 🥁','ok');
+    }catch(e){ console.warn('[suite-quiz] libre', e); }
+    return true;
+  }
+  async function completar(cartaLibre){
+    if(!ENVIO || !CUENTA) return completarLibre(cartaLibre);   // quiz libre: cuenta si ese quiz ya se lanzó
     if(_enviado) return true;
     if(_enviando) return false;
     _enviando=true;
