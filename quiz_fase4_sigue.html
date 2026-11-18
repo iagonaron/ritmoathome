@@ -743,7 +743,9 @@ function startQuiz(){
   // 100 ms (quedaba solo la latencia del aparato) y ahora las figuras van un pelín
   // ADELANTADAS. Se deja la mitad: latencia real + 50 ms.
   // (15-sep, 3ª vuelta) latencia real + 80 ms.
-  DRAW_DELAY_P = (latenciaSalida() + VIS_DELAY*0.8)/effSecPerPulse();
+  // (Iago 18-nov-2026) «la imagen llega a la línea un poquito antes, como un frame antes… ajustar 1 o 2 frames»:
+  // +25 ms (≈1,5 fotogramas a 60 Hz) → latencia real + 105 ms. Solo el dibujo; la ventana de precisión no cambia.
+  DRAW_DELAY_P = (latenciaSalida() + VIS_DELAY*0.8 + 0.025)/effSecPerPulse();
   buildQuiz(); layoutTrack(); updateBar();
   running=true; setStartBtn(true); updateBar(); document.getElementById('hint').textContent='¡Percute cada figura al cruzar la línea verde!';
   beginPlayback();
