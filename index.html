@@ -4038,12 +4038,12 @@ function genLessonComb(worldIds, seed){
     plan = faPrimero
       ? {phraseTime:[bl,bl,bin,'6/8','6/8'], owners:[[],[],[],['m1'],[]], blockTimes:[bl,bin,'6/8'], blockSplit:[2,1,2]}
       : {phraseTime:['6/8','6/8',bin,bl,bl], owners:[['m1'],[],[],[],[]], blockTimes:['6/8',bin,bl], blockSplit:[2,1,2]}; }
-  else plan = geCombPlan(worldIds, rand);
+  else plan = (typeof geCombPlan2==='function') ? geCombPlan2(worldIds, rand) : geCombPlan(worldIds, rand);   /* (21-nov-2026, Iago 17:36) reparto por mundos: reparto-ge.js */
   const phraseTime = plan.phraseTime, phraseOwners = plan.owners;
   const times = plan.blockTimes, split = plan.blockSplit;
   const tres1 = rand()<0.5;
   const clefs = EXAM12 ? (faPrimero ? ['bass','bass','treble','treble','treble'] : ['treble','treble','treble','bass','bass'])
-              : (tres1 ? ['treble','treble','treble','bass','bass'] : ['bass','bass','treble','treble','treble']);
+              : (plan.clefs || (tres1 ? ['treble','treble','treble','bass','bass'] : ['bass','bass','treble','treble','treble']));   /* (21-nov-2026) reparto-ge.js decide qué va en fa */
   const faIni = clefs.indexOf('bass');   // (10-nov) el 1.er pentagrama de fa (para las dificultades del pulso de blanca)
   const binIdx = EXAM12 ? 2 : -1;   // el pentagrama binario del examen (síncopa o ligadura): 3.º en los dos órdenes
   /* pulso de blanca del examen: dificultades en los compases 3, 5 y 7 de los dos pentagramas de fa; el tresillo, solo en el 7 */
@@ -4052,8 +4052,9 @@ function genLessonComb(worldIds, seed){
 
   const phrases=clefs.map((clef,i)=>{
     const time=phraseTime[i];
+    const phCards = (plan.cards && plan.cards[i] && plan.cards[i].length) ? plan.cards[i] : cfg.activeCards;   /* (21-nov-2026) cada pentagrama, con las cartas de su mundo */
     const isLast=(i===clefs.length-1);
-    const slow = cfg.hasFusas && binSimple(time);   // fusas posibles en este bloque → frase corta (3) y densa
+    const slow = phCards.some(cc=>cc.slow) && binSimple(time);   // fusas posibles en este bloque → frase corta (3) y densa
     const{num:tNum,den:tDen}=meterInfo(time);
     const is12_8=(tDen===8&&tNum===12);
     let mc; if(slow) mc=3; else if(is12_8) mc=2; else if(tDen===8&&tNum===9) mc=3; else if(time==='4/4') mc=2; else mc=4;
@@ -4065,7 +4066,7 @@ function genLessonComb(worldIds, seed){
     for(let c=0;c<mc;c++){
       const last=(c===mc-1);
       if(last){
-        if(is12_8) measures.push(make12_8Tail(cfg.activeCards, prPick, isLast, buildScale(tonic,modoNat,clef,keysig), TONIC_PC[tonic]));
+        if(is12_8) measures.push(make12_8Tail(phCards, prPick, isLast, buildScale(tonic,modoNat,clef,keysig), TONIC_PC[tonic]));
         else measures.push(makeReposoMeasure(time, buildScale(tonic,modoNat,clef,keysig), TONIC_PC[tonic], false));
         continue;
       }
@@ -4075,7 +4076,7 @@ function genLessonComb(worldIds, seed){
       const kBl=(i-faIni)*mc+c, blTipo = kBl===2 ? blDif[0] : kBl===4 ? blDif[1] : kBl===6 ? 'trip' : null;
       const gen=()=> (EXAM12 && reliefFa) ? geBlancaMeasure(time,prPick,blTipo)
                    : reliefFa ? geBasicMeasure(time,prPick,{startSix:prevSix,dispGroup,simpleDisp})
-                              : genMeasureFromCards(time, cfg.activeCards, prPick, {dispGroup,simpleDisp});
+                              : genMeasureFromCards(time, phCards, prPick, {dispGroup,simpleDisp,difBlanca:!!(plan.hard&&plan.hard[i]&&c>=1)});   /* (21-nov-2026, Iago) mundo 2 en sol: que no sea demasiado fácil (reparto-ge.js) */
       /* examen: el pentagrama binario lleva síncopa o ligadura (cartas 1.4 y 1.6) en su 2.º compás */
       const sincCards = (EXAM12 && i===binIdx && c===1) ? cfg.activeCards.filter(cc=>cc.id==='c1_4'||cc.id==='c1_6') : null;
       const gen2 = (sincCards && sincCards.length) ? ()=>genMeasureFromCards(time, sincCards, prPick, {dispGroup}) : gen;
@@ -4105,7 +4106,7 @@ function genLessonComb(worldIds, seed){
         if(!has && measures[ti]){
           let mh,tr=0;
           do{ mh = isCompFa ? geBasicMeasure(time,prPick,{forceHardFirst:true,dispGroup})
-                            : genMeasureFromCards(time, cfg.activeCards, prPick, {forceHardFirst:true,dispGroup}); tr++; }
+                            : genMeasureFromCards(time, phCards, prPick, {forceHardFirst:true,dispGroup}); tr++; }
           while(!validateMeasure(mh)&&tr<40);
           if(validateMeasure(mh)){ measures[ti]=mh;
             if(mc===4 && ti===1) easeLastPulse(measures[ti]);
@@ -11204,6 +11205,7 @@ function phase3(host){
 })();
 </script>
 <!-- (21-nov-2026, Iago) el dado para todos los alumnos («Prueba directa» solo para él) y matices + articulación en las lecciones generadas. Deshacer: borrar estas dos líneas -->
+<script src="reparto-ge.js?v=1"></script><!-- (21-nov-2026, Iago 17:36) reparto de pentagramas por mundo al combinar. Deshacer: borrar esta línea (vuelve el reparto de antes) -->
 <script src="dado.js?v=1"></script>
 <script src="matices.js?v=1"></script>
 </body></html>
