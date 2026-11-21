@@ -5626,7 +5626,7 @@ function play(opts){ // opts: {schedule, bpm, melody, rhythm, metronome, gold, r
   }
   sched.notes.forEach(nt=>{ if(nt.tied || nt.onsetQ<startQ-1e-6) return;
     const a0=at(nt.onsetQ), dur=Math.max(0.08,(at(nt.onsetQ+nt.durQ)-a0)*0.92); const oc=(opts.tesitura?phraseOct(nt.pi):0);
-    if(opts.melody) pianoHit(nt.midi+oc,a0,dur,0.13);
+    if(opts.melody) pianoHit(nt.midi+oc,a0,(nt.stac?Math.min(dur,0.16):dur),0.13*(nt.vel||1));   /* (21-nov-2026) matices y articulación (matices.js): volumen y picado */
     if(opts.rhythm) knock(a0);
     if(opts.refSet && opts.refSet.has(nt.onsetQ)) pianoHit(nt.midi+oc,a0,Math.min(0.7,dur),opts.melody?0.14:0.27);
   });
@@ -11203,4 +11203,7 @@ function phase3(host){
   }catch(e){}
 })();
 </script>
+<!-- (21-nov-2026, Iago) el dado para todos los alumnos («Prueba directa» solo para él) y matices + articulación en las lecciones generadas. Deshacer: borrar estas dos líneas -->
+<script src="dado.js?v=1"></script>
+<script src="matices.js?v=1"></script>
 </body></html>
