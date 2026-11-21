@@ -13,3 +13,6 @@ Antes de subir nada: mira el último commit y añade aquí tu huella (quién ere
   - Al combinar mundos (no toca el examen 1+2): 2 mundos 3+2 · 3 → 2+2+1 · 4 → 2+1+1+1 · 5 → 1 cada uno · 6 → el 1 y el 3 comparten; extras para el 1 y el 5; cada pentagrama con las cartas de su mundo (4.3 en los 6/8 del 1 y el 3 si está el 4); fa sencilla si no es el mundo 2; mundo 2 en sol con miga; máx. 2 pentagramas por compás; si la melodía falla, siguiente semilla.
   - Pendiente (provisional): carta 6.3 (cambio de compás dentro de un pentagrama).
   - Deshacer: borrar la línea <script src="reparto-ge.js?v=1"> del index.html (vuelve el reparto de antes).
+- 2026-11-21 18:45 · Conversación «Examen ampliación 2GP» (Claude) · HECHO (esta subida) · Iago 18:38: «Publica las ligaduras en las dos apps».
+  - matices.js (el mismo que ritmopro 47d0a1f, con la cabecera de GE): LIGADURAS DE EXPRESIÓN por ideas musicales (frases, semifrases, motivos), como en Ritmo 4 y Ritmo 6 de Tordesillas; no tapan los números/corchetes de grupos de valoración especial. index.html: matices.js?v=2.
+  - Deshacer: matices.js e index.html del commit d4df6ea (o «Revert» del commit).
