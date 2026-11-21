@@ -65,16 +65,29 @@ function geCombPlan2(worldIds, rand){
     }
     elegidos.forEach(t => { usoT[t] = (usoT[t] || 0) + 1; slots.push({ owners: u.slice(), time: t, cards: cartasDe(u, t) }); });
   });
+  // 3b) (Iago 19:11) CLAVE DE DO: si está el mundo 6, en el 30 % de las lecciones uno de sus pentagramas pasa a clave de Do
+  //     (3.ª o 4.ª línea), 4/4 como la carta 6.4 y ritmos muy básicos (blanca, negras, corcheas, silencio de negra).
+  //     Sustituye a uno de los dos de fa (queda 3 sol + 1 fa + 1 do) y va junto al de fa. Si el 6 tiene más pentagramas, conserva el 5/8.
+  let slotDo = null;
+  if (worldIds.includes('m6') && rand() < 0.3) {
+    const s6 = slots.filter(x => x.owners.includes('m6'));
+    if (s6.length) {
+      slotDo = (s6.length > 1 ? s6.find(x => !isDisp(x.time)) : null) || s6[s6.length - 1];
+      const c64 = (gp1World('m6') ? gp1World('m6').cards : []).filter(c => c.id === 'c6_3');
+      slotDo.time = '4/4'; slotDo.cards = c64; slotDo.doClef = rand() < 0.5 ? 'alto' : 'tenor';
+    }
+  }
   // 4) claves (Iago 17:39): 2 en fa, al azar pero fáciles; mejor de un mundo que tenga otro pentagrama en sol.
   //    En fa, si el mundo no es el 2 y tiene más pentagramas, ritmo sencillo (sin compás de sus cartas). El 2 en sol: con miga.
   const porUnidad = u => slots.filter(x => x.owners.join() === u.join()).length;
   const bassFirst = rand() < 0.5;
   const enFa = new Set(); const cupo = new Map();
-  shuffle(slots).forEach(x => { if (enFa.size >= 2) return; const k = x.owners.join(); const usados = cupo.get(k) || 0;
+  const nFa = slotDo ? 1 : 2, candFa = slots.filter(x => x !== slotDo);
+  shuffle(candFa).forEach(x => { if (enFa.size >= nFa) return; const k = x.owners.join(); const usados = cupo.get(k) || 0;
     if (porUnidad(x.owners) - usados >= 2) { enFa.add(x); cupo.set(k, usados + 1); } });
-  shuffle(slots).forEach(x => { if (enFa.size < 2 && !enFa.has(x)) enFa.add(x); });   // todos de un pentagrama: cualquiera
+  shuffle(candFa).forEach(x => { if (enFa.size < nFa && !enFa.has(x)) enFa.add(x); });   // todos de un pentagrama: cualquiera
   slots.forEach(x => { x.fa = enFa.has(x); x.solo = !x.fa || porUnidad(x.owners) === 1; });
-  const sol = slots.filter(x => !x.fa), fa = slots.filter(x => x.fa);
+  const sol = slots.filter(x => !x.fa && x !== slotDo), fa = slots.filter(x => x.fa).concat(slotDo ? [slotDo] : []);   // el de Do, junto al de fa
   // 5) orden: el mejor de muchos al azar (los de fa, juntos al principio o al final)
   const score = seq => { let p = 0;
     for (let i = 0; i < seq.length - 1; i++) { const a = seq[i].time, b = seq[i + 1].time;
@@ -89,9 +102,9 @@ function geCombPlan2(worldIds, rand){
   let best = arma(), bestP = score(best);
   for (let t = 0; t < 300 && bestP > 0; t++) { const o = arma(); const p = score(o); if (p < bestP) { bestP = p; best = o; } }
   const phraseTime = [], owners = [], cards = [], blockTimes = [], blockSplit = [], clefs = [], hard = [];
-  best.forEach(s => { phraseTime.push(s.time); cards.push(s.cards); clefs.push(s.fa ? 'bass' : 'treble');
+  best.forEach(s => { phraseTime.push(s.time); cards.push(s.cards); clefs.push(s === slotDo ? s.doClef : (s.fa ? 'bass' : 'treble'));
     const esDos = s.owners.includes('m2');
-    owners.push((s.fa && !esDos && !s.solo) ? [] : s.owners.slice());   // en fa con otros pentagramas en sol: solo ritmo sencillo
+    owners.push((s === slotDo || (s.fa && !esDos && !s.solo)) ? [] : s.owners.slice());   // en fa con otros pentagramas en sol (y en Do): solo ritmo sencillo
     hard.push(!s.fa && esDos && isBlanca(s.time));
     if (blockTimes.length && blockTimes[blockTimes.length - 1] === s.time) blockSplit[blockSplit.length - 1]++; else { blockTimes.push(s.time); blockSplit.push(1); } });
   geCombPlan2.ultimo = best.map(s => s.owners.slice());
@@ -135,3 +148,17 @@ function geCombPlan2(worldIds, rand){
     for (let k = 1; k <= 6; k++) { const L2 = orig.call(this, worldIds, seed + k * 7919); if (L2.valid) { L2.__unidad = P.ultimo; return L2; } }
     return L; };
 })();
+/* (Iago 19:11) compás de CLAVE DE DO en las combinaciones: ritmos muy básicos, como los de la carta 6.4
+   (por mitades de 4/4: blanca · dos negras · negra + dos corcheas · dos corcheas + negra · negra + silencio de negra) */
+function geDoMeasure(time, pick){
+  const [n, d] = time.split('/').map(Number);
+  if (d !== 4 || n % 2) return geElementalMeasure(time, pick);
+  const MITAD = [['h'], ['q', 'q'], ['q', 'q'], ['q', '8', '8'], ['8', '8', 'q'], ['q', 'qr']];
+  const notes = [], beams = [];
+  for (let h = 0; h < n / 2; h++) {
+    let m = pick(MITAD); if (h === 0 && m[1] === 'qr') m = ['q', 'q'];   // no empieza con silencio a media barra
+    const b0 = notes.length; m.forEach(x => notes.push(x === 'qr' ? { dur: 'q', rest: true } : { dur: x }));
+    const i8 = notes.slice(b0).map((x, i) => x.dur === '8' && !x.rest ? b0 + i : -1).filter(i => i >= 0); if (i8.length === 2) beams.push(i8);
+  }
+  return { time, notes, beams, cap: meterCapQ(time) };
+}

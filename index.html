@@ -4057,7 +4057,7 @@ function genLessonComb(worldIds, seed){
     const slow = phCards.some(cc=>cc.slow) && binSimple(time);   // fusas posibles en este bloque → frase corta (3) y densa
     const{num:tNum,den:tDen}=meterInfo(time);
     const is12_8=(tDen===8&&tNum===12);
-    let mc; if(slow) mc=3; else if(is12_8) mc=2; else if(tDen===8&&tNum===9) mc=3; else if(time==='4/4') mc=2; else mc=4;
+    let mc; if(slow) mc=3; else if(is12_8) mc=2; else if(tDen===8&&tNum===9) mc=3; else if(time==='4/4') mc=((clef==='alto'||clef==='tenor')?3:2); else mc=4;   /* (Iago 19:11) clave de Do: 2 compases de lectura + final */
     const pr=makeRand(seed+i*101+1);
     const prPick=pickF(pr);
     const measures=[];
@@ -4076,6 +4076,7 @@ function genLessonComb(worldIds, seed){
       const kBl=(i-faIni)*mc+c, blTipo = kBl===2 ? blDif[0] : kBl===4 ? blDif[1] : kBl===6 ? 'trip' : null;
       const gen=()=> (EXAM12 && reliefFa) ? geBlancaMeasure(time,prPick,blTipo)
                    : reliefFa ? geBasicMeasure(time,prPick,{startSix:prevSix,dispGroup,simpleDisp})
+                   : ((clef==='alto'||clef==='tenor') && typeof geDoMeasure==='function') ? geDoMeasure(time,prPick)   /* (Iago 19:11) clave de Do: ritmos muy básicos (reparto-ge.js) */
                               : genMeasureFromCards(time, phCards, prPick, {dispGroup,simpleDisp,difBlanca:!!(plan.hard&&plan.hard[i]&&c>=1)});   /* (21-nov-2026, Iago) mundo 2 en sol: que no sea demasiado fácil (reparto-ge.js) */
       /* examen: el pentagrama binario lleva síncopa o ligadura (cartas 1.4 y 1.6) en su 2.º compás */
       const sincCards = (EXAM12 && i===binIdx && c===1) ? cfg.activeCards.filter(cc=>cc.id==='c1_4'||cc.id==='c1_6') : null;
@@ -11205,7 +11206,7 @@ function phase3(host){
 })();
 </script>
 <!-- (21-nov-2026, Iago) el dado para todos los alumnos («Prueba directa» solo para él) y matices + articulación en las lecciones generadas. Deshacer: borrar estas dos líneas -->
-<script src="reparto-ge.js?v=1"></script><!-- (21-nov-2026, Iago 17:36) reparto de pentagramas por mundo al combinar. Deshacer: borrar esta línea (vuelve el reparto de antes) -->
+<script src="reparto-ge.js?v=2"></script><!-- (21-nov-2026, Iago 17:36) reparto de pentagramas por mundo al combinar. Deshacer: borrar esta línea (vuelve el reparto de antes) -->
 <script src="dado.js?v=1"></script>
-<script src="matices.js?v=3"></script>
+<script src="matices.js?v=4"></script>
 </body></html>

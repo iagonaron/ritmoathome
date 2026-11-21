@@ -18,3 +18,7 @@ Antes de subir nada: mira el último commit y añade aquí tu huella (quién ere
   - Deshacer: matices.js e index.html del commit d4df6ea (o «Revert» del commit).
 - 2026-11-21 19:05 · Conversación «Examen ampliación 2GP» (Claude) · HECHO (esta subida) · Iago 19:01: «Publica las síncopas en las dos apps».
   - matices.js (el mismo que ritmopro d233077, con la cabecera de GE): cada síncopa con su propia ligadura y sin ligaduras de frase que la corten. index.html: matices.js?v=3. Deshacer: matices.js e index.html del commit ec12d81.
+- 2026-11-21 19:25 · Conversación «Examen ampliación 2GP» (Claude) · HECHO (esta subida) · Iago 19:11 y 19:21: «Publica la clave de do y el arreglo de ligaduras».
+  - reparto-ge.js: CLAVE DE DO — con el mundo 6, en el 30 % de las lecciones uno de sus pentagramas pasa a clave de Do (3.ª o 4.ª), 4/4, ritmos muy básicos (geDoMeasure), sustituye a uno de los de fa y va junto a él. index.html: genLessonComb usa geDoMeasure en clave de Do y le da 2 compases de lectura + final; reparto-ge.js?v=2, matices.js?v=4.
+  - matices.js (el mismo que ritmopro 2f2d3bc, con la cabecera de GE): arreglo de ligaduras (solo su pentagrama, grupos enteros, control final).
+  - Deshacer: index.html, reparto-ge.js y matices.js del commit 0dc1b01.
