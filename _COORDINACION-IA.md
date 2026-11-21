@@ -16,3 +16,5 @@ Antes de subir nada: mira el último commit y añade aquí tu huella (quién ere
 - 2026-11-21 18:45 · Conversación «Examen ampliación 2GP» (Claude) · HECHO (esta subida) · Iago 18:38: «Publica las ligaduras en las dos apps».
   - matices.js (el mismo que ritmopro 47d0a1f, con la cabecera de GE): LIGADURAS DE EXPRESIÓN por ideas musicales (frases, semifrases, motivos), como en Ritmo 4 y Ritmo 6 de Tordesillas; no tapan los números/corchetes de grupos de valoración especial. index.html: matices.js?v=2.
   - Deshacer: matices.js e index.html del commit d4df6ea (o «Revert» del commit).
+- 2026-11-21 19:05 · Conversación «Examen ampliación 2GP» (Claude) · HECHO (esta subida) · Iago 19:01: «Publica las síncopas en las dos apps».
+  - matices.js (el mismo que ritmopro d233077, con la cabecera de GE): cada síncopa con su propia ligadura y sin ligaduras de frase que la corten. index.html: matices.js?v=3. Deshacer: matices.js e index.html del commit ec12d81.
